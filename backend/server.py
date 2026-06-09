@@ -726,41 +726,63 @@ async def admin_analytics(admin=Depends(require_admin)):
     }
 
 
-# ----- CSV Exports -----
-def _csv_response(rows: List[Dict[str, Any]], filename: str) -> Response:
-    if not rows:
-        rows = [{}]
-    fields = sorted({k for r in rows for k in r.keys()})
-    buf = io.StringIO()
-    w = csv.DictWriter(buf, fieldnames=fields)
-    w.writeheader()
-    for r in rows:
-        w.writerow({k: (",".join(map(str, v)) if isinstance(v, list) else v) for k, v in r.items()})
-    return Response(content=buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={filename}"})
+# ----- CSV Exports (streaming, cursor-based) -----
+def _csv_escape(v: Any) -> str:
+    if v is None:
+        return ""
+    if isinstance(v, list):
+        v = ",".join(map(str, v))
+    s = str(v)
+    if any(ch in s for ch in [",", '"', "\n", "\r"]):
+        return '"' + s.replace('"', '""') + '"'
+    return s
+
+
+async def _stream_csv(cursor, fields: List[str], filename: str) -> StreamingResponse:
+    """Stream MongoDB cursor → CSV without loading entire dataset in memory."""
+    async def gen():
+        yield (",".join(fields) + "\n").encode()
+        async for row in cursor:
+            yield (",".join(_csv_escape(row.get(f)) for f in fields) + "\n").encode()
+    return StreamingResponse(
+        gen(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+USER_CSV_FIELDS = ["id", "mobile", "full_name", "state", "district", "gender", "age", "category", "role", "language", "onboarding_step", "created_at"]
+LEAD_CSV_FIELDS = ["id", "user_id", "consultation_id", "source", "stage", "consultation_type", "funding_required", "state", "mobile", "full_name", "assigned_to", "follow_up_date", "notes", "created_at", "updated_at"]
+CONSULTATION_CSV_FIELDS = ["id", "user_id", "consultation_type", "date", "time_slot", "status", "assigned_to", "notes", "created_at", "updated_at"]
+SCHEME_CSV_FIELDS = ["id", "name", "full_name", "description", "max_funding", "max_subsidy_percent", "categories", "states", "tags", "disabled"]
 
 
 @api_router.get("/admin/exports/users.csv")
 async def export_users(admin=Depends(require_admin)):
-    rows = await db.users.find({}, {"_id": 0}).to_list(50000)
-    return _csv_response(rows, "saral-users.csv")
+    projection = {"_id": 0, **{f: 1 for f in USER_CSV_FIELDS}}
+    cursor = db.users.find({}, projection).sort("created_at", -1)
+    return await _stream_csv(cursor, USER_CSV_FIELDS, "saral-users.csv")
 
 
 @api_router.get("/admin/exports/leads.csv")
 async def export_leads(admin=Depends(require_admin)):
-    rows = await db.leads.find({}, {"_id": 0}).to_list(50000)
-    return _csv_response(rows, "saral-leads.csv")
+    projection = {"_id": 0, **{f: 1 for f in LEAD_CSV_FIELDS}}
+    cursor = db.leads.find({}, projection).sort("created_at", -1)
+    return await _stream_csv(cursor, LEAD_CSV_FIELDS, "saral-leads.csv")
 
 
 @api_router.get("/admin/exports/consultations.csv")
 async def export_consultations(admin=Depends(require_admin)):
-    rows = await db.consultations.find({}, {"_id": 0}).to_list(50000)
-    return _csv_response(rows, "saral-consultations.csv")
+    projection = {"_id": 0, **{f: 1 for f in CONSULTATION_CSV_FIELDS}}
+    cursor = db.consultations.find({}, projection).sort("created_at", -1)
+    return await _stream_csv(cursor, CONSULTATION_CSV_FIELDS, "saral-consultations.csv")
 
 
 @api_router.get("/admin/exports/schemes.csv")
 async def export_schemes(admin=Depends(require_admin)):
-    rows = await db.schemes.find({}, {"_id": 0}).to_list(50000)
-    return _csv_response(rows, "saral-schemes.csv")
+    projection = {"_id": 0, **{f: 1 for f in SCHEME_CSV_FIELDS}}
+    cursor = db.schemes.find({}, projection)
+    return await _stream_csv(cursor, SCHEME_CSV_FIELDS, "saral-schemes.csv")
 
 
 # ===========================================================================
