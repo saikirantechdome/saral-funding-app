@@ -1,34 +1,47 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Query
+from fastapi.responses import StreamingResponse, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import logging
+import os, io, csv, logging, uuid
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-import uuid
 from datetime import datetime, timezone
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from schemes_seed import SCHEMES_SEED
-from ai_service import advisor_chat, match_schemes_with_llm
+from banks_seed import BANKS_SEED
+from ai_service import advisor_chat, match_schemes_with_llm, advisor_structured
+from bank_service import recommend_banks
+from readiness_service import compute_readiness
+from alerts_service import evaluate_alerts
+from analytics_service import compute_overview, popular_schemes, state_distribution, consultation_status, lead_pipeline
+from auth_service import verify_firebase_id_token, is_enabled as firebase_enabled
 
+# ---- DB ----
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-app = FastAPI(title="Saral Funding API")
+app = FastAPI(title="Saral Funding API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 
 
-# ----------------- Models -----------------
+# ---- helpers ----
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+ROLES = ["user", "super_admin", "manager", "expert", "sales_executive", "support_executive"]
+ADMIN_ROLES = {"super_admin", "manager", "expert", "sales_executive", "support_executive"}
+LEAD_STAGES = ["new", "contacted", "interested", "documentation", "submitted", "approved", "disbursed", "closed"]
+CONSULTATION_STATUSES = ["new", "called", "follow_up", "interested", "submitted", "approved", "closed"]
+
+
+# ---- models ----
 class OtpRequest(BaseModel):
     mobile: str
     language: Optional[str] = "en"
@@ -37,6 +50,11 @@ class OtpRequest(BaseModel):
 class OtpVerify(BaseModel):
     mobile: str
     code: str
+    language: Optional[str] = "en"
+
+
+class FirebaseVerify(BaseModel):
+    id_token: str
     language: Optional[str] = "en"
 
 
@@ -51,6 +69,7 @@ class UserOut(BaseModel):
     age: Optional[int] = None
     category: Optional[str] = None
     onboarding_step: str = "profile"
+    role: str = "user"
 
 
 class ProfileIn(BaseModel):
@@ -59,12 +78,12 @@ class ProfileIn(BaseModel):
     district: str
     gender: str
     age: int
-    category: str  # General / OBC / SC / ST / Minority
+    category: str
 
 
 class BusinessProfileIn(BaseModel):
-    business_stage: str  # "existing" or "new"
-    industry: str  # Manufacturing / Service / Trading / Agriculture
+    business_stage: str
+    industry: str
     funding_required: int
     annual_turnover: int
     employees: int
@@ -84,8 +103,8 @@ class AssessmentIn(BaseModel):
 
 
 class ConsultationIn(BaseModel):
-    consultation_type: str  # Funding Guidance / Government Schemes / Business Loan Consultation / Subsidy Consultation
-    date: str  # YYYY-MM-DD
+    consultation_type: str
+    date: str
     time_slot: str
     notes: Optional[str] = ""
 
@@ -95,7 +114,54 @@ class AdvisorMessageIn(BaseModel):
     language: Optional[str] = "en"
 
 
-# ----------------- Auth helpers -----------------
+class AdvisorStructuredIn(BaseModel):
+    query: str
+    language: Optional[str] = "en"
+
+
+class LeadUpdate(BaseModel):
+    stage: Optional[str] = None
+    notes: Optional[str] = None
+    assigned_to: Optional[str] = None
+    follow_up_date: Optional[str] = None
+
+
+class ConsultationStatusUpdate(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    assigned_to: Optional[str] = None
+
+
+class AdminSchemeIn(BaseModel):
+    id: Optional[str] = None
+    name: str
+    full_name: Optional[str] = ""
+    description: str
+    eligibility: List[str] = []
+    benefits: List[str] = []
+    max_funding: int = 0
+    max_subsidy_percent: int = 0
+    documents: List[str] = []
+    process: str = ""
+    categories: List[str] = []
+    states: List[str] = ["All India"]
+    tags: List[str] = []
+    disabled: bool = False
+
+
+class NotificationCreate(BaseModel):
+    title: str
+    body: str
+    type: str = "platform"
+    target_user_ids: Optional[List[str]] = None  # None = broadcast
+    schedule_at: Optional[str] = None
+
+
+class RoleUpdate(BaseModel):
+    role: str
+
+
+# ---- auth dep ----
 async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -106,53 +172,75 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[
     return user
 
 
-# ----------------- Routes -----------------
+async def require_admin(user=Depends(get_current_user)) -> Dict[str, Any]:
+    if user.get("role") not in ADMIN_ROLES:
+        raise HTTPException(status_code=403, detail="Admin only")
+    return user
+
+
+async def require_super_admin(user=Depends(get_current_user)) -> Dict[str, Any]:
+    if user.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Super admin only")
+    return user
+
+
+# ===========================================================================
+# ROOT + AUTH
+# ===========================================================================
 @api_router.get("/")
 async def root():
-    return {"message": "Saral Funding API"}
+    return {"message": "Saral Funding API", "version": "1.0.0", "firebase": firebase_enabled()}
 
 
 @api_router.post("/auth/send-otp")
 async def send_otp(req: OtpRequest):
-    # Mock OTP — always 123456
     if not req.mobile or len(req.mobile) < 10:
         raise HTTPException(status_code=400, detail="Invalid mobile number")
-    return {"success": True, "message": "OTP sent (use 123456 in this MVP)", "mock_code": "123456"}
+    if firebase_enabled():
+        return {"success": True, "mode": "firebase", "message": "Use Firebase Phone Auth on client. Send id_token to /auth/firebase-verify."}
+    return {"success": True, "mode": "mock", "message": "OTP sent (use 123456 in this MVP)", "mock_code": "123456"}
+
+
+async def _create_or_get_user(mobile: str, language: str) -> Dict[str, Any]:
+    user = await db.users.find_one({"mobile": mobile}, {"_id": 0})
+    if user:
+        await db.users.update_one({"id": user["id"]}, {"$set": {"language": language, "updated_at": now_iso()}})
+        user["language"] = language
+        return user
+    user = {
+        "id": str(uuid.uuid4()), "mobile": mobile, "language": language,
+        "full_name": None, "state": None, "district": None, "gender": None,
+        "age": None, "category": None, "onboarding_step": "profile",
+        "role": "user", "created_at": now_iso(), "updated_at": now_iso(),
+    }
+    await db.users.insert_one(user.copy())
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()), "user_id": user["id"],
+        "title": "Welcome to Saral Funding",
+        "body": "Complete your profile to see funding schemes you're eligible for.",
+        "type": "platform", "read": False, "created_at": now_iso(),
+    })
+    return user
 
 
 @api_router.post("/auth/verify-otp")
 async def verify_otp(req: OtpVerify):
     if req.code != "123456":
         raise HTTPException(status_code=400, detail="Invalid OTP. Use 123456 in this MVP.")
-    user = await db.users.find_one({"mobile": req.mobile}, {"_id": 0})
-    if not user:
-        user = {
-            "id": str(uuid.uuid4()),
-            "mobile": req.mobile,
-            "language": req.language or "en",
-            "full_name": None,
-            "state": None,
-            "district": None,
-            "gender": None,
-            "age": None,
-            "category": None,
-            "onboarding_step": "profile",
-            "created_at": now_iso(),
-        }
-        await db.users.insert_one(user.copy())
-        # welcome notification
-        await db.notifications.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": user["id"],
-            "title": "Welcome to Saral Funding",
-            "body": "Complete your profile to see funding schemes you're eligible for.",
-            "type": "platform",
-            "read": False,
-            "created_at": now_iso(),
-        })
-    else:
-        await db.users.update_one({"id": user["id"]}, {"$set": {"language": req.language or user.get("language", "en")}})
-        user["language"] = req.language or user.get("language", "en")
+    user = await _create_or_get_user(req.mobile, req.language or "en")
+    return {"token": user["id"], "user": UserOut(**user).dict()}
+
+
+@api_router.post("/auth/firebase-verify")
+async def firebase_verify(req: FirebaseVerify):
+    decoded = verify_firebase_id_token(req.id_token)
+    if not decoded:
+        raise HTTPException(status_code=401, detail="Invalid Firebase id_token")
+    phone = decoded.get("phone_number")
+    if not phone:
+        raise HTTPException(status_code=400, detail="No phone_number claim in token")
+    mobile = phone.lstrip("+").lstrip("9").lstrip("1")[-10:]  # crude IN normalisation
+    user = await _create_or_get_user(mobile, req.language or "en")
     return {"token": user["id"], "user": UserOut(**user).dict()}
 
 
@@ -161,6 +249,9 @@ async def get_me(user=Depends(get_current_user)):
     return UserOut(**user).dict()
 
 
+# ===========================================================================
+# ONBOARDING
+# ===========================================================================
 @api_router.post("/profile")
 async def save_profile(body: ProfileIn, user=Depends(get_current_user)):
     update = body.dict()
@@ -174,53 +265,47 @@ async def save_profile(body: ProfileIn, user=Depends(get_current_user)):
 @api_router.post("/business-profile")
 async def save_business(body: BusinessProfileIn, user=Depends(get_current_user)):
     doc = body.dict()
-    doc["user_id"] = user["id"]
-    doc["updated_at"] = now_iso()
-    await db.business_profiles.update_one(
-        {"user_id": user["id"]}, {"$set": doc}, upsert=True,
-    )
+    doc["user_id"] = user["id"]; doc["updated_at"] = now_iso()
+    await db.business_profiles.update_one({"user_id": user["id"]}, {"$set": doc}, upsert=True)
     await db.users.update_one({"id": user["id"]}, {"$set": {"onboarding_step": "assessment"}})
     return {"ok": True, "business_profile": doc}
 
 
 @api_router.get("/business-profile")
 async def get_business(user=Depends(get_current_user)):
-    bp = await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0})
-    return bp or {}
+    return await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
 
 
 @api_router.post("/funding-assessment")
 async def save_assessment(body: AssessmentIn, user=Depends(get_current_user)):
     doc = body.dict()
-    doc["user_id"] = user["id"]
-    doc["updated_at"] = now_iso()
-    await db.funding_assessments.update_one(
-        {"user_id": user["id"]}, {"$set": doc}, upsert=True,
-    )
+    doc["user_id"] = user["id"]; doc["updated_at"] = now_iso()
+    await db.funding_assessments.update_one({"user_id": user["id"]}, {"$set": doc}, upsert=True)
     await db.users.update_one({"id": user["id"]}, {"$set": {"onboarding_step": "done"}})
-    # compute matches immediately
     await compute_and_store_matches(user["id"])
     return {"ok": True}
 
 
 @api_router.get("/funding-assessment")
 async def get_assessment(user=Depends(get_current_user)):
-    a = await db.funding_assessments.find_one({"user_id": user["id"]}, {"_id": 0})
-    return a or {}
+    return await db.funding_assessments.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
 
 
+# ===========================================================================
+# SCHEMES + MATCHING
+# ===========================================================================
 @api_router.get("/schemes")
 async def list_schemes(category: Optional[str] = None, q: Optional[str] = None, state: Optional[str] = None):
-    query: Dict[str, Any] = {}
+    query: Dict[str, Any] = {"disabled": {"$ne": True}}
+    ands: List[Dict[str, Any]] = []
     if category and category.lower() != "all":
-        query["categories"] = category
+        ands.append({"categories": category})
     if state and state.lower() != "all":
-        query["$or"] = [{"states": "All India"}, {"states": state}]
+        ands.append({"$or": [{"states": "All India"}, {"states": state}]})
     if q:
-        query["$or"] = (query.get("$or") or []) + [
-            {"name": {"$regex": q, "$options": "i"}},
-            {"description": {"$regex": q, "$options": "i"}},
-        ]
+        ands.append({"$or": [{"name": {"$regex": q, "$options": "i"}}, {"description": {"$regex": q, "$options": "i"}}]})
+    if ands:
+        query["$and"] = ands
     schemes = await db.schemes.find(query, {"_id": 0}).to_list(200)
     return schemes
 
@@ -237,26 +322,10 @@ async def compute_and_store_matches(user_id: str):
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     bp = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0}) or {}
     fa = await db.funding_assessments.find_one({"user_id": user_id}, {"_id": 0}) or {}
-    schemes = await db.schemes.find({}, {"_id": 0}).to_list(200)
+    schemes = await db.schemes.find({"disabled": {"$ne": True}}, {"_id": 0}).to_list(200)
     matches = await match_schemes_with_llm(user or {}, bp, fa, schemes)
-    doc = {
-        "user_id": user_id,
-        "matches": matches,
-        "computed_at": now_iso(),
-    }
+    doc = {"user_id": user_id, "matches": matches, "computed_at": now_iso()}
     await db.scheme_matches.update_one({"user_id": user_id}, {"$set": doc}, upsert=True)
-    # notification
-    if matches:
-        top = matches[0]
-        await db.notifications.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "title": f"You may qualify for {top['name']}",
-            "body": f"Your eligibility score is {top['score']}%. Explore in your dashboard.",
-            "type": "recommendation",
-            "read": False,
-            "created_at": now_iso(),
-        })
     return doc
 
 
@@ -265,16 +334,19 @@ async def get_my_matches(user=Depends(get_current_user)):
     m = await db.scheme_matches.find_one({"user_id": user["id"]}, {"_id": 0})
     if not m:
         m = await compute_and_store_matches(user["id"])
-    # Compute dashboard summary
     matches: List[Dict[str, Any]] = m.get("matches", [])
     funding_estimate = sum(int(x.get("funding_estimate", 0) or 0) for x in matches[:5])
     subsidy_estimate = sum(int(x.get("subsidy_estimate", 0) or 0) for x in matches[:5])
-    avg_score = int(sum(x.get("score", 0) for x in matches[:5]) / max(1, len(matches[:5]))) if matches else 0
+
+    bp = await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    fa = await db.funding_assessments.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    readiness = compute_readiness(user, bp, fa)
+
     return {
         "matches": matches,
         "funding_estimate": funding_estimate,
         "subsidy_estimate": subsidy_estimate,
-        "readiness_score": avg_score,
+        "readiness_score": readiness["score"],
         "computed_at": m.get("computed_at"),
     }
 
@@ -284,23 +356,81 @@ async def recompute(user=Depends(get_current_user)):
     return await compute_and_store_matches(user["id"])
 
 
+# ===========================================================================
+# BANKS
+# ===========================================================================
+@api_router.get("/banks")
+async def list_banks():
+    return await db.banks.find({}, {"_id": 0}).to_list(50)
+
+
+@api_router.get("/banks/{bank_id}")
+async def get_bank(bank_id: str):
+    b = await db.banks.find_one({"id": bank_id}, {"_id": 0})
+    if not b:
+        raise HTTPException(status_code=404, detail="Bank not found")
+    return b
+
+
+@api_router.get("/banks/recommend/me")
+async def recommend_my_banks(user=Depends(get_current_user)):
+    bp = await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    fa = await db.funding_assessments.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    banks = await db.banks.find({}, {"_id": 0}).to_list(50)
+    return {"recommendations": recommend_banks(banks, user, bp, fa, limit=5)}
+
+
+@api_router.post("/banks/compare")
+async def compare_banks(body: Dict[str, List[str]]):
+    ids = body.get("ids", [])
+    items = await db.banks.find({"id": {"$in": ids}}, {"_id": 0}).to_list(20)
+    return {"banks": items}
+
+
+# ===========================================================================
+# READINESS + ALERTS
+# ===========================================================================
+@api_router.get("/readiness/me")
+async def my_readiness(user=Depends(get_current_user)):
+    bp = await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    fa = await db.funding_assessments.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    return compute_readiness(user, bp, fa)
+
+
+@api_router.post("/alerts/evaluate")
+async def evaluate_my_alerts(user=Depends(get_current_user)):
+    bp = await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    fa = await db.funding_assessments.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    m = await db.scheme_matches.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    consultations = await db.consultations.find({"user_id": user["id"]}, {"_id": 0}).to_list(10)
+    candidates = evaluate_alerts(user, bp, fa, m.get("matches", []), consultations)
+    # dedupe by key
+    existing_keys = set([n.get("key") for n in await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).to_list(200)])
+    inserted = []
+    for a in candidates:
+        if a.get("key") in existing_keys:
+            continue
+        await db.notifications.insert_one(a.copy())
+        a.pop("_id", None)
+        inserted.append(a)
+    return {"new_alerts": inserted}
+
+
+# ===========================================================================
+# ADVISOR
+# ===========================================================================
 @api_router.post("/advisor/chat")
 async def advisor_chat_endpoint(body: AdvisorMessageIn, user=Depends(get_current_user)):
-    # Load history
     history_doc = await db.ai_conversations.find_one({"user_id": user["id"]}, {"_id": 0})
     history = history_doc.get("messages", []) if history_doc else []
-    schemes = await db.schemes.find({}, {"_id": 0}).to_list(200)
+    schemes = await db.schemes.find({"disabled": {"$ne": True}}, {"_id": 0}).to_list(200)
+    banks = await db.banks.find({}, {"_id": 0}).to_list(50)
     bp = await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
     fa = await db.funding_assessments.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
     reply = await advisor_chat(
-        user_id=user["id"],
-        user_profile=user,
-        business_profile=bp,
-        assessment=fa,
-        schemes=schemes,
-        message=body.message,
-        language=body.language or user.get("language", "en"),
-        history=history,
+        user_id=user["id"], user_profile=user, business_profile=bp, assessment=fa,
+        schemes=schemes, banks=banks, message=body.message,
+        language=body.language or user.get("language", "en"), history=history,
     )
     new_history = history + [
         {"role": "user", "content": body.message, "ts": now_iso()},
@@ -312,6 +442,24 @@ async def advisor_chat_endpoint(body: AdvisorMessageIn, user=Depends(get_current
         upsert=True,
     )
     return {"reply": reply, "messages": new_history}
+
+
+@api_router.post("/advisor/structured")
+async def advisor_structured_endpoint(body: AdvisorStructuredIn, user=Depends(get_current_user)):
+    bp = await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    fa = await db.funding_assessments.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    schemes = await db.schemes.find({"disabled": {"$ne": True}}, {"_id": 0}).to_list(200)
+    banks = await db.banks.find({}, {"_id": 0}).to_list(50)
+    m = await db.scheme_matches.find_one({"user_id": user["id"]}, {"_id": 0})
+    matches = m.get("matches", []) if m else []
+    bank_recs = recommend_banks(banks, user, bp, fa, limit=5)
+    result = await advisor_structured(
+        user_profile=user, business_profile=bp, assessment=fa,
+        matches=matches, banks_recommended=bank_recs,
+        schemes=schemes, banks=banks,
+        user_query=body.query, language=body.language or user.get("language", "en"),
+    )
+    return result
 
 
 @api_router.get("/advisor/history")
@@ -326,22 +474,45 @@ async def advisor_clear(user=Depends(get_current_user)):
     return {"ok": True}
 
 
+# ===========================================================================
+# CONSULTATIONS + CRM LEADS
+# ===========================================================================
 @api_router.post("/consultations")
 async def book_consultation(body: ConsultationIn, user=Depends(get_current_user)):
+    cid = str(uuid.uuid4())
     doc = body.dict()
-    doc["id"] = str(uuid.uuid4())
-    doc["user_id"] = user["id"]
-    doc["status"] = "confirmed"
-    doc["created_at"] = now_iso()
+    doc.update({
+        "id": cid, "user_id": user["id"],
+        "status": "new", "assigned_to": None, "notes": doc.get("notes", ""),
+        "created_at": now_iso(), "updated_at": now_iso(),
+    })
     await db.consultations.insert_one(doc.copy())
-    await db.notifications.insert_one({
+
+    # auto-create lead
+    lead = {
         "id": str(uuid.uuid4()),
         "user_id": user["id"],
+        "consultation_id": cid,
+        "source": "consultation",
+        "stage": "new",
+        "consultation_type": doc["consultation_type"],
+        "funding_required": (await db.business_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}).get("funding_required", 0),
+        "state": user.get("state"),
+        "mobile": user.get("mobile"),
+        "full_name": user.get("full_name"),
+        "assigned_to": None,
+        "notes": "",
+        "follow_up_date": None,
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    await db.leads.insert_one(lead.copy())
+
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()), "user_id": user["id"],
         "title": "Consultation Booked",
         "body": f"Your {doc['consultation_type']} on {doc['date']} at {doc['time_slot']} is confirmed.",
-        "type": "reminder",
-        "read": False,
-        "created_at": now_iso(),
+        "type": "reminder", "read": False, "created_at": now_iso(),
     })
     doc.pop("_id", None)
     return doc
@@ -349,14 +520,15 @@ async def book_consultation(body: ConsultationIn, user=Depends(get_current_user)
 
 @api_router.get("/consultations/me")
 async def my_consultations(user=Depends(get_current_user)):
-    items = await db.consultations.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(50)
-    return items
+    return await db.consultations.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(50)
 
 
+# ===========================================================================
+# NOTIFICATIONS
+# ===========================================================================
 @api_router.get("/notifications/me")
 async def my_notifications(user=Depends(get_current_user)):
-    items = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return items
+    return await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
 
 @api_router.post("/notifications/{nid}/read")
@@ -372,28 +544,218 @@ async def update_language(body: Dict[str, Any], user=Depends(get_current_user)):
     return {"ok": True, "language": lang}
 
 
-# ----------------- Startup -----------------
+# ===========================================================================
+# ADMIN — all under /admin/*
+# ===========================================================================
+@api_router.get("/admin/overview")
+async def admin_overview(admin=Depends(require_admin)):
+    return await compute_overview(db)
+
+
+@api_router.get("/admin/users")
+async def admin_list_users(q: Optional[str] = None, state: Optional[str] = None, role: Optional[str] = None, limit: int = 200, admin=Depends(require_admin)):
+    query: Dict[str, Any] = {}
+    if role: query["role"] = role
+    if state: query["state"] = state
+    if q: query["$or"] = [{"full_name": {"$regex": q, "$options": "i"}}, {"mobile": {"$regex": q, "$options": "i"}}]
+    users = await db.users.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    return users
+
+
+@api_router.get("/admin/users/{uid}")
+async def admin_user_detail(uid: str, admin=Depends(require_admin)):
+    user = await db.users.find_one({"id": uid}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    bp = await db.business_profiles.find_one({"user_id": uid}, {"_id": 0}) or {}
+    fa = await db.funding_assessments.find_one({"user_id": uid}, {"_id": 0}) or {}
+    m = await db.scheme_matches.find_one({"user_id": uid}, {"_id": 0}) or {}
+    return {"user": user, "business_profile": bp, "assessment": fa, "matches": m.get("matches", [])}
+
+
+@api_router.post("/admin/users/{uid}/role")
+async def admin_update_role(uid: str, body: RoleUpdate, admin=Depends(require_super_admin)):
+    if body.role not in ROLES:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    await db.users.update_one({"id": uid}, {"$set": {"role": body.role}})
+    return {"ok": True}
+
+
+@api_router.get("/admin/schemes")
+async def admin_list_schemes(admin=Depends(require_admin)):
+    return await db.schemes.find({}, {"_id": 0}).to_list(500)
+
+
+@api_router.post("/admin/schemes")
+async def admin_create_scheme(body: AdminSchemeIn, admin=Depends(require_admin)):
+    sid = body.id or body.name.lower().replace(" ", "-")
+    doc = body.dict(); doc["id"] = sid; doc["updated_at"] = now_iso()
+    await db.schemes.update_one({"id": sid}, {"$set": doc}, upsert=True)
+    return doc
+
+
+@api_router.post("/admin/schemes/{sid}/disable")
+async def admin_disable_scheme(sid: str, admin=Depends(require_admin)):
+    await db.schemes.update_one({"id": sid}, {"$set": {"disabled": True}})
+    return {"ok": True}
+
+
+@api_router.post("/admin/schemes/{sid}/enable")
+async def admin_enable_scheme(sid: str, admin=Depends(require_admin)):
+    await db.schemes.update_one({"id": sid}, {"$set": {"disabled": False}})
+    return {"ok": True}
+
+
+@api_router.delete("/admin/schemes/{sid}")
+async def admin_delete_scheme(sid: str, admin=Depends(require_super_admin)):
+    await db.schemes.delete_one({"id": sid})
+    return {"ok": True}
+
+
+@api_router.get("/admin/consultations")
+async def admin_list_consultations(status: Optional[str] = None, limit: int = 200, admin=Depends(require_admin)):
+    q: Dict[str, Any] = {}
+    if status: q["status"] = status
+    items = await db.consultations.find(q, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    # enrich with user info
+    user_ids = list({i["user_id"] for i in items})
+    users = await db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "full_name": 1, "mobile": 1, "state": 1}).to_list(500)
+    by_id = {u["id"]: u for u in users}
+    for it in items:
+        it["user"] = by_id.get(it["user_id"], {})
+    return items
+
+
+@api_router.post("/admin/consultations/{cid}")
+async def admin_update_consultation(cid: str, body: ConsultationStatusUpdate, admin=Depends(require_admin)):
+    update = {k: v for k, v in body.dict().items() if v is not None}
+    update["updated_at"] = now_iso()
+    if "status" in update and update["status"] not in CONSULTATION_STATUSES:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    await db.consultations.update_one({"id": cid}, {"$set": update})
+    # mirror lead stage if status mapped
+    map_status_to_stage = {"new": "new", "called": "contacted", "follow_up": "contacted", "interested": "interested", "submitted": "submitted", "approved": "approved", "closed": "closed"}
+    if "status" in update and update["status"] in map_status_to_stage:
+        await db.leads.update_one({"consultation_id": cid}, {"$set": {"stage": map_status_to_stage[update["status"]], "updated_at": now_iso()}})
+    return {"ok": True}
+
+
+@api_router.get("/admin/leads")
+async def admin_list_leads(stage: Optional[str] = None, q: Optional[str] = None, assigned_to: Optional[str] = None, limit: int = 200, admin=Depends(require_admin)):
+    query: Dict[str, Any] = {}
+    if stage: query["stage"] = stage
+    if assigned_to: query["assigned_to"] = assigned_to
+    if q: query["$or"] = [{"full_name": {"$regex": q, "$options": "i"}}, {"mobile": {"$regex": q, "$options": "i"}}]
+    return await db.leads.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
+
+
+@api_router.post("/admin/leads/{lid}")
+async def admin_update_lead(lid: str, body: LeadUpdate, admin=Depends(require_admin)):
+    update = {k: v for k, v in body.dict().items() if v is not None}
+    if "stage" in update and update["stage"] not in LEAD_STAGES:
+        raise HTTPException(status_code=400, detail="Invalid lead stage")
+    update["updated_at"] = now_iso()
+    await db.leads.update_one({"id": lid}, {"$set": update})
+    return {"ok": True}
+
+
+@api_router.post("/admin/notifications")
+async def admin_send_notification(body: NotificationCreate, admin=Depends(require_admin)):
+    targets = body.target_user_ids
+    if not targets:
+        users = await db.users.find({"role": "user"}, {"_id": 0, "id": 1}).to_list(10000)
+        targets = [u["id"] for u in users]
+    docs = [{
+        "id": str(uuid.uuid4()), "user_id": uid,
+        "title": body.title, "body": body.body, "type": body.type,
+        "read": False, "created_at": now_iso(),
+    } for uid in targets]
+    if docs:
+        await db.notifications.insert_many([d.copy() for d in docs])
+    return {"sent": len(docs)}
+
+
+@api_router.get("/admin/analytics")
+async def admin_analytics(admin=Depends(require_admin)):
+    return {
+        "popular_schemes": await popular_schemes(db),
+        "state_distribution": await state_distribution(db),
+        "consultation_status": await consultation_status(db),
+        "lead_pipeline": await lead_pipeline(db),
+    }
+
+
+# ----- CSV Exports -----
+def _csv_response(rows: List[Dict[str, Any]], filename: str) -> Response:
+    if not rows:
+        rows = [{}]
+    fields = sorted({k for r in rows for k in r.keys()})
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=fields)
+    w.writeheader()
+    for r in rows:
+        w.writerow({k: (",".join(map(str, v)) if isinstance(v, list) else v) for k, v in r.items()})
+    return Response(content=buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+
+@api_router.get("/admin/exports/users.csv")
+async def export_users(admin=Depends(require_admin)):
+    rows = await db.users.find({}, {"_id": 0}).to_list(50000)
+    return _csv_response(rows, "saral-users.csv")
+
+
+@api_router.get("/admin/exports/leads.csv")
+async def export_leads(admin=Depends(require_admin)):
+    rows = await db.leads.find({}, {"_id": 0}).to_list(50000)
+    return _csv_response(rows, "saral-leads.csv")
+
+
+@api_router.get("/admin/exports/consultations.csv")
+async def export_consultations(admin=Depends(require_admin)):
+    rows = await db.consultations.find({}, {"_id": 0}).to_list(50000)
+    return _csv_response(rows, "saral-consultations.csv")
+
+
+@api_router.get("/admin/exports/schemes.csv")
+async def export_schemes(admin=Depends(require_admin)):
+    rows = await db.schemes.find({}, {"_id": 0}).to_list(50000)
+    return _csv_response(rows, "saral-schemes.csv")
+
+
+# ===========================================================================
+# STARTUP
+# ===========================================================================
 @app.on_event("startup")
 async def seed_db():
-    count = await db.schemes.count_documents({})
-    if count == 0:
+    if await db.schemes.count_documents({}) == 0:
         for s in SCHEMES_SEED:
-            await db.schemes.insert_one(s.copy())
+            s = {**s, "disabled": False}
+            await db.schemes.insert_one(s)
         logging.info(f"Seeded {len(SCHEMES_SEED)} schemes")
+    if await db.banks.count_documents({}) == 0:
+        for b in BANKS_SEED:
+            await db.banks.insert_one(b.copy())
+        logging.info(f"Seeded {len(BANKS_SEED)} banks")
+    # seed super admin (idempotent)
+    admin_mobile = "9000000000"
+    existing_admin = await db.users.find_one({"mobile": admin_mobile})
+    if not existing_admin:
+        await db.users.insert_one({
+            "id": str(uuid.uuid4()), "mobile": admin_mobile, "language": "en",
+            "full_name": "Super Admin", "state": "Gujarat", "district": "Surat",
+            "gender": "Male", "age": 30, "category": "General",
+            "onboarding_step": "done", "role": "super_admin",
+            "created_at": now_iso(), "updated_at": now_iso(),
+        })
+        logging.info(f"Seeded super admin (mobile={admin_mobile}, OTP=123456)")
+    else:
+        # ensure role is super_admin
+        await db.users.update_one({"mobile": admin_mobile}, {"$set": {"role": "super_admin"}})
 
 
 app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 
 @app.on_event("shutdown")

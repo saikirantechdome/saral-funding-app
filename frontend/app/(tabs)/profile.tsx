@@ -49,6 +49,9 @@ export default function Profile() {
         )}
 
         <View style={styles.actions}>
+          {me?.role && me.role !== "user" && (
+            <TouchableOpacity testID="goto-admin" style={[styles.action, { borderColor: colors.primary, backgroundColor: colors.primarySoft }]} onPress={() => router.push("/admin")}><Text style={[styles.actionText, { color: colors.primaryDark }]}>🛠️  Admin Console</Text><Text style={[styles.chev, { color: colors.primaryDark }]}>›</Text></TouchableOpacity>
+          )}
           <TouchableOpacity testID="goto-bookings" style={styles.action} onPress={() => router.push("/booking")}><Text style={styles.actionText}>📞  Book Consultation</Text><Text style={styles.chev}>›</Text></TouchableOpacity>
           <TouchableOpacity testID="goto-notif" style={styles.action} onPress={() => router.push("/notifications")}><Text style={styles.actionText}>🔔  Notifications</Text><Text style={styles.chev}>›</Text></TouchableOpacity>
           <TouchableOpacity testID="goto-settings" style={styles.action} onPress={() => router.push("/settings")}><Text style={styles.actionText}>⚙️  Settings</Text><Text style={styles.chev}>›</Text></TouchableOpacity>

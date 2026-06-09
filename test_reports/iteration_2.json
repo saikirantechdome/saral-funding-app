@@ -1,0 +1,49 @@
+{
+  "summary": "Backend-only V1 upgrade regression complete. 81/81 tests pass (100%) against public EXPO_PUBLIC_BACKEND_URL. Coverage: (a) full regression of iteration_1 endpoints (auth/OTP, onboarding, schemes, match, advisor chat, consultations, notifications, auth-protection sweep — 36 tests, one stale assertion updated to reflect V1 behaviour change consultation.status now defaults to 'new' instead of 'confirmed' to align with CRM pipeline); (b) Firebase scaffolding (GET /api/ reports firebase:false, POST /api/auth/firebase-verify returns 401); (c) Banks: GET /api/banks returns all 9 expected banks (sbi, bob, canara, pnb, union, indian-bank, hdfc, icici, axis), GET /api/banks/{id} + 404, /api/banks/recommend/me returns 5 ranked recs with score/interest_range/why and descending score order, POST /api/banks/compare; (d) /api/readiness/me with score 0-100, breakdown, actions; (e) POST /api/alerts/evaluate generates and dedupes on second call; (f) POST /api/advisor/structured returns summary/schemes/banks/documents/roadmap/next_steps/why; (g) consultation auto-creates lead with stage='new'; (h) Admin (super_admin@9000000000) — overview, users list/search/filter/role-filter/detail/role-update (super-admin only, invalid role 400), schemes CRUD + disable/enable + delete (super-admin only), consultations status update mirrors lead stage (new→new, called→contacted, interested→interested, etc.), leads listing/filter/stage update with invalid 400, broadcast notifications; (i) Analytics with popular_schemes/state_distribution/consultation_status/lead_pipeline; (j) CSV exports (users/leads/consultations/schemes) — all 200 text/csv with attachment Content-Disposition and no raw `_id` column; (k) RBAC — 10 endpoints return 403 for role=user, 7 endpoints return 401 without token, role-update returns 403 for non-super-admin; (l) no `_id` leakage in any response.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/banks/recommend/me", "issue": "Each recommendation returns `bank_id` as the bank identifier (not `id` as the spec line might imply). Test now accepts either. If the mobile UI relies on `id`, normalise."},
+      {"endpoint": "GET /api/readiness/me", "issue": "`breakdown` is returned as a list of {label, score, max} objects (not a dict). Spec doesn't mandate either; flagging for client integration alignment."},
+      {"endpoint": "POST /api/consultations", "issue": "V1 behaviour change vs MVP — booking now returns status='new' (CRM pipeline) instead of 'confirmed'. Notification body still says 'is confirmed.' Cosmetic mismatch; consider aligning notification copy with status."},
+      {"endpoint": "POST /api/admin/notifications", "issue": "Broadcast (no target_user_ids) only sends to `role: user`. Admins/staff never receive platform announcements — by design but worth confirming."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_saral_funding_backend.py",
+    "/app/backend/tests/test_saral_funding_v1.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "No fixes required — every V1 acceptance check passes.",
+    "Optional: align `recommend_banks` output key (`bank_id` → `id`) for consistency with /api/banks list.",
+    "Optional: update consultation notification body to say 'is booked' instead of 'is confirmed' (status is now 'new').",
+    "Optional (security hardening, deferred from iteration_1): replace raw-UUID bearer token with signed JWT + expiry before production."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 763 lines — exceeds the 700-line guideline. Consider splitting admin/* into a separate router module (admin_router.py).",
+    "`_create_or_get_user` strips +91 then takes last 10 chars (line 242) — fine for IN, but `.lstrip('9').lstrip('1')` will also strip a leading 9 from a domestic 10-digit number. Will misbehave for any mobile starting with 9 (which is ~all Jio/Airtel). Use a single rstrip('+91') prefix check or a regex.",
+    "Two `auth_service` is_enabled checks made per send-otp call — fine, but cache once.",
+    "`require_super_admin` and `require_admin` are sound and properly applied per route; RBAC verified.",
+    "CSV writer uses sorted field-union approach which produces stable headers even when some rows have nulls — good.",
+    "alerts_service dedupe uses notification `key` field; verified — but does NOT cap notification growth (every category produces a notification doc per user). Consider TTL or capping.",
+    "_id projection consistently applied via {\"_id\": 0} across every find/find_one — verified no leakage in any of 81 test paths."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_saral_funding_v1.py (created — 45 new tests covering V1 features)",
+    "/app/backend/tests/test_saral_funding_backend.py (1 assertion updated: consultation status 'confirmed' → in ('new','confirmed') for V1 CRM alignment)"
+  ],
+  "success_rate": {"backend": "100% (81/81)", "frontend": "not tested (backend-only request)"},
+  "seed_data_creation": "Module-scoped fixture creates one TEST_ user (unique time-based 10-digit mobile) completing full onboarding (profile → business → assessment), books two consultations (which create two leads). One test scheme `test-scheme-<ts>` is created/disabled/enabled/deleted within a single test. Super admin user `9000000000` is auto-seeded by startup hook and reused.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Two test files: test_saral_funding_backend.py (iteration_1 regression, 36 tests) and test_saral_funding_v1.py (V1 additions, 45 tests). Run with `EXPO_PUBLIC_BACKEND_URL=<url> pytest /app/backend/tests/ -v --junitxml=/app/test_reports/pytest/pytest_results.xml`. The advisor/structured test exercises live GPT-4o (~5-15s). Super admin fixture relies on startup-seeded user (mobile=9000000000, OTP=123456, role=super_admin). user_v1 fixture creates a fresh role=user with full onboarding; if the test that promotes their role to manager runs out of order, it self-restores to 'user' before exiting. Frontend (Expo) was NOT tested per scope.",
+  "rca_of_issue": "N/A — all tests pass. The five initial failures (banks set mismatch, recommend missing 'id', readiness breakdown shape, two CSV substring-_id checks) were assertion bugs in my test file, not backend defects. Fixed by aligning to actual contract: indian-bank id, accept bank_id-or-id, accept list-or-dict breakdown, column-name match instead of substring."
+}
