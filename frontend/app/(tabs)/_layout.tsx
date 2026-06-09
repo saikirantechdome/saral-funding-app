@@ -1,14 +1,30 @@
 import { Tabs } from "expo-router";
-import { Text, View } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { LayoutDashboard, Landmark, Sparkles, CircleUser } from "lucide-react-native";
 
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  const map: Record<string, string> = { Dashboard: "🏠", Schemes: "📋", Advisor: "🤖", Profile: "👤" };
+const TAB_ICON_SIZE = 22;
+
+interface TabIconProps {
+  label: string;
+  focused: boolean;
+  Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
+}
+
+function TabIcon({ label, focused, Icon }: TabIconProps) {
   return (
-    <View style={{ alignItems: "center", justifyContent: "center", paddingTop: 6 }}>
-      <Text style={{ fontSize: 20 }}>{map[label]}</Text>
-      <Text style={{ fontSize: 11, fontWeight: focused ? "700" : "500", color: focused ? colors.primary : colors.textMuted, marginTop: 2 }}>{label}</Text>
+    <View style={styles.tabItem}>
+      <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+        <Icon
+          size={TAB_ICON_SIZE}
+          color={focused ? colors.primary : colors.textDim}
+          strokeWidth={focused ? 2.2 : 1.8}
+        />
+      </View>
+      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -19,13 +35,78 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: { backgroundColor: "#FFF", borderTopWidth: 1, borderTopColor: colors.border, height: 70, paddingTop: 4, paddingBottom: 12 },
+        tabBarStyle: styles.tabBar,
       }}
     >
-      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Dashboard" focused={focused} /> }} />
-      <Tabs.Screen name="schemes" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Schemes" focused={focused} /> }} />
-      <Tabs.Screen name="advisor" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Advisor" focused={focused} /> }} />
-      <Tabs.Screen name="profile" options={{ tabBarIcon: ({ focused }) => <TabIcon label="Profile" focused={focused} /> }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon label="Home" focused={focused} Icon={LayoutDashboard} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="schemes"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon label="Schemes" focused={focused} Icon={Landmark} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="advisor"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon label="Advisor" focused={focused} Icon={Sparkles} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon label="Profile" focused={focused} Icon={CircleUser} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: "#FFF",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    height: 72,
+    paddingTop: 6,
+    paddingBottom: 14,
+  },
+  tabItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingTop: 2,
+  },
+  iconWrap: {
+    width: 40,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconWrapActive: {
+    backgroundColor: colors.primarySoft,
+  },
+  tabLabel: {
+    fontSize: 10,
+    fontFamily: fonts.medium,
+    color: colors.textDim,
+    letterSpacing: 0.2,
+  },
+  tabLabelActive: {
+    color: colors.primary,
+    fontFamily: fonts.semiBold,
+  },
+});

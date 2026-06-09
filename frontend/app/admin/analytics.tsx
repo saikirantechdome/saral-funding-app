@@ -1,86 +1,189 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { TrendingUp, MapPin, Target, Phone } from "lucide-react-native";
 
-import { colors, spacing, radius } from "@/src/theme";
+import { colors, spacing, radius, fonts, stageColor } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+
+function SectionHeader({ Icon, title }: { Icon: any; title: string }) {
+  return (
+    <View style={secStyles.wrap}>
+      <View style={secStyles.icon}>
+        <Icon size={14} color={colors.primaryDark} strokeWidth={2} />
+      </View>
+      <Text style={secStyles.title}>{title}</Text>
+    </View>
+  );
+}
+const secStyles = StyleSheet.create({
+  wrap: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  icon: { width: 28, height: 28, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 13, fontFamily: fonts.bold, color: colors.text, textTransform: "uppercase", letterSpacing: 0.5 },
+});
+
+function BarRow({ label, value, max, color = colors.primary }: { label: string; value: number; max: number; color?: string }) {
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  return (
+    <View style={barStyles.row}>
+      <Text style={barStyles.label} numberOfLines={1}>{label}</Text>
+      <View style={barStyles.trackWrap}>
+        <View style={barStyles.track}>
+          <View style={[barStyles.fill, { width: `${pct}%`, backgroundColor: color }]} />
+        </View>
+        <Text style={barStyles.count}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+const barStyles = StyleSheet.create({
+  row: { marginBottom: 10 },
+  label: { fontSize: 12, fontFamily: fonts.medium, color: colors.text, marginBottom: 5 },
+  trackWrap: { flexDirection: "row", alignItems: "center", gap: 8 },
+  track: { flex: 1, height: 10, backgroundColor: colors.surfaceAlt, borderRadius: 5, overflow: "hidden" },
+  fill: { height: "100%", borderRadius: 5 },
+  count: { fontSize: 12, fontFamily: fonts.bold, color: colors.text, width: 30, textAlign: "right" },
+});
+
+function PipelineBox({ label, value, stage }: { label: string; value: number; stage: string }) {
+  const { bg, text } = stageColor(stage);
+  return (
+    <View style={[pipeStyles.box, { backgroundColor: bg, borderColor: bg }]}>
+      <Text style={[pipeStyles.value, { color: text }]}>{value}</Text>
+      <Text style={[pipeStyles.label, { color: text }]}>{label}</Text>
+    </View>
+  );
+}
+const pipeStyles = StyleSheet.create({
+  box: { width: "30%", padding: 10, borderRadius: radius.lg, borderWidth: 1, marginBottom: 8, alignItems: "center" },
+  value: { fontSize: 22, fontFamily: fonts.displayBold },
+  label: { fontSize: 10, fontFamily: fonts.semiBold, marginTop: 2, textTransform: "capitalize", textAlign: "center" },
+});
 
 export default function AdminAnalytics() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
 
-  useEffect(() => { apiGet<any>("/admin/analytics").then(setData); }, []);
+  useEffect(() => {
+    apiGet<any>("/admin/analytics").then(setData).catch(() => {});
+  }, []);
 
-  if (!data) return <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FFF" }}><ActivityIndicator color={colors.primary} /></View>;
+  if (!data) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]}>
+        <BackBar title="Analytics" onBack={() => router.back()} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />
+      </SafeAreaView>
+    );
+  }
 
   const maxPop = Math.max(1, ...(data.popular_schemes || []).map((p: any) => p.matches));
   const maxState = Math.max(1, ...(data.state_distribution || []).map((s: any) => s.count));
 
+  // Colour palette for state bars
+  const stateColors = ["#22C55E", "#16A34A", "#4ADE80", "#86EFAC", "#BBF7D0"];
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="admin-analytics">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-analytics">
       <BackBar title="Analytics" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}>
-        <Text style={styles.section}>Popular Schemes</Text>
-        {(data.popular_schemes || []).length === 0 && <Text style={styles.empty}>No matches yet</Text>}
-        {(data.popular_schemes || []).map((p: any) => (
-          <View key={p.scheme_id} style={styles.barRow} testID={`pop-${p.scheme_id}`}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.barTitle}>{p.name}</Text>
-              <View style={styles.barTrack}><View style={[styles.barFill, { width: `${(p.matches / maxPop) * 100}%` }]} /></View>
-            </View>
-            <Text style={styles.barCount}>{p.matches}</Text>
-          </View>
-        ))}
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
 
-        <Text style={styles.section}>State Distribution</Text>
-        {(data.state_distribution || []).length === 0 && <Text style={styles.empty}>No users yet</Text>}
-        {(data.state_distribution || []).map((s: any) => (
-          <View key={s.state} style={styles.barRow} testID={`state-${s.state}`}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.barTitle}>{s.state}</Text>
-              <View style={styles.barTrack}><View style={[styles.barFill, { width: `${(s.count / maxState) * 100}%` }]} /></View>
-            </View>
-            <Text style={styles.barCount}>{s.count}</Text>
-          </View>
-        ))}
-
-        <Text style={styles.section}>Lead Pipeline</Text>
-        <View style={styles.pipeline}>
-          {Object.entries(data.lead_pipeline || {}).map(([k, v]) => (
-            <View key={k} style={styles.pipeBox}>
-              <Text style={styles.pipeV}>{String(v)}</Text>
-              <Text style={styles.pipeK}>{k}</Text>
-            </View>
-          ))}
-          {Object.keys(data.lead_pipeline || {}).length === 0 && <Text style={styles.empty}>No leads yet</Text>}
+        {/* Popular schemes */}
+        <View style={styles.section}>
+          <SectionHeader Icon={TrendingUp} title="Popular Schemes" />
+          {(data.popular_schemes || []).length === 0 ? (
+            <Text style={styles.empty}>No match data yet</Text>
+          ) : (
+            (data.popular_schemes || []).map((p: any) => (
+              <BarRow
+                key={p.scheme_id}
+                label={p.name}
+                value={p.matches}
+                max={maxPop}
+                color={colors.primary}
+              />
+            ))
+          )}
         </View>
 
-        <Text style={styles.section}>Consultation Status</Text>
-        <View style={styles.pipeline}>
-          {(data.consultation_status || []).map((s: any) => (
-            <View key={s.status} style={styles.pipeBox}>
-              <Text style={styles.pipeV}>{s.count}</Text>
-              <Text style={styles.pipeK}>{s.status}</Text>
-            </View>
-          ))}
+        {/* State distribution */}
+        <View style={styles.section}>
+          <SectionHeader Icon={MapPin} title="State Distribution" />
+          {(data.state_distribution || []).length === 0 ? (
+            <Text style={styles.empty}>No users yet</Text>
+          ) : (
+            (data.state_distribution || []).map((s: any, i: number) => (
+              <BarRow
+                key={s.state}
+                label={s.state}
+                value={s.count}
+                max={maxState}
+                color={stateColors[i % stateColors.length]}
+              />
+            ))
+          )}
         </View>
+
+        {/* Lead pipeline */}
+        <View style={styles.section}>
+          <SectionHeader Icon={Target} title="Lead Pipeline" />
+          <View style={styles.pipelineGrid}>
+            {Object.keys(data.lead_pipeline || {}).length === 0 ? (
+              <Text style={styles.empty}>No leads yet</Text>
+            ) : (
+              Object.entries(data.lead_pipeline || {}).map(([k, v]) => (
+                <PipelineBox key={k} label={k} value={Number(v)} stage={k} />
+              ))
+            )}
+          </View>
+        </View>
+
+        {/* Consultation status */}
+        <View style={styles.section}>
+          <SectionHeader Icon={Phone} title="Consultation Status" />
+          <View style={styles.pipelineGrid}>
+            {(data.consultation_status || []).map((s: any) => (
+              <PipelineBox key={s.status} label={s.status} value={s.count} stage={s.status} />
+            ))}
+          </View>
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  section: { fontSize: 14, fontWeight: "800", color: colors.text, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 16, marginBottom: 12 },
-  barRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  barTitle: { fontSize: 13, fontWeight: "600", color: colors.text, marginBottom: 6 },
-  barTrack: { height: 8, backgroundColor: colors.surfaceAlt, borderRadius: 4, overflow: "hidden" },
-  barFill: { height: "100%", backgroundColor: colors.primary, borderRadius: 4 },
-  barCount: { fontSize: 13, fontWeight: "800", color: colors.text, width: 36, textAlign: "right" },
-  pipeline: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  pipeBox: { width: "31%", padding: 12, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: "#FFF" },
-  pipeV: { fontSize: 20, fontWeight: "800", color: colors.text },
-  pipeK: { fontSize: 11, color: colors.textMuted, marginTop: 4, textTransform: "capitalize" },
-  empty: { color: colors.textMuted, fontSize: 13 },
+  section: {
+    backgroundColor: "#FFF",
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  pipelineGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  empty: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    paddingVertical: 8,
+  },
 });

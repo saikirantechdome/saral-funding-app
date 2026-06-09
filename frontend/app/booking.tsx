@@ -1,15 +1,27 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import Animated, { FadeIn, SlideInUp } from "react-native-reanimated";
+import { CheckCircle2, Calendar, Clock, Phone, ChevronRight } from "lucide-react-native";
 
-import { colors, spacing, radius } from "@/src/theme";
+import { colors, spacing, radius, fonts } from "@/src/theme";
 import { apiPost } from "@/src/api";
 import { CONSULT_TYPES, TIME_SLOTS } from "@/src/constants";
 import { BackBar } from "@/src/components/StepBar";
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 function nextDates(n: number) {
-  const out: { iso: string; label: string; day: string }[] = [];
+  const out: { iso: string; label: string; day: string; month: string; isWeekend: boolean }[] = [];
   const today = new Date();
   for (let i = 1; i <= n; i++) {
     const d = new Date(today);
@@ -17,11 +29,160 @@ function nextDates(n: number) {
     out.push({
       iso: d.toISOString().slice(0, 10),
       label: d.getDate().toString().padStart(2, "0"),
-      day: d.toLocaleDateString("en-US", { weekday: "short" }),
+      day: DAYS[d.getDay()],
+      month: MONTHS[d.getMonth()],
+      isWeekend: d.getDay() === 0 || d.getDay() === 6,
     });
   }
   return out;
 }
+
+// Confirmation screen with animation
+function ConfirmationView({ done, onBack }: { done: any; onBack: () => void }) {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="booking-confirmed">
+      <BackBar title="Booking Confirmed" onBack={onBack} />
+      <View style={confirmStyles.wrap}>
+        <Animated.View entering={FadeIn.duration(400)} style={confirmStyles.checkCircle}>
+          <CheckCircle2 size={52} color="#FFF" strokeWidth={1.5} />
+        </Animated.View>
+
+        <Animated.View entering={SlideInUp.delay(200).duration(400)} style={{ alignItems: "center" }}>
+          <Text style={confirmStyles.title}>Consultation Booked!</Text>
+          <Text style={confirmStyles.subtitle}>
+            Our expert advisor will call you at the scheduled time.
+          </Text>
+        </Animated.View>
+
+        <Animated.View entering={SlideInUp.delay(350).duration(400)} style={confirmStyles.detailCard}>
+          <View style={confirmStyles.detailRow}>
+            <View style={confirmStyles.detailIcon}>
+              <Phone size={15} color={colors.primaryDark} strokeWidth={2} />
+            </View>
+            <View>
+              <Text style={confirmStyles.detailLabel}>Consultation Type</Text>
+              <Text style={confirmStyles.detailValue}>{done.consultation_type}</Text>
+            </View>
+          </View>
+          <View style={confirmStyles.divider} />
+          <View style={confirmStyles.detailRow}>
+            <View style={confirmStyles.detailIcon}>
+              <Calendar size={15} color={colors.primaryDark} strokeWidth={2} />
+            </View>
+            <View>
+              <Text style={confirmStyles.detailLabel}>Date</Text>
+              <Text style={confirmStyles.detailValue}>{done.date}</Text>
+            </View>
+          </View>
+          <View style={confirmStyles.divider} />
+          <View style={confirmStyles.detailRow}>
+            <View style={confirmStyles.detailIcon}>
+              <Clock size={15} color={colors.primaryDark} strokeWidth={2} />
+            </View>
+            <View>
+              <Text style={confirmStyles.detailLabel}>Time</Text>
+              <Text style={confirmStyles.detailValue}>{done.time_slot}</Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        <TouchableOpacity
+          testID="back-to-home"
+          style={confirmStyles.cta}
+          onPress={onBack}
+          activeOpacity={0.85}
+        >
+          <Text style={confirmStyles.ctaText}>Back to Dashboard</Text>
+          <ChevronRight size={18} color="#FFF" strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const confirmStyles = StyleSheet.create({
+  wrap: { flex: 1, alignItems: "center", padding: spacing.lg, paddingTop: 40 },
+  checkCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: spacing.xl,
+  },
+  detailCard: {
+    width: "100%",
+    backgroundColor: colors.surface2,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 10,
+  },
+  detailIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailLabel: {
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    color: colors.textDim,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    color: colors.text,
+    marginTop: 2,
+  },
+  divider: { height: 1, backgroundColor: colors.border },
+  cta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.primary,
+    borderRadius: radius.xl,
+    paddingVertical: 15,
+    width: "100%",
+  },
+  ctaText: {
+    fontSize: 16,
+    fontFamily: fonts.displayBold,
+    color: "#FFF",
+  },
+});
 
 export default function Booking() {
   const router = useRouter();
@@ -38,64 +199,105 @@ export default function Booking() {
     try {
       const r = await apiPost("/consultations", { consultation_type: type, date, time_slot: slot, notes: "" });
       setDone(r);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (done) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="booking-confirmed">
-        <BackBar title="Confirmed" onBack={() => router.replace("/(tabs)")} />
-        <View style={styles.doneWrap}>
-          <View style={styles.checkBadge}><Text style={{ fontSize: 36, color: "#FFF" }}>✓</Text></View>
-          <Text style={styles.doneTitle}>Consultation Booked</Text>
-          <Text style={styles.doneSub}>Our advisor will call you on {done.date} at {done.time_slot}</Text>
-          <View style={styles.summary}>
-            <Text style={styles.sumRow}>Type: <Text style={styles.sumVal}>{done.consultation_type}</Text></Text>
-            <Text style={styles.sumRow}>Date: <Text style={styles.sumVal}>{done.date}</Text></Text>
-            <Text style={styles.sumRow}>Time: <Text style={styles.sumVal}>{done.time_slot}</Text></Text>
-          </View>
-          <TouchableOpacity testID="back-to-home" style={styles.cta} onPress={() => router.replace("/(tabs)")}><Text style={styles.ctaText}>Go to Dashboard</Text></TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
+    return <ConfirmationView done={done} onBack={() => router.replace("/(tabs)")} />;
   }
+
+  const canBook = type && date && slot;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="booking-screen">
-      <BackBar title="Free Consultation" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 100 }}>
-        <Text style={styles.h1}>Book a 30-min advisor call</Text>
-        <Text style={styles.sub}>Get personalised funding & subsidy guidance.</Text>
+      <BackBar title="Book Consultation" onBack={() => router.back()} />
 
-        <Text style={styles.label}>Choose consultation type</Text>
-        {CONSULT_TYPES.map((c) => (
-          <TouchableOpacity key={c} testID={`type-${c}`} style={[styles.opt, type === c && styles.optActive]} onPress={() => setType(c)}>
-            <Text style={[styles.optText, type === c && styles.optTextActive]}>{c}</Text>
-            {type === c && <Text style={{ color: colors.primaryDark, fontSize: 20 }}>✓</Text>}
-          </TouchableOpacity>
-        ))}
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.heading}>Book a 30-min advisor call</Text>
+        <Text style={styles.subheading}>Get personalised guidance on funding, schemes & subsidies.</Text>
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Pick a date</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 6 }}>
-          {dates.map((d) => (
-            <TouchableOpacity key={d.iso} testID={`date-${d.iso}`} style={[styles.dateBtn, date === d.iso && styles.dateActive]} onPress={() => setDate(d.iso)}>
-              <Text style={[styles.dateDay, date === d.iso && styles.dateActiveText]}>{d.day}</Text>
-              <Text style={[styles.dateLabel, date === d.iso && styles.dateActiveText]}>{d.label}</Text>
+        {/* Consultation type */}
+        <Text style={styles.fieldLabel}>Consultation Type</Text>
+        <View style={styles.typeGrid}>
+          {CONSULT_TYPES.map((c) => (
+            <TouchableOpacity
+              key={c}
+              testID={`type-${c}`}
+              style={[styles.typeCard, type === c && styles.typeCardActive]}
+              onPress={() => setType(c)}
+              activeOpacity={0.85}
+            >
+              {type === c && (
+                <View style={styles.typeCheck}>
+                  <CheckCircle2 size={14} color={colors.primaryDark} strokeWidth={2.5} />
+                </View>
+              )}
+              <Text style={[styles.typeText, type === c && styles.typeTextActive]}>{c}</Text>
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Date picker */}
+        <Text style={[styles.fieldLabel, { marginTop: 20 }]}>Select Date</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+        >
+          {dates.map((d) => {
+            const active = date === d.iso;
+            return (
+              <TouchableOpacity
+                key={d.iso}
+                testID={`date-${d.iso}`}
+                style={[styles.dateCard, active && styles.dateCardActive, d.isWeekend && !active && styles.dateCardWeekend]}
+                onPress={() => setDate(d.iso)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.dateDay, active && styles.dateActiveText]}>{d.day}</Text>
+                <Text style={[styles.dateNum, active && styles.dateActiveText]}>{d.label}</Text>
+                <Text style={[styles.dateMon, active && styles.dateActiveText]}>{d.month}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Pick a time slot</Text>
+        {/* Time slot */}
+        <Text style={[styles.fieldLabel, { marginTop: 20 }]}>Select Time Slot</Text>
         <View style={styles.slotGrid}>
           {TIME_SLOTS.map((s) => (
-            <TouchableOpacity key={s} testID={`slot-${s}`} style={[styles.slot, slot === s && styles.slotActive]} onPress={() => setSlot(s)}>
+            <TouchableOpacity
+              key={s}
+              testID={`slot-${s}`}
+              style={[styles.slot, slot === s && styles.slotActive]}
+              onPress={() => setSlot(s)}
+              activeOpacity={0.85}
+            >
               <Text style={[styles.slotText, slot === s && styles.slotTextActive]}>{s}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
+
+      {/* Footer CTA */}
       <View style={styles.footer}>
-        <TouchableOpacity testID="confirm-booking" disabled={!type || !date || !slot || loading} style={[styles.cta, (!type || !date || !slot) && styles.ctaDisabled]} onPress={onConfirm}>
+        {canBook && (
+          <Text style={styles.footerMeta}>
+            {type} on {date} at {slot}
+          </Text>
+        )}
+        <TouchableOpacity
+          testID="confirm-booking"
+          disabled={!canBook || loading}
+          style={[styles.cta, !canBook && styles.ctaDisabled]}
+          onPress={onConfirm}
+          activeOpacity={0.85}
+        >
           <Text style={styles.ctaText}>{loading ? "Booking…" : "Confirm Booking"}</Text>
         </TouchableOpacity>
       </View>
@@ -104,32 +306,171 @@ export default function Booking() {
 }
 
 const styles = StyleSheet.create({
-  h1: { fontSize: 22, fontWeight: "800", color: colors.text },
-  sub: { fontSize: 14, color: colors.textMuted, marginTop: 6, marginBottom: spacing.lg },
-  label: { fontSize: 12, fontWeight: "700", color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
-  opt: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: 14, marginBottom: 8 },
-  optActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  optText: { fontSize: 15, color: colors.text, fontWeight: "600" },
-  optTextActive: { color: colors.primaryDark },
-  dateBtn: { width: 56, height: 72, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  dateActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  dateDay: { fontSize: 11, color: colors.textMuted, fontWeight: "600" },
-  dateLabel: { fontSize: 20, color: colors.text, fontWeight: "800", marginTop: 4 },
-  dateActiveText: { color: "#FFF" },
-  slotGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  slot: { paddingHorizontal: 16, height: 40, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-  slotActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
-  slotText: { fontSize: 14, color: colors.text, fontWeight: "600" },
-  slotTextActive: { color: colors.primaryDark, fontWeight: "700" },
-  footer: { padding: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: "#FFF" },
-  cta: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: "center" },
-  ctaDisabled: { backgroundColor: "#A7F3D0" },
-  ctaText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-  doneWrap: { flex: 1, alignItems: "center", padding: 24, paddingTop: 60 },
-  checkBadge: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
-  doneTitle: { fontSize: 24, fontWeight: "800", color: colors.text, marginTop: 16 },
-  doneSub: { fontSize: 14, color: colors.textMuted, marginTop: 8, textAlign: "center" },
-  summary: { backgroundColor: colors.surfaceAlt, borderRadius: radius.lg, padding: 16, marginTop: 24, width: "100%" },
-  sumRow: { fontSize: 14, color: colors.textMuted, marginBottom: 6 },
-  sumVal: { color: colors.text, fontWeight: "700" },
+  heading: {
+    fontSize: 22,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+    marginBottom: 6,
+  },
+  subheading: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+    lineHeight: 20,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+
+  // Type selection
+  typeGrid: {
+    gap: 8,
+  },
+  typeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: "#FFF",
+  },
+  typeCardActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  typeCheck: {
+    // hidden until active
+  },
+  typeText: {
+    fontSize: 15,
+    fontFamily: fonts.medium,
+    color: colors.text,
+    flex: 1,
+  },
+  typeTextActive: {
+    fontFamily: fonts.semiBold,
+    color: colors.primaryDark,
+  },
+
+  // Date cards
+  dateCard: {
+    width: 58,
+    height: 76,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 1,
+    backgroundColor: "#FFF",
+  },
+  dateCardActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  dateCardWeekend: {
+    backgroundColor: colors.surface2,
+  },
+  dateDay: {
+    fontSize: 10,
+    fontFamily: fonts.medium,
+    color: colors.textMuted,
+  },
+  dateNum: {
+    fontSize: 20,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+  },
+  dateMon: {
+    fontSize: 10,
+    fontFamily: fonts.medium,
+    color: colors.textMuted,
+  },
+  dateActiveText: {
+    color: "#FFF",
+  },
+
+  // Time slots
+  slotGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  slot: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "#FFF",
+  },
+  slotActive: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  slotText: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.text,
+  },
+  slotTextActive: {
+    fontFamily: fonts.semiBold,
+    color: colors.primaryDark,
+  },
+
+  // Footer
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm2,
+    paddingBottom: Platform.OS === "ios" ? 32 : spacing.md,
+    backgroundColor: "#FFF",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: 6,
+  },
+  footerMeta: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    color: colors.textMuted,
+    textAlign: "center",
+  },
+  cta: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.xl,
+    paddingVertical: 15,
+    alignItems: "center",
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  ctaDisabled: {
+    backgroundColor: "#A7F3D0",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  ctaText: {
+    fontSize: 16,
+    fontFamily: fonts.displayBold,
+    color: "#FFF",
+  },
 });

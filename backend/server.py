@@ -311,7 +311,10 @@ async def list_schemes(category: Optional[str] = None, q: Optional[str] = None, 
         ands.append({"$or": [{"name": {"$regex": q, "$options": "i"}}, {"description": {"$regex": q, "$options": "i"}}]})
     if ands:
         query["$and"] = ands
-    schemes = await db.schemes.find(query, {"_id": 0}).to_list(200)
+    # list view only needs summary fields; full detail comes from /schemes/{id}
+    projection = {"_id": 0, "id": 1, "name": 1, "description": 1, "max_funding": 1,
+                  "max_subsidy_percent": 1, "categories": 1, "states": 1, "tags": 1}
+    schemes = await db.schemes.find(query, projection).to_list(200)
     return schemes
 
 
@@ -410,7 +413,7 @@ async def evaluate_my_alerts(user=Depends(get_current_user)):
     consultations = await db.consultations.find({"user_id": user["id"]}, {"_id": 0}).to_list(10)
     candidates = evaluate_alerts(user, bp, fa, m.get("matches", []), consultations)
     # dedupe by key
-    existing_keys = set([n.get("key") for n in await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).to_list(200)])
+    existing_keys = set([n.get("key") for n in await db.notifications.find({"user_id": user["id"]}, {"_id": 0, "key": 1}).to_list(200)])
     inserted = []
     for a in candidates:
         if a.get("key") in existing_keys:
@@ -558,13 +561,19 @@ async def admin_overview(admin=Depends(require_admin)):
 
 
 @api_router.get("/admin/users")
-async def admin_list_users(q: Optional[str] = None, state: Optional[str] = None, role: Optional[str] = None, limit: int = 200, admin=Depends(require_admin)):
+async def admin_list_users(
+    q: Optional[str] = None, state: Optional[str] = None, role: Optional[str] = None,
+    page: int = 1, limit: int = Query(default=50, le=200),
+    admin=Depends(require_admin)
+):
     query: Dict[str, Any] = {}
     if role: query["role"] = role
     if state: query["state"] = state
     if q: query["$or"] = [{"full_name": {"$regex": q, "$options": "i"}}, {"mobile": {"$regex": q, "$options": "i"}}]
-    users = await db.users.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
-    return users
+    skip = (max(page, 1) - 1) * limit
+    total = await db.users.count_documents(query)
+    users = await db.users.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).to_list(limit)
+    return {"items": users, "total": total, "page": page, "limit": limit, "pages": max(1, (total + limit - 1) // limit)}
 
 
 @api_router.get("/admin/users/{uid}")
@@ -624,7 +633,7 @@ async def admin_list_consultations(status: Optional[str] = None, limit: int = 20
     items = await db.consultations.find(q, {"_id": 0}).sort("created_at", -1).to_list(limit)
     # enrich with user info
     user_ids = list({i["user_id"] for i in items})
-    users = await db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "full_name": 1, "mobile": 1, "state": 1}).to_list(500)
+    users = await db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "full_name": 1, "mobile": 1, "state": 1}).to_list(len(user_ids) or 1)
     by_id = {u["id"]: u for u in users}
     for it in items:
         it["user"] = by_id.get(it["user_id"], {})
@@ -646,12 +655,18 @@ async def admin_update_consultation(cid: str, body: ConsultationStatusUpdate, ad
 
 
 @api_router.get("/admin/leads")
-async def admin_list_leads(stage: Optional[str] = None, q: Optional[str] = None, assigned_to: Optional[str] = None, limit: int = 200, admin=Depends(require_admin)):
+async def admin_list_leads(
+    stage: Optional[str] = None, q: Optional[str] = None, assigned_to: Optional[str] = None,
+    page: int = 1, limit: int = Query(default=50, le=200),
+    admin=Depends(require_admin)
+):
     query: Dict[str, Any] = {}
     if stage: query["stage"] = stage
     if assigned_to: query["assigned_to"] = assigned_to
     if q: query["$or"] = [{"full_name": {"$regex": q, "$options": "i"}}, {"mobile": {"$regex": q, "$options": "i"}}]
-    return await db.leads.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    skip = (max(page, 1) - 1) * limit
+    items = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).to_list(limit)
+    return items  # return flat array for backwards compatibility with frontend
 
 
 @api_router.post("/admin/leads/{lid}")
@@ -667,17 +682,38 @@ async def admin_update_lead(lid: str, body: LeadUpdate, admin=Depends(require_ad
 @api_router.post("/admin/notifications")
 async def admin_send_notification(body: NotificationCreate, admin=Depends(require_admin)):
     targets = body.target_user_ids
-    if not targets:
-        users = await db.users.find({"role": "user"}, {"_id": 0, "id": 1}).to_list(10000)
-        targets = [u["id"] for u in users]
-    docs = [{
-        "id": str(uuid.uuid4()), "user_id": uid,
-        "title": body.title, "body": body.body, "type": body.type,
-        "read": False, "created_at": now_iso(),
-    } for uid in targets]
-    if docs:
-        await db.notifications.insert_many([d.copy() for d in docs])
-    return {"sent": len(docs)}
+    BATCH = 1000
+    sent_total = 0
+    if targets:
+        # explicit target list
+        docs = [{
+            "id": str(uuid.uuid4()), "user_id": uid,
+            "title": body.title, "body": body.body, "type": body.type,
+            "read": False, "created_at": now_iso(),
+        } for uid in targets]
+        for i in range(0, len(docs), BATCH):
+            chunk = docs[i:i + BATCH]
+            if chunk:
+                await db.notifications.insert_many([d.copy() for d in chunk])
+                sent_total += len(chunk)
+    else:
+        # broadcast — stream via cursor to avoid loading 10k IDs into memory
+        cursor = db.users.find({"role": "user"}, {"_id": 0, "id": 1})
+        chunk: List[Dict[str, Any]] = []
+        async for u in cursor:
+            chunk.append({
+                "id": str(uuid.uuid4()), "user_id": u["id"],
+                "title": body.title, "body": body.body, "type": body.type,
+                "read": False, "created_at": now_iso(),
+            })
+            if len(chunk) >= BATCH:
+                await db.notifications.insert_many([d.copy() for d in chunk])
+                sent_total += len(chunk)
+                chunk = []
+        if chunk:
+            await db.notifications.insert_many([d.copy() for d in chunk])
+            sent_total += len(chunk)
+    return {"sent": sent_total}
 
 
 @api_router.get("/admin/analytics")
@@ -730,8 +766,48 @@ async def export_schemes(admin=Depends(require_admin)):
 # ===========================================================================
 # STARTUP
 # ===========================================================================
+async def _ensure_indexes():
+    """Create MongoDB indexes for all hot-path queries. Idempotent."""
+    try:
+        # users — looked up by mobile (auth) and id (every authenticated request)
+        await db.users.create_index("mobile", unique=True, background=True)
+        await db.users.create_index("id", unique=True, background=True)
+        await db.users.create_index([("role", 1), ("state", 1)], background=True)
+
+        # business_profiles — joined on every advisor/match call
+        await db.business_profiles.create_index("user_id", unique=True, background=True)
+
+        # funding_assessments — joined on every match/readiness call
+        await db.funding_assessments.create_index("user_id", unique=True, background=True)
+
+        # scheme_matches — fetched on dashboard load
+        await db.scheme_matches.create_index("user_id", unique=True, background=True)
+
+        # consultations — user inbox + admin list
+        await db.consultations.create_index("user_id", background=True)
+        await db.consultations.create_index([("status", 1), ("created_at", -1)], background=True)
+
+        # leads — CRM pipeline queries
+        await db.leads.create_index("user_id", background=True)
+        await db.leads.create_index([("stage", 1), ("created_at", -1)], background=True)
+        await db.leads.create_index("assigned_to", background=True)
+
+        # notifications — user inbox (unread filter)
+        await db.notifications.create_index([("user_id", 1), ("read", 1), ("created_at", -1)], background=True)
+
+        # ai_conversations — chat history lookup
+        await db.ai_conversations.create_index("user_id", unique=True, background=True)
+
+        logging.info("MongoDB indexes ensured")
+    except Exception as e:
+        logging.warning(f"Index creation warning (non-fatal): {e}")
+
+
 @app.on_event("startup")
 async def seed_db():
+    # Ensure indexes first (non-blocking, background=True)
+    await _ensure_indexes()
+
     if await db.schemes.count_documents({}) == 0:
         for s in SCHEMES_SEED:
             s = {**s, "disabled": False}
