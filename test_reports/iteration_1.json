@@ -1,0 +1,44 @@
+{
+  "summary": "Backend-only testing for Saral Funding MVP completed. Wrote a full pytest suite covering all 15 requested behaviors plus parametrized auth-protection sweep. 36/36 tests passed (100%) against the public EXPO_PUBLIC_BACKEND_URL. Health, OTP send/verify (mock 123456 + wrong code 400 + invalid mobile 400), /auth/me (200/401 missing/401 invalid), full onboarding flow (profile -> business -> assessment with onboarding_step transitions profile->business->assessment->done), match/me with readiness/funding/subsidy aggregates and per-scheme reason from GPT-4o, schemes list (11 seeded, all expected IDs present), category filters (Women/Manufacturing/MSME/Startup), search query, scheme detail (200 + 404), advisor chat+history+clear via GPT-4o, consultations book+list, notifications list+mark-read, and 14 parametrized 401-protection checks. ObjectId (_id) leak verified absent across every relevant response.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/schemes", "issue": "When both `category` and `q` are supplied along with no `state`, the $or for `q` overwrites any $or set elsewhere (currently fine because state branch is the only other $or user, but with `state`+`q` combined the search will combine into one $or that mixes state and text-match clauses — works but is fragile). Consider $and-wrapping."},
+      {"endpoint": "POST /api/auth/verify-otp", "issue": "Token is just the raw user UUID (no signing/expiry). Acceptable for mock-OTP MVP but flag for production hardening."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/conftest.py",
+    "/app/backend/tests/test_saral_funding_backend.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "No fixes required — all 15 backend behaviours from the review request pass.",
+    "Optional: harden auth token (signed JWT + expiry) before production.",
+    "Optional: refactor /api/schemes filter builder to use $and to avoid fragile $or merging when state+q are combined."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 401 lines — well under 700 line limit; clean separation.",
+    "All endpoints prefixed with /api and routed through APIRouter — good.",
+    "All responses exclude `_id` via projection ({\"_id\": 0}) or pop — verified no leak in tests.",
+    "advisor_chat history replay loop in ai_service.py breaks after first user message (line 211-213) — this is intentional per the comment, but it means multi-turn context is NOT actually fed to GPT-4o beyond the immediate message. Conversation memory persists in Mongo but isn't re-sent to LLM on each turn. Worth confirming intent.",
+    "compute_and_store_matches is invoked synchronously inside POST /api/funding-assessment and can take up to ~15s on first call (GPT-4o reasoning) — acceptable but consider background task / async-fire so UX isn't blocked.",
+    "EMERGENT_LLM_KEY hardcoded in /app/backend/.env — acceptable for the MVP setup script."
+  ],
+  "updated_files": [
+    "/app/backend/tests/conftest.py (created)",
+    "/app/backend/tests/test_saral_funding_backend.py (created)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "not tested (backend-only request)"},
+  "seed_data_creation": "Tests create one ephemeral TEST_ user per pytest session using a time-based unique 10-digit mobile, plus one business profile, assessment, consultation and advisor conversation. No production-like seed data added. 11 schemes seeded by the app's startup hook (verified present).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Reusable pytest at /app/backend/tests/test_saral_funding_backend.py — run with `pytest /app/backend/tests/ -v --junitxml=/app/test_reports/pytest/pytest_results.xml`. Uses session-scoped `auth` fixture that does send-otp + verify-otp(123456) and exposes `auth_headers`. Public URL resolved from EXPO_PUBLIC_BACKEND_URL. The advisor + match tests exercise the live GPT-4o path (~5-15s); pytest timeouts already set generously. Frontend (Expo web preview) was NOT tested per the review request; testID coverage in screens has not been audited.",
+  "rca_of_issue": "N/A — no failing tests."
+}
