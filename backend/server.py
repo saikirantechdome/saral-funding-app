@@ -239,7 +239,12 @@ async def firebase_verify(req: FirebaseVerify):
     phone = decoded.get("phone_number")
     if not phone:
         raise HTTPException(status_code=400, detail="No phone_number claim in token")
-    mobile = phone.lstrip("+").lstrip("9").lstrip("1")[-10:]  # crude IN normalisation
+    raw_phone = phone.strip()
+    digits = "".join(ch for ch in raw_phone if ch.isdigit())
+    # If starts with country code 91, strip it
+    if digits.startswith("91") and len(digits) > 10:
+        digits = digits[2:]
+    mobile = digits[-10:]
     user = await _create_or_get_user(mobile, req.language or "en")
     return {"token": user["id"], "user": UserOut(**user).dict()}
 
@@ -511,7 +516,7 @@ async def book_consultation(body: ConsultationIn, user=Depends(get_current_user)
     await db.notifications.insert_one({
         "id": str(uuid.uuid4()), "user_id": user["id"],
         "title": "Consultation Booked",
-        "body": f"Your {doc['consultation_type']} on {doc['date']} at {doc['time_slot']} is confirmed.",
+        "body": f"Your {doc['consultation_type']} on {doc['date']} at {doc['time_slot']} is booked. Our advisor will reach out soon.",
         "type": "reminder", "read": False, "created_at": now_iso(),
     })
     doc.pop("_id", None)

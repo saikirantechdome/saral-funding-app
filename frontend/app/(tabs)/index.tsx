@@ -33,7 +33,7 @@ export default function Dashboard() {
         apiPost<{ new_alerts: any[] }>("/alerts/evaluate", {}).catch(() => ({ new_alerts: [] })),
       ]);
       setUser(me); setData(m);
-      setNext((c || []).find((x: any) => ["confirmed", "new", "called", "follow_up"].includes(x.status)) || null);
+      setNext((c || []).find((x: any) => ["new", "confirmed", "called", "follow_up", "interested"].includes(x.status)) || null);
       setBankRec((banks.recommendations || [])[0] || null);
       setReadiness(ready);
       const notif = await apiGet<any[]>("/notifications/me").catch(() => []);
