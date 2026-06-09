@@ -200,17 +200,26 @@ async def advisor_chat(
         return "AI advisor is not configured. Please set EMERGENT_LLM_KEY."
 
     try:
+        # Include recent history (last 6 turns) inline as part of the system prompt
+        # so the LLM has context without us issuing extra paid calls per turn.
+        if history:
+            recent = history[-12:]
+            convo_lines = []
+            for h in recent:
+                role = "User" if h.get("role") == "user" else "Advisor"
+                convo_lines.append(f"{role}: {h.get('content', '')}")
+            system_prompt_with_history = (
+                system_prompt + "\n\nRecent conversation so far:\n" + "\n".join(convo_lines)
+            )
+        else:
+            system_prompt_with_history = system_prompt
+
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"advisor_{user_id}",
-            system_message=system_prompt,
+            system_message=system_prompt_with_history,
         ).with_model("openai", "gpt-4o")
 
-        # Replay history (last 6 turns) so context carries
-        for h in history[-12:]:
-            if h.get("role") == "user":
-                await chat.send_message(UserMessage(text=h["content"]))
-                break  # LlmChat tracks internally — replay only seeds, we just send latest
         reply = await chat.send_message(UserMessage(text=message))
         return reply.strip()
     except Exception as e:
