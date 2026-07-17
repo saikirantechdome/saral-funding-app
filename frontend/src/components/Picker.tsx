@@ -1,23 +1,52 @@
-import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from "react-native";
-import { ChevronDown, Check } from "lucide-react-native";
+import { useMemo, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, SectionList, TextInput } from "react-native";
+import { ChevronDown, Check, Search } from "lucide-react-native";
 import { colors, spacing, radius, fonts } from "@/src/theme";
+
+export interface PickerGroup {
+  label: string;
+  options: string[];
+}
 
 interface Props {
   label: string;
   value: string;
-  options: string[];
   onChange: (v: string) => void;
+  options?: string[];
+  groups?: PickerGroup[];
   testID?: string;
   placeholder?: string;
   error?: string;
+  disabledOptions?: string[];
+  optionBadge?: (option: string) => string | undefined;
+  searchable?: boolean;
 }
 
-export default function Picker({ label, value, options, onChange, testID, placeholder, error }: Props) {
+export default function Picker({
+  label, value, onChange, options, groups, testID, placeholder, error,
+  disabledOptions, optionBadge, searchable,
+}: Props) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   const borderColor = error ? colors.danger : open ? colors.primary : colors.border;
   const bgColor = error ? colors.dangerSoft : open ? "#FFF" : colors.surface2;
+
+  const allGroups: PickerGroup[] = groups ?? [{ label: "", options: options ?? [] }];
+  const totalCount = allGroups.reduce((n, g) => n + g.options.length, 0);
+  const showSearch = searchable ?? totalCount > 8;
+
+  const sections = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return allGroups
+      .map((g) => ({
+        title: g.label,
+        data: q ? g.options.filter((o) => o.toLowerCase().includes(q)) : g.options,
+      }))
+      .filter((g) => g.data.length > 0);
+  }, [allGroups, query]);
+
+  const close = () => { setOpen(false); setQuery(""); };
 
   return (
     <View style={styles.wrap}>
@@ -35,7 +64,7 @@ export default function Picker({ label, value, options, onChange, testID, placeh
         onPress={() => setOpen(true)}
         activeOpacity={0.8}
       >
-        <Text style={[styles.value, !value && styles.placeholder]}>
+        <Text style={[styles.value, !value && styles.placeholder]} numberOfLines={1}>
           {value || placeholder || `Select ${label}`}
         </Text>
         <ChevronDown
@@ -46,28 +75,54 @@ export default function Picker({ label, value, options, onChange, testID, placeh
       </TouchableOpacity>
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={styles.sheet}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={close}>
+          <View style={styles.sheet} onStartShouldSetResponder={() => true}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>{label}</Text>
-            <FlatList
-              data={options}
-              keyExtractor={(x) => x}
+
+            {showSearch && (
+              <View style={styles.searchBox}>
+                <Search size={14} color={colors.textDim} strokeWidth={2} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search..."
+                  placeholderTextColor={colors.textPlaceholder}
+                  value={query}
+                  onChangeText={setQuery}
+                />
+              </View>
+            )}
+
+            <SectionList
+              sections={sections}
+              keyExtractor={(item, i) => `${item}-${i}`}
               showsVerticalScrollIndicator={false}
+              stickySectionHeadersEnabled={false}
               ItemSeparatorComponent={() => <View style={styles.sep} />}
+              ListEmptyComponent={<Text style={styles.emptyText}>No matches found</Text>}
+              renderSectionHeader={({ section }) =>
+                section.title ? <Text style={styles.groupLabel}>{section.title}</Text> : null
+              }
               renderItem={({ item }) => {
                 const selected = item === value;
+                const isDisabled = !!disabledOptions?.includes(item);
+                const badge = optionBadge?.(item);
                 return (
                   <TouchableOpacity
                     testID={`${testID}-opt-${item}`}
-                    style={[styles.opt, selected && styles.optSelected]}
-                    onPress={() => { onChange(item); setOpen(false); }}
-                    activeOpacity={0.7}
+                    style={[styles.opt, selected && styles.optSelected, isDisabled && styles.optDisabled]}
+                    onPress={() => { if (isDisabled) return; onChange(item); close(); }}
+                    activeOpacity={isDisabled ? 1 : 0.7}
                   >
-                    <Text style={[styles.optText, selected && styles.optTextSelected]}>
+                    <Text style={[styles.optText, selected && styles.optTextSelected, isDisabled && styles.optTextDisabled]}>
                       {item}
                     </Text>
+                    {badge && (
+                      <View style={styles.optBadge}>
+                        <Text style={styles.optBadgeText}>{badge}</Text>
+                      </View>
+                    )}
                     {selected && (
                       <Check size={15} color={colors.primaryDark} strokeWidth={2.5} />
                     )}
@@ -108,6 +163,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.text,
     flex: 1,
+    marginRight: 8,
   },
   placeholder: {
     color: colors.textPlaceholder,
@@ -130,7 +186,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingTop: 12,
     paddingBottom: 40,
-    maxHeight: "72%",
+    maxHeight: "80%",
   },
   sheetHandle: {
     width: 36,
@@ -149,6 +205,38 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     marginBottom: 4,
+  },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.surface2,
+    borderRadius: radius.xl,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.text,
+    padding: 0,
+  },
+  groupLabel: {
+    fontSize: 11,
+    fontFamily: fonts.bold,
+    color: colors.primaryDark,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    backgroundColor: "#FFF",
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 6,
   },
   opt: {
     flexDirection: "row",
@@ -169,6 +257,31 @@ const styles = StyleSheet.create({
   optTextSelected: {
     fontFamily: fonts.semiBold,
     color: colors.primaryDark,
+  },
+  optDisabled: {
+    opacity: 0.5,
+  },
+  optTextDisabled: {
+    color: colors.textDim,
+  },
+  optBadge: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 8,
+  },
+  optBadgeText: {
+    fontSize: 10,
+    fontFamily: fonts.bold,
+    color: colors.primaryDark,
+  },
+  emptyText: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    textAlign: "center",
+    paddingVertical: 24,
   },
   sep: {
     height: 1,

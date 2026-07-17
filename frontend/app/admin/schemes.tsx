@@ -5,25 +5,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { CheckCircle2, XCircle, Landmark, Plus, X } from "lucide-react-native";
+import { CheckCircle2, XCircle, Landmark, Plus, X, Pencil } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import EmptyState from "@/src/components/EmptyState";
-
-const DOCUMENT_OPTIONS = [
-  "Aadhaar Card",
-  "PAN Card",
-  "GST Certificate",
-  "Udyam Certificate",
-  "Bank Statement (6 months)",
-  "ITR (Income Tax Return)",
-  "Project Report",
-  "Quotation / Invoice",
-  "Partnership Deed",
-  "Property Papers",
-];
+import MultiSelectPicker from "@/src/components/MultiSelectPicker";
+import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
 
 const STATE_OPTIONS = [
   "All India",
@@ -51,7 +40,8 @@ export default function AdminSchemes() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [role, setRole] = useState<string>("");
 
-  const [showCreate, setShowCreate] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -101,7 +91,37 @@ export default function AdminSchemes() {
     });
   };
 
-  const handleCreate = async () => {
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setShowForm(true);
+  };
+
+  const openEdit = (s: any) => {
+    setEditingId(s.id);
+    setForm({
+      name: s.name || "",
+      full_name: s.full_name || "",
+      description: s.description || "",
+      max_funding: s.max_funding != null ? String(s.max_funding) : "",
+      max_subsidy_percent: s.max_subsidy_percent != null ? String(s.max_subsidy_percent) : "",
+      process: s.process || "",
+      eligibility: (s.eligibility || []).join("\n"),
+      benefits: (s.benefits || []).join("\n"),
+      categories: (s.categories || []).join(", "),
+      documents: s.documents || [],
+      states: s.states && s.states.length ? s.states : ["All India"],
+    });
+    setShowForm(true);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+  };
+
+  const handleSave = async () => {
     if (!form.name.trim() || !form.description.trim()) {
       Alert.alert("Required", "Name and description are required.");
       return;
@@ -109,6 +129,7 @@ export default function AdminSchemes() {
     setSaving(true);
     try {
       await apiPost("/admin/schemes", {
+        id: editingId || undefined,
         name: form.name.trim(),
         full_name: form.full_name.trim(),
         description: form.description.trim(),
@@ -121,11 +142,10 @@ export default function AdminSchemes() {
         categories: form.categories.split(",").map((s) => s.trim()).filter(Boolean),
         states: form.states,
       });
-      setShowCreate(false);
-      setForm(EMPTY_FORM);
+      closeForm();
       await load();
     } catch (e: any) {
-      Alert.alert("Error", e.message || "Could not create scheme.");
+      Alert.alert("Error", e.message || "Could not save scheme.");
     } finally {
       setSaving(false);
     }
@@ -139,7 +159,7 @@ export default function AdminSchemes() {
         title="Schemes"
         onBack={() => router.back()}
         right={isSuperAdmin ? (
-          <TouchableOpacity style={styles.createBtn} onPress={() => setShowCreate(true)} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.createBtn} onPress={openCreate} activeOpacity={0.8}>
             <Plus size={16} color={colors.primaryDark} strokeWidth={2.5} />
             <Text style={styles.createBtnText}>Create</Text>
           </TouchableOpacity>
@@ -186,32 +206,44 @@ export default function AdminSchemes() {
                   </View>
                 </View>
               </View>
-              <TouchableOpacity
-                testID={`toggle-${item.id}`}
-                style={[styles.toggleBtn, item.disabled ? styles.toggleBtnOff : styles.toggleBtnOn]}
-                onPress={() => toggle(item)}
-                disabled={toggling === item.id}
-                activeOpacity={0.8}
-              >
-                {item.disabled
-                  ? <XCircle size={13} color={colors.danger} strokeWidth={2} />
-                  : <CheckCircle2 size={13} color={colors.primaryDark} strokeWidth={2} />}
-                <Text style={[styles.toggleText, item.disabled ? styles.toggleTextOff : styles.toggleTextOn]}>
-                  {toggling === item.id ? "…" : item.disabled ? "Off" : "On"}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.cardActions}>
+                {isSuperAdmin && (
+                  <TouchableOpacity
+                    testID={`edit-${item.id}`}
+                    style={styles.editBtn}
+                    onPress={(e) => { e.stopPropagation?.(); openEdit(item); }}
+                    activeOpacity={0.8}
+                  >
+                    <Pencil size={13} color={colors.textMuted} strokeWidth={2} />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  testID={`toggle-${item.id}`}
+                  style={[styles.toggleBtn, item.disabled ? styles.toggleBtnOff : styles.toggleBtnOn]}
+                  onPress={(e) => { e.stopPropagation?.(); toggle(item); }}
+                  disabled={toggling === item.id}
+                  activeOpacity={0.8}
+                >
+                  {item.disabled
+                    ? <XCircle size={13} color={colors.danger} strokeWidth={2} />
+                    : <CheckCircle2 size={13} color={colors.primaryDark} strokeWidth={2} />}
+                  <Text style={[styles.toggleText, item.disabled ? styles.toggleTextOff : styles.toggleTextOn]}>
+                    {toggling === item.id ? "…" : item.disabled ? "Off" : "On"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </TouchableOpacity>
           )}
         />
       )}
 
-      {/* Create Scheme Modal */}
-      <Modal visible={showCreate} transparent animationType="slide" onRequestClose={() => setShowCreate(false)}>
+      {/* Create / Edit Scheme Modal */}
+      <Modal visible={showForm} transparent animationType="slide" onRequestClose={closeForm}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create Scheme</Text>
-              <TouchableOpacity onPress={() => setShowCreate(false)}>
+              <Text style={styles.modalTitle}>{editingId ? "Edit Scheme" : "Create Scheme"}</Text>
+              <TouchableOpacity onPress={closeForm}>
                 <X size={20} color={colors.textMuted} strokeWidth={2} />
               </TouchableOpacity>
             </View>
@@ -226,35 +258,37 @@ export default function AdminSchemes() {
                 <Field label="Eligibility (one per line)" placeholder={"Must be an Indian citizen\nAge 18-45..."} value={form.eligibility} onChangeText={(v) => setForm((f) => ({ ...f, eligibility: v }))} multiline />
                 <Field label="Benefits (one per line)" placeholder={"Up to 35% subsidy\nCollateral free..."} value={form.benefits} onChangeText={(v) => setForm((f) => ({ ...f, benefits: v }))} multiline />
 
-                {/* Documents Required — multi-select chips */}
-                <MultiSelect
+                {/* Documents Required — searchable multi-select dropdown */}
+                <MultiSelectPicker
                   label="Documents Required"
-                  options={DOCUMENT_OPTIONS}
+                  groups={DOCUMENT_TYPE_GROUPS}
                   selected={form.documents}
                   onToggle={toggleDoc}
+                  testID="doc-picker"
                 />
 
                 <Field label="Process" placeholder="Application process description..." value={form.process} onChangeText={(v) => setForm((f) => ({ ...f, process: v }))} multiline />
                 <Field label="Categories (comma separated)" placeholder="MSME, Manufacturing, Startup" value={form.categories} onChangeText={(v) => setForm((f) => ({ ...f, categories: v }))} />
 
-                {/* States — multi-select chips */}
-                <MultiSelect
+                {/* States — searchable multi-select dropdown */}
+                <MultiSelectPicker
                   label="States"
                   options={STATE_OPTIONS}
                   selected={form.states}
                   onToggle={toggleState}
+                  testID="state-picker"
                 />
               </View>
             </ScrollView>
 
             <TouchableOpacity
               style={[styles.saveBtn, saving && { opacity: 0.6 }]}
-              onPress={handleCreate}
+              onPress={handleSave}
               disabled={saving}
             >
               {saving
                 ? <ActivityIndicator color="#FFF" size="small" />
-                : <Text style={styles.saveBtnText}>Create Scheme</Text>}
+                : <Text style={styles.saveBtnText}>{editingId ? "Save Changes" : "Create Scheme"}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -276,40 +310,6 @@ function Field({ label, ...props }: { label: string; [key: string]: any }) {
   );
 }
 
-function MultiSelect({ label, options, selected, onToggle }: {
-  label: string;
-  options: string[];
-  selected: string[];
-  onToggle: (val: string) => void;
-}) {
-  return (
-    <View>
-      <Text style={styles.fieldLabel}>
-        {label}
-        {selected.length > 0 && (
-          <Text style={{ color: colors.primaryDark, fontFamily: fonts.bold }}> · {selected.length} selected</Text>
-        )}
-      </Text>
-      <View style={styles.chipGrid}>
-        {options.map((opt) => {
-          const isSel = selected.includes(opt);
-          return (
-            <TouchableOpacity
-              key={opt}
-              style={[styles.chip, isSel && styles.chipSelected]}
-              onPress={() => onToggle(opt)}
-              activeOpacity={0.7}
-            >
-              {isSel && <CheckCircle2 size={11} color={colors.primaryDark} strokeWidth={2.5} />}
-              <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>{opt}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   statsBar: { paddingHorizontal: spacing.md, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: "#FFF" },
   statsText: { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
@@ -326,6 +326,8 @@ const styles = StyleSheet.create({
   schemeStats: { flexDirection: "row", gap: 8 },
   schemeAmt: { fontSize: 11, fontFamily: fonts.bold, color: colors.primaryDark },
   schemeSub: { fontSize: 11, fontFamily: fonts.medium, color: colors.textMuted },
+  cardActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+  editBtn: { width: 30, height: 30, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center" },
   toggleBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1 },
   toggleBtnOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   toggleBtnOff: { borderColor: colors.danger, backgroundColor: "#FEE2E2" },
@@ -340,14 +342,4 @@ const styles = StyleSheet.create({
   fieldInput: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 14, paddingVertical: 10, fontSize: 13, fontFamily: fonts.regular, color: colors.text, backgroundColor: "#FFF" },
   saveBtn: { backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: 13, alignItems: "center" },
   saveBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
-  chipGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: radius.pill, borderWidth: 1.5,
-    borderColor: colors.border, backgroundColor: colors.surface2,
-  },
-  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  chipText: { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
-  chipTextSelected: { color: colors.primaryDark, fontFamily: fonts.bold },
 });

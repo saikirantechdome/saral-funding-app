@@ -36,19 +36,12 @@ import {
 
 import { colors, spacing, radius, fonts } from "@/src/theme";
 import { apiGet, apiDelete, getToken, API_BASE } from "@/src/api";
+import Picker from "@/src/components/Picker";
+import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
 
-const DOC_TYPES = [
-  "Aadhaar Card",
-  "PAN Card",
-  "GST Certificate",
-  "Udyam Certificate",
-  "Bank Statement (6 months)",
-  "ITR (Income Tax Return)",
-  "Project Report",
-  "Quotation / Invoice",
-  "Partnership Deed",
-  "Property Papers",
-];
+const BULK_UPLOAD_WHATSAPP_URL = `https://wa.me/919893869899?text=${encodeURIComponent(
+  "Hello, I have multiple documents to upload for my Saral Funding application. Could your team please help me with a bulk upload?"
+)}`;
 
 type PickedFile = {
   uri: string;
@@ -237,30 +230,26 @@ function UserDocumentsTab() {
           <Text style={s.sectionLabel}>Upload a Document</Text>
           <Text style={s.hint}>Select the document type, choose a file, then tap Upload.</Text>
 
-          <View style={s.chips}>
-            {DOC_TYPES.map((type) => {
-              const isUploaded = uploadedTypes.has(type);
-              const isSelected = selected === type;
-              return (
-                <TouchableOpacity
-                  key={type}
-                  style={[s.chip, isSelected && s.chipSelected, isUploaded && s.chipUploaded]}
-                  onPress={() => {
-                    if (!isUploaded) {
-                      setSelected(isSelected ? null : type);
-                      if (isSelected) setPickedFile(null);
-                    }
-                  }}
-                  activeOpacity={0.75}
-                >
-                  {isUploaded && <CheckCircle2 size={11} color={colors.primaryDark} strokeWidth={2.5} />}
-                  <Text style={[s.chipText, isSelected && s.chipTextSelected, isUploaded && s.chipTextUploaded]}>
-                    {type}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <Picker
+            label="Document Type"
+            placeholder="Select a document type"
+            value={selected ?? ""}
+            groups={DOCUMENT_TYPE_GROUPS}
+            disabledOptions={Array.from(uploadedTypes)}
+            optionBadge={(opt) => (uploadedTypes.has(opt) ? "Uploaded" : undefined)}
+            onChange={(v) => { setSelected(v); setPickedFile(null); }}
+            testID="doc-type-picker"
+          />
+
+          <TouchableOpacity
+            style={s.bulkUploadBtn}
+            onPress={() => Linking.openURL(BULK_UPLOAD_WHATSAPP_URL)}
+            activeOpacity={0.8}
+            testID="bulk-upload-whatsapp-cta"
+          >
+            <Text style={{ fontSize: 14 }}>💬</Text>
+            <Text style={s.bulkUploadBtnText}>Bulk upload? Contact us on WhatsApp</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[s.filePickerBtn, !selected && { opacity: 0.45 }]}
@@ -419,23 +408,19 @@ const s = StyleSheet.create({
     marginBottom: spacing.sm2,
     lineHeight: 18,
   },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.sm2 },
-  chip: {
+  bulkUploadBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: radius.lg,
+    borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface2,
+    marginBottom: 10,
   },
-  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  chipUploaded: { borderColor: colors.primaryDark + "40", backgroundColor: colors.primarySoft, opacity: 0.7 },
-  chipText: { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
-  chipTextSelected: { color: colors.primaryDark, fontFamily: fonts.bold },
-  chipTextUploaded: { color: colors.primaryDark },
+  bulkUploadBtnText: { fontSize: 12, fontFamily: fonts.semiBold, color: colors.primaryDark },
   filePickerBtn: {
     flexDirection: "row",
     alignItems: "center",
