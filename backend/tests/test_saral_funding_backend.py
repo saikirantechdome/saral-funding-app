@@ -6,7 +6,7 @@ import pytest
 BASE_URL = (
     os.environ.get("EXPO_PUBLIC_BACKEND_URL")
     or os.environ.get("EXPO_BACKEND_URL")
-    or "https://saral-schemes.preview.emergentagent.com"
+    or "https://app-publish-ready-1.preview.emergentagent.com"
 ).rstrip("/")
 
 
