@@ -134,7 +134,7 @@ const ac = StyleSheet.create({
     backgroundColor: colors.surfaceAlt, paddingHorizontal: 8,
     paddingVertical: 3, borderRadius: radius.pill,
   },
-  weightBadgeHigh: { backgroundColor: "#DCFCE7" },
+  weightBadgeHigh: { backgroundColor: "#DDF3F0" },
   weight: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted },
   weightHigh: { color: colors.primaryDark },
   detail: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, lineHeight: 18, marginBottom: 8 },

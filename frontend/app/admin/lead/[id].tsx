@@ -77,7 +77,7 @@ function TimelineEvent({ item }: { item: any }) {
     stage_changed: { label: "Stage Changed", color: "#1D4ED8" },
     note_added: { label: "Note Added", color: "#92400E" },
     assigned: { label: "Assigned", color: "#5B21B6" },
-    follow_up_set: { label: "Follow-up Set", color: "#065F46" },
+    follow_up_set: { label: "Follow-up Set", color: "#1E534C" },
     created: { label: "Lead Created", color: colors.primaryDark },
     updated: { label: "Updated", color: colors.textMuted },
   };
@@ -483,8 +483,8 @@ export default function LeadDetail() {
                       <Text style={styles.appBankName}>{app.bank_name}</Text>
                     </View>
                   ) : null}
-                  <View style={[styles.appStagePill, app.stage === "approved" || app.stage === "disbursed" ? { backgroundColor: "#dcfce7" } : app.stage === "rejected" ? { backgroundColor: "#fee2e2" } : { backgroundColor: "#eff6ff" }]}>
-                    <Text style={[styles.appStageText, { color: app.stage === "approved" || app.stage === "disbursed" ? "#16a34a" : app.stage === "rejected" ? "#dc2626" : colors.primary }]}>
+                  <View style={[styles.appStagePill, app.stage === "approved" || app.stage === "disbursed" ? { backgroundColor: "#DDF3F0" } : app.stage === "rejected" ? { backgroundColor: "#fee2e2" } : { backgroundColor: "#eff6ff" }]}>
+                    <Text style={[styles.appStageText, { color: app.stage === "approved" || app.stage === "disbursed" ? "#2D7C72" : app.stage === "rejected" ? "#dc2626" : colors.primary }]}>
                       {app.stage_label || app.stage}
                     </Text>
                   </View>
@@ -909,10 +909,10 @@ const styles = StyleSheet.create({
   // Recommendations
   existingRecBanner: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#D1FAE5", borderRadius: radius.lg,
+    backgroundColor: "#DDF3F0", borderRadius: radius.lg,
     paddingHorizontal: 10, paddingVertical: 6, marginBottom: 12, alignSelf: "flex-start",
   },
-  existingRecText: { fontSize: 11, fontFamily: fonts.medium, color: "#065F46" },
+  existingRecText: { fontSize: 11, fontFamily: fonts.medium, color: "#1E534C" },
   recSubLabel: {
     fontSize: 10, fontFamily: fonts.bold, color: colors.textMuted,
     textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6,

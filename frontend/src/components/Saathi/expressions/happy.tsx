@@ -5,7 +5,7 @@ export default function HappyExpression({ size = 120 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 120 120">
       {/* Body */}
-      <Ellipse cx="60" cy="88" rx="28" ry="20" fill="#DCFCE7" />
+      <Ellipse cx="60" cy="88" rx="28" ry="20" fill="#DDF3F0" />
       {/* Head */}
       <Circle cx="60" cy="54" r="30" fill="#FEF9C3" />
       {/* Face highlight */}

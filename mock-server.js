@@ -647,14 +647,14 @@ async function handle(req, res) {
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: -apple-system, sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; background:#F0FDF4; }
+    body { font-family: -apple-system, sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; background:#EFF9F7; }
     .card { background:#fff; border-radius:16px; padding:32px; max-width:360px; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,0.1); }
-    h2 { color:#166534; margin-bottom:8px; }
+    h2 { color:#1E534C; margin-bottom:8px; }
     p { color:#6B7280; font-size:14px; line-height:1.6; }
-    .bank { background:#DCFCE7; border-radius:8px; padding:12px; margin:16px 0; font-size:13px; color:#166534; }
-    .btn { background:#16A34A; color:#fff; border:none; border-radius:12px; padding:14px 32px; font-size:16px; cursor:pointer; width:100%; margin-top:8px; }
+    .bank { background:#DDF3F0; border-radius:8px; padding:12px; margin:16px 0; font-size:13px; color:#1E534C; }
+    .btn { background:#2D7C72; color:#fff; border:none; border-radius:12px; padding:14px 32px; font-size:16px; cursor:pointer; width:100%; margin-top:8px; }
     .deny { background:#F3F4F6; color:#374151; margin-top:8px; }
-    .spinner { display:none; font-size:13px; color:#16A34A; margin-top:16px; }
+    .spinner { display:none; font-size:13px; color:#2D7C72; margin-top:16px; }
   </style>
 </head>
 <body>

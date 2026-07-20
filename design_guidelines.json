@@ -2,15 +2,15 @@
   "theme": "light",
   "archetype": "High-Contrast Utilitarian Government Trust",
   "colors": {
-    "primary": "#22C55E",
-    "primary_dark": "#15803D",
+    "primary": "#37988C",
+    "primary_dark": "#24655E",
     "background": "#FFFFFF",
     "surface": "#FFFFFF",
     "surface_secondary": "#F3F4F6",
     "text_primary": "#111111",
     "text_secondary": "#374151",
     "border": "#E5E7EB",
-    "success": "#22C55E",
+    "success": "#37988C",
     "error": "#EF4444",
     "warning": "#F59E0B",
     "black": "#111111",
@@ -60,7 +60,7 @@
       "marginBottom": 16
     },
     "button_primary": {
-      "backgroundColor": "#22C55E",
+      "backgroundColor": "#37988C",
       "borderRadius": 8,
       "paddingVertical": 14,
       "paddingHorizontal": 24,
@@ -110,8 +110,8 @@
       "minHeight": 40
     },
     "chip_active": {
-      "backgroundColor": "#EBFDF0",
-      "borderColor": "#22C55E",
+      "backgroundColor": "#EFF9F7",
+      "borderColor": "#37988C",
       "borderWidth": 1
     },
     "chip_text": {
@@ -120,12 +120,12 @@
       "fontWeight": "500"
     },
     "chip_text_active": {
-      "color": "#15803D",
+      "color": "#24655E",
       "fontSize": 14,
       "fontWeight": "600"
     },
     "chat_bubble_user": {
-      "backgroundColor": "#22C55E",
+      "backgroundColor": "#37988C",
       "borderRadius": 16,
       "borderBottomRightRadius": 4,
       "padding": 12,
@@ -143,7 +143,7 @@
   },
   "layout_rules": {
     "safe_area": "All screens must wrap content in SafeAreaView to handle mobile notches. Add safe area context appropriately to headers and bottom tabs.",
-    "bottom_tabs": "Use a clear bottom tab bar. Background white, active icon color #22C55E (Primary), inactive icon color #374151 (Dark Gray). Keep it minimal without background pills.",
+    "bottom_tabs": "Use a clear bottom tab bar. Background white, active icon color #37988C (Primary), inactive icon color #374151 (Dark Gray). Keep it minimal without background pills.",
     "touch_targets": "All interactive elements (buttons, links, chips, tab bar icons) MUST have a minimum height and width of 48dp for accessibility compliance.",
     "dashboard": "Keep strictly clean. Show maximum 5 cards/widgets on the screen at a time. Use a ScrollView with generous vertical padding (16px gaps). Avoid clutter.",
     "lists": "Use FlatList for scheme lists. Implement visual separation using either cards with 16px margins or 1px border bottoms (#E5E7EB) to clearly delineate items.",
@@ -158,7 +158,7 @@
     "library": "lucide-react-native",
     "strokeWidth": 2,
     "size_standard": 24,
-    "color_active": "#22C55E",
+    "color_active": "#37988C",
     "color_inactive": "#374151"
   },
   "image_urls": [

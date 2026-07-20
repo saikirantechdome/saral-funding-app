@@ -36,7 +36,7 @@ Each improvement is scored on:
 ## PHASE 1 — UI PREMIUM UPGRADE (Highest User Impact)
 *Transform visual quality to fintech-grade. Est: 8–12 days.*
 
-Constraint: Green (#22C55E) branding · White backgrounds · Black typography · No blue · No copy of Groww/Zerodha/Navi
+Constraint: Green (#37988C) branding · White backgrounds · Black typography · No blue · No copy of Groww/Zerodha/Navi
 
 ### 1A. Foundation (Do First)
 
@@ -197,8 +197,8 @@ Micro:   Inter 11/16px, weight 500
 ### Color Additions Needed
 ```javascript
 // Add to theme.ts:
-colors.primaryLight = "#4ADE80"    // lighter green for gradients
-colors.success = "#16A34A"         // success states (distinct from primary)
+colors.primaryLight = "#5AC4B7"    // lighter green for gradients
+colors.success = "#2D7C72"         // success states (distinct from primary)
 colors.surface1 = "#FFFFFF"        // cards
 colors.surface2 = "#F9FAFB"        // page backgrounds
 colors.surface3 = "#F3F4F6"        // subtle fills

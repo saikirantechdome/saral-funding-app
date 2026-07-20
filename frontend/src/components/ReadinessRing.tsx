@@ -20,7 +20,7 @@ const CY = RING_SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * R;
 
 function scoreColor(score: number): string {
-  if (score >= 70) return "#4ADE80";
+  if (score >= 70) return "#5AC4B7";
   if (score >= 40) return "#FCD34D";
   return "#FCA5A5";
 }

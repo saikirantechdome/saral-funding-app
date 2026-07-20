@@ -55,10 +55,10 @@ const ALL_MODULES = [
   { id: "leads",         label: "CRM / Leads",    sub: "Pipeline & stages",     Icon: Target,      color: "#FEF3C7",          iconColor: "#92400E" },
   { id: "schemes",       label: "Schemes",         sub: "Enable & disable",      Icon: Landmark,    color: "#FFF7ED",          iconColor: "#C2410C" },
   { id: "banks",         label: "Banks",            sub: "Assign & manage banks", Icon: Banknote,    color: "#EFF6FF",          iconColor: "#1D4ED8" },
-  { id: "documents",    label: "Documents",       sub: "Review & approve docs", Icon: FolderIcon,  color: "#F0FDF4",          iconColor: "#15803D" },
+  { id: "documents",    label: "Documents",       sub: "Review & approve docs", Icon: FolderIcon,  color: "#EFF9F7",          iconColor: "#24655E" },
   { id: "analytics",    label: "Analytics",       sub: "Charts & trends",       Icon: BarChart2,   color: "#DBEAFE",          iconColor: "#1D4ED8" },
   { id: "notifications",label: "Notifications",   sub: "Broadcast to users",    Icon: Bell,        color: "#FEF3C7",          iconColor: "#B45309" },
-  { id: "team",          label: "Team Members",   sub: "Invite & manage roles", Icon: Shield,      color: "#DCFCE7",          iconColor: "#15803D" },
+  { id: "team",          label: "Team Members",   sub: "Invite & manage roles", Icon: Shield,      color: "#DDF3F0",          iconColor: "#24655E" },
   { id: "settings",     label: "Settings",        sub: "App configuration",     Icon: Settings,    color: "#F5F3FF",          iconColor: "#6D28D9" },
 ];
 
@@ -236,7 +236,7 @@ export default function Dashboard() {
               <StatCard label="Consultations"  value={String(overview?.total_consultations ?? 0)} Icon={Phone}       color="#FEF3C7"            iconColor="#92400E" />
               <StatCard label="Leads"          value={String(overview?.total_leads ?? 0)}        Icon={Target}       color="#FEE2E2"            iconColor="#DC2626" />
               <StatCard label="Schemes"        value={String(overview?.total_schemes ?? 0)}      Icon={Landmark}     color={colors.surfaceAlt}  iconColor={colors.textMuted} />
-              <StatCard label="Conversion"     value={`${overview?.conversion_rate ?? 0}%`}      Icon={Percent}      color="#F0FDF4"            iconColor="#15803D" />
+              <StatCard label="Conversion"     value={`${overview?.conversion_rate ?? 0}%`}      Icon={Percent}      color="#EFF9F7"            iconColor="#24655E" />
               <StatCard label="Scheme Views"   value={String(overview?.scheme_views ?? 0)}       Icon={Eye}          color="#FFF7ED"            iconColor="#C2410C" />
             </View>
 
@@ -639,14 +639,14 @@ const styles = StyleSheet.create({
   logoName: {
     fontSize: 18,
     fontFamily: fonts.displayBold,
-    color: "#0D4A47",
+    color: colors.primaryDark,
     letterSpacing: 1.5,
     lineHeight: 22,
   },
   logoTagline: {
     fontSize: 10,
     fontFamily: fonts.medium,
-    color: "#0D9488",
+    color: colors.primary,
     letterSpacing: 0.5,
   },
   greeting: {
@@ -851,13 +851,13 @@ const styles = StyleSheet.create({
   waBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#25D366",
+    backgroundColor: colors.primary,
     borderRadius: radius.xl,
     padding: spacing.sm2,
     paddingVertical: 14,
     marginBottom: 10,
     ...elevation.l1,
-    shadowColor: "#25D366",
+    shadowColor: colors.primary,
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,

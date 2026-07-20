@@ -33,7 +33,7 @@ const H_PAD: Record<Size, number> = { lg: 20, md: 18, sm: 14 };
 const RADIUS: Record<Size, number> = { lg: 14, md: 12, sm: 10 };
 
 const VARIANTS: Record<Variant, { bg: string; text: string; border?: string; disabledBg: string; disabledText: string }> = {
-  primary: { bg: colors.primary, text: "#FFF", disabledBg: "#A7F3D0", disabledText: "rgba(255,255,255,0.6)" },
+  primary: { bg: colors.primary, text: "#FFF", disabledBg: "#BCE7E2", disabledText: "rgba(255,255,255,0.6)" },
   secondary: { bg: "#FFF", text: colors.primaryDark, border: colors.primary, disabledBg: "#FFF", disabledText: colors.textPlaceholder },
   tertiary: { bg: colors.primarySoft, text: colors.primaryDark, disabledBg: colors.primarySoft, disabledText: colors.textPlaceholder },
   ghost: { bg: "transparent", text: colors.primary, disabledBg: "transparent", disabledText: colors.textPlaceholder },

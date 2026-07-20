@@ -31,7 +31,7 @@ export default function ReviewingDocumentsExpression({ size = 120 }: { size?: nu
       <Path d="M74 61 L90 61" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" />
       <Path d="M74 66 L85 66" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" />
       {/* Checkmark on doc */}
-      <Path d="M74 72 L77 75 L84 68" stroke="#22C55E" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M74 72 L77 75 L84 68" stroke="#37988C" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       {/* Arms holding document */}
       <Path d="M32 70 Q28 62 36 54" stroke="#FEF9C3" strokeWidth="7" fill="none" strokeLinecap="round" />
       <Path d="M88 70 Q84 60 70 54" stroke="#FEF9C3" strokeWidth="7" fill="none" strokeLinecap="round" />

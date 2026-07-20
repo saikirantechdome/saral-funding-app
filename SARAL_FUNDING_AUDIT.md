@@ -197,7 +197,7 @@
 | # | Screen | Issue |
 |---|---|---|
 | U1 | All screens | **Emoji used as all icons** — inconsistent rendering across Android OEM, looks amateur |
-| U2 | Dashboard | **Green hero card (#22C55E) with white text** — score readable but supporting stats ("Eligible Funding", "Estimated Subsidy") use low-contrast label text (#DCFCE7 on green) |
+| U2 | Dashboard | **Green hero card (#37988C) with white text** — score readable but supporting stats ("Eligible Funding", "Estimated Subsidy") use low-contrast label text (#DDF3F0 on green) |
 | U3 | All screens | **No custom font** — system default font (Roboto/San Francisco) — no premium feel |
 | U4 | Login | **Logo is a green square with "S"** — not a real brand mark |
 | U5 | Dashboard | **No visual hierarchy between card types** — readiness, alerts, bank, CTAs all look identical |

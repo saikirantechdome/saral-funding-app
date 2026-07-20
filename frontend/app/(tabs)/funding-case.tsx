@@ -103,7 +103,7 @@ export default function FundingCase() {
           <View style={s.adminRecCard}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <View style={s.adminRecIconWrap}>
-                <Star size={14} color="#065F46" strokeWidth={2.5} />
+                <Star size={14} color="#1E534C" strokeWidth={2.5} />
               </View>
               <Text style={s.adminRecTitle}>Advisor Recommendation</Text>
             </View>
@@ -533,26 +533,26 @@ const s = StyleSheet.create({
   adminRecCard: {
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm2,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#EFF9F7",
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: "#BBF7D0",
+    borderColor: "#BCE7E2",
     padding: spacing.md,
   },
   adminRecIconWrap: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#D1FAE5",
+    backgroundColor: "#DDF3F0",
     alignItems: "center",
     justifyContent: "center",
   },
-  adminRecTitle: { fontSize: 14, fontFamily: fonts.displayBold, color: "#065F46" },
-  adminRecBody: { fontSize: 13, fontFamily: fonts.regular, color: "#065F46", lineHeight: 18 },
-  adminRecSubLabel: { fontSize: 10, fontFamily: fonts.bold, color: "#065F46", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
-  adminRecItem: { fontSize: 13, fontFamily: fonts.medium, color: "#065F46", lineHeight: 20 },
-  adminRecNote: { fontSize: 13, fontFamily: fonts.regular, color: "#065F46", fontStyle: "italic", marginTop: 8, lineHeight: 18 },
-  adminRecDate: { fontSize: 11, fontFamily: fonts.regular, color: "#6EE7B7", marginTop: 8 },
+  adminRecTitle: { fontSize: 14, fontFamily: fonts.displayBold, color: "#1E534C" },
+  adminRecBody: { fontSize: 13, fontFamily: fonts.regular, color: "#1E534C", lineHeight: 18 },
+  adminRecSubLabel: { fontSize: 10, fontFamily: fonts.bold, color: "#1E534C", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
+  adminRecItem: { fontSize: 13, fontFamily: fonts.medium, color: "#1E534C", lineHeight: 20 },
+  adminRecNote: { fontSize: 13, fontFamily: fonts.regular, color: "#1E534C", fontStyle: "italic", marginTop: 8, lineHeight: 18 },
+  adminRecDate: { fontSize: 11, fontFamily: fonts.regular, color: "#8FD7CE", marginTop: 8 },
 
   // Documents
   docCountPill: {

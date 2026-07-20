@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   ctaDisabled: {
-    backgroundColor: "#A7F3D0",
+    backgroundColor: "#BCE7E2",
     shadowOpacity: 0,
     elevation: 0,
   },

@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
-  bankTypePub: { color: "#4ADE80" },
+  bankTypePub: { color: "#5AC4B7" },
   bankTypePriv: { color: "#93C5FD" },
   bankHeaderName: {
     fontSize: 13,

@@ -45,11 +45,11 @@ xxl: 48px   — screen padding top
 ## Colors
 
 ### Primary (Green)
-- `primary: #22C55E` — buttons, active states, primary badges
-- `primaryDark: #15803D` — text on green backgrounds, dark variants
-- `primaryLight: #4ADE80` — gradients, lighter accents
-- `primarySoft: #EBFDF0` — backgrounds, pill fills
-- `primaryMid: #DCFCE7` — borders on primarySoft cards
+- `primary: #37988C` — buttons, active states, primary badges
+- `primaryDark: #24655E` — text on green backgrounds, dark variants
+- `primaryLight: #5AC4B7` — gradients, lighter accents
+- `primarySoft: #EFF9F7` — backgrounds, pill fills
+- `primaryMid: #DDF3F0` — borders on primarySoft cards
 
 ### Surfaces
 - `surface (bg): #FFFFFF` — cards, modals
@@ -66,7 +66,7 @@ xxl: 48px   — screen padding top
 - `danger: #EF4444` — errors, destructive actions
 - `dangerSoft: #FEF2F2` — error input backgrounds
 - `warning: #F59E0B` — caution states (collateral required)
-- `success: #16A34A` — positive confirmation
+- `success: #2D7C72` — positive confirmation
 
 **Rule:** Never use blue. Any blue-leaning state (info, bank type) uses the semantic color rather than `#3B82F6`.
 
@@ -103,7 +103,7 @@ Location: `src/components/ui/Button.tsx`
 
 | Variant | Background | Text | Use |
 |---|---|---|---|
-| `primary` | `#22C55E` | white | Main CTAs (Save, Continue, Book) |
+| `primary` | `#37988C` | white | Main CTAs (Save, Continue, Book) |
 | `secondary` | white + green border | primaryDark | Secondary actions |
 | `tertiary` | primarySoft | primaryDark | Inline chip-style actions |
 | `ghost` | transparent | primary | Links within content |

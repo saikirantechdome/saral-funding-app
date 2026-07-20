@@ -60,4 +60,4 @@ Funding fit, industry, state, GST + Udyam (private bank gating), turnover, colla
 - Expert dashboard split-out (`/admin/experts/*` reserved)
 
 ## Brand
-Green `#22C55E` / dark green `#15803D` / black / white. No blue, no gradients, no glassmorphism. Existing UI preserved; V1 adds widgets without redesign.
+Green `#37988C` / dark green `#24655E` / black / white. No blue, no gradients, no glassmorphism. Existing UI preserved; V1 adds widgets without redesign.

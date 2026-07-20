@@ -36,8 +36,8 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const STAGE_COLORS: Record<string, string> = {
-  approved:  "#16a34a",
-  disbursed: "#15803d",
+  approved:  "#2D7C72",
+  disbursed: "#24655E",
   rejected:  "#dc2626",
 };
 
@@ -123,7 +123,7 @@ function AppCard({ app, expanded, onToggle }: {
       {/* Header */}
       <TouchableOpacity style={s.cardHeader} onPress={onToggle} activeOpacity={0.8}>
         <View style={[s.schemeIcon, isDisbursed && s.schemeIconGreen, isRejected && s.schemeIconRed]}>
-          <FileText size={18} color={isRejected ? "#dc2626" : isDisbursed ? "#15803d" : colors.primary} strokeWidth={2} />
+          <FileText size={18} color={isRejected ? "#dc2626" : isDisbursed ? "#24655E" : colors.primary} strokeWidth={2} />
         </View>
         <View style={s.cardHeaderText}>
           <Text style={s.schemeName} numberOfLines={1}>{app.scheme_name}</Text>
@@ -217,7 +217,7 @@ function AppCard({ app, expanded, onToggle }: {
 
 function StagePill({ stage, label }: { stage: string; label: string }) {
   const bg = stage === "approved" || stage === "disbursed"
-    ? "#dcfce7" : stage === "rejected"
+    ? "#DDF3F0" : stage === "rejected"
     ? "#fee2e2" : "#eff6ff";
   const fg = STAGE_COLORS[stage] ?? colors.primary;
   return (
@@ -249,7 +249,7 @@ const s = StyleSheet.create({
   cardHeader:      { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.md },
   schemeIcon:      { width: 40, height: 40, borderRadius: radius.md, backgroundColor: "#eff6ff",
                      alignItems: "center", justifyContent: "center" },
-  schemeIconGreen: { backgroundColor: "#dcfce7" },
+  schemeIconGreen: { backgroundColor: "#DDF3F0" },
   schemeIconRed:   { backgroundColor: "#fee2e2" },
   cardHeaderText:  { flex: 1, gap: 4 },
   schemeName:      { fontSize: 15, fontFamily: fonts.semiBold, color: colors.text },

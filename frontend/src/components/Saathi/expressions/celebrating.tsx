@@ -7,7 +7,7 @@ export default function CelebratingExpression({ size = 120 }: { size?: number })
       <Rect x="12" y="20" width="6" height="6" rx="1" fill="#FCD34D" transform="rotate(20 12 20)" />
       <Rect x="100" y="18" width="5" height="5" rx="1" fill="#F87171" transform="rotate(-15 100 18)" />
       <Rect x="22" y="14" width="4" height="4" rx="1" fill="#60A5FA" transform="rotate(35 22 14)" />
-      <Rect x="88" y="26" width="4" height="8" rx="2" fill="#34D399" transform="rotate(-20 88 26)" />
+      <Rect x="88" y="26" width="4" height="8" rx="2" fill="#5AC4B7" transform="rotate(-20 88 26)" />
       <Circle cx="18" cy="35" r="3" fill="#A78BFA" />
       <Circle cx="102" cy="36" r="3" fill="#FCA5A5" />
       {/* Body */}

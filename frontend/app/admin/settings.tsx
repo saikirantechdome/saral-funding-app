@@ -87,8 +87,8 @@ export default function AdminSettings() {
             {/* WhatsApp */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: "#DCFCE7" }]}>
-                  <Phone size={14} color="#15803D" strokeWidth={2} />
+                <View style={[styles.sectionIcon, { backgroundColor: "#DDF3F0" }]}>
+                  <Phone size={14} color="#24655E" strokeWidth={2} />
                 </View>
                 <Text style={styles.sectionTitle}>WhatsApp Support</Text>
               </View>

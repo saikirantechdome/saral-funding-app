@@ -153,7 +153,7 @@ export default function AdminAnalytics() {
 
   const maxPop = Math.max(1, ...(data.popular_schemes || []).map((p: any) => p.matches));
   const maxState = Math.max(1, ...(data.state_distribution || []).map((s: any) => s.count));
-  const stateColors = ["#22C55E", "#16A34A", "#4ADE80", "#86EFAC", "#BBF7D0"];
+  const stateColors = ["#37988C", "#2D7C72", "#5AC4B7", "#8FD7CE", "#BCE7E2"];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-analytics">

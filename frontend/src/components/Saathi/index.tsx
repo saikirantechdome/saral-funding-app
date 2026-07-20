@@ -20,7 +20,7 @@ const EXPRESSIONS: Record<SaathiExpression, React.ComponentType<{ size?: number 
 };
 
 const BUBBLE_COLORS: Record<SaathiExpression, string> = {
-  happy: "#DCFCE7",
+  happy: "#DDF3F0",
   thinking: "#EDE9FE",
   explaining: "#DBEAFE",
   celebrating: "#FEF9C3",
@@ -28,7 +28,7 @@ const BUBBLE_COLORS: Record<SaathiExpression, string> = {
 };
 
 const BUBBLE_BORDER: Record<SaathiExpression, string> = {
-  happy: "#BBF7D0",
+  happy: "#BCE7E2",
   thinking: "#C4B5FD",
   explaining: "#BFDBFE",
   celebrating: "#FDE68A",
