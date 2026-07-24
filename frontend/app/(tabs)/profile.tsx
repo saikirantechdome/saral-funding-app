@@ -236,7 +236,13 @@ export default function Profile() {
                 <InfoRow label="Stage" value={bp?.business_stage} />
                 <InfoRow label="Industry" value={bp?.industry} />
                 <InfoRow label="GST" value={bp?.gst_available ? "Registered" : "Not registered"} />
-                <InfoRow label="Udyam" value={bp?.udyam_available ? "Registered" : "Not registered"} last />
+                <InfoRow label="Udyam" value={bp?.udyam_available ? "Registered" : "Not registered"} last={!bp?.business_activity} />
+                {bp?.business_activity && (
+                  <View style={infoStyles.activityBlock}>
+                    <Text style={infoStyles.activityLabel}>Business Activity</Text>
+                    <Text style={infoStyles.activityValue}>{bp.business_activity}</Text>
+                  </View>
+                )}
               </View>
             </View>
           )}
@@ -345,6 +351,22 @@ const infoStyles = StyleSheet.create({
     color: colors.text,
     maxWidth: "55%",
     textAlign: "right",
+  },
+  activityBlock: {
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+  },
+  activityLabel: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  activityValue: {
+    fontSize: 13,
+    fontFamily: fonts.semiBold,
+    color: colors.text,
+    lineHeight: 18,
   },
   editRow: {
     flexDirection: "row",

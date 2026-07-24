@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Bell, Target, Building2, Zap, CheckCheck } from "lucide-react-native";
+import { Bell, Target, Building2, Zap, CheckCheck, CheckCircle2, Info } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
@@ -24,6 +24,7 @@ function notifIcon(type: string) {
     consultation_reminder: { icon: Bell, bg: "#EDE9FE", color: "#5B21B6" },
     platform: { icon: Bell, bg: "#EEF2FF", color: "#4F46E5" },
     reminder: { icon: Bell, bg: "#EDE9FE", color: "#5B21B6" },
+    recommendation: { icon: CheckCircle2, bg: "#DBEAFE", color: "#1D4ED8" },
   };
   return cfg[type] ?? { icon: Info, bg: colors.surfaceAlt, color: colors.textMuted };
 }

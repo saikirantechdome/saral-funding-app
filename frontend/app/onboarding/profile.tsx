@@ -85,7 +85,7 @@ export default function ProfileScreen() {
           />
           <Input
             testID="district"
-            label="District"
+            label="City"
             value={district}
             onChangeText={setDistrict}
             placeholder="e.g. Surat"

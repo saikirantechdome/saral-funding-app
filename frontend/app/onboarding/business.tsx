@@ -60,6 +60,7 @@ export default function BusinessScreen() {
   const router = useRouter();
   const [stage, setStage] = useState<"existing" | "new">("new");
   const [industry, setIndustry] = useState("");
+  const [activity, setActivity] = useState("");
   const [funding, setFunding] = useState("");
   const [turnover, setTurnover] = useState("");
   const [employees, setEmployees] = useState("");
@@ -84,6 +85,7 @@ export default function BusinessScreen() {
         apiPost("/business-profile", {
           business_stage: stage,
           industry,
+          business_activity: activity.trim(),
           funding_required: Number(funding || 0),
           annual_turnover: Number(turnover || 0),
           employees: Number(employees || 0),
@@ -147,6 +149,18 @@ export default function BusinessScreen() {
           </View>
 
           <Picker label="Industry / Sector" testID="industry" value={industry} options={INDUSTRIES} onChange={setIndustry} />
+
+          <Input
+            testID="activity"
+            label="Business Activity"
+            value={activity}
+            onChangeText={setActivity}
+            placeholder="e.g. Manufacturing of steel almirahs and furniture for retail customers"
+            helper="Describe what your business does in your own words — helps us match sector-specific schemes"
+            multiline
+            maxLength={300}
+            showCount
+          />
 
           <Input
             testID="funding"

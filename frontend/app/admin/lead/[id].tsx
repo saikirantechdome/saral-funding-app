@@ -395,6 +395,7 @@ export default function LeadDetail() {
         {(bp.industry || bp.business_stage) && (
           <SectionCard title="Business Profile">
             <InfoRow icon={<Building2 size={13} color={colors.textDim} />} label="Industry" value={bp.industry || "—"} />
+            <InfoRow icon={<FileText size={13} color={colors.textDim} />} label="Business Activity" value={bp.business_activity || ""} />
             <InfoRow icon={<Tag size={13} color={colors.textDim} />} label="Stage" value={bp.business_stage || "—"} />
             <InfoRow icon={<DollarSign size={13} color={colors.textDim} />} label="Annual Turnover" value={bp.annual_turnover ? formatINR(bp.annual_turnover) : "—"} />
             <InfoRow icon={<CheckCircle2 size={13} color={colors.textDim} />} label="GST" value={bp.gst_available ? "Registered" : "Not Registered"} />

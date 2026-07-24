@@ -382,7 +382,7 @@ export default function Dashboard() {
           >
             <Phone size={20} color={colors.primaryDark} strokeWidth={2} />
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.qaTitle}>Free Consultation</Text>
+              <Text style={styles.qaTitle}>Book a Consultation Call</Text>
               <Text style={styles.qaSub}>30-min advisor call</Text>
             </View>
             <ChevronRight size={16} color={colors.primaryDark} strokeWidth={2} />

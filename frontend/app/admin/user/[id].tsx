@@ -188,8 +188,11 @@ export default function UserDetail() {
           <View style={s.sectionCard}>
             <Text style={s.sectionLabel}>Business</Text>
             <Text style={s.sectionValue}>{business.business_name || "—"}</Text>
-            {business.business_type && (
-              <Text style={s.sectionMeta}>{business.business_type} · {business.industry || "—"}</Text>
+            {(business.business_stage || business.industry) && (
+              <Text style={s.sectionMeta}>{business.business_stage || "—"} · {business.industry || "—"}</Text>
+            )}
+            {business.business_activity && (
+              <Text style={s.sectionActivity}>{business.business_activity}</Text>
             )}
           </View>
         )}
@@ -352,6 +355,7 @@ const s = StyleSheet.create({
   sectionLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 },
   sectionValue: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text },
   sectionMeta: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 2 },
+  sectionActivity: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 6, lineHeight: 17 },
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10, marginTop: 4 },
   sectionTitle: { flex: 1, fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
   addBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.primarySoft, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },

@@ -188,6 +188,7 @@ class ProfileIn(BaseModel):
 class BusinessProfileIn(BaseModel):
     business_stage: str
     industry: str
+    business_activity: Optional[str] = ""
     funding_required: int
     annual_turnover: int
     employees: int
