@@ -6,7 +6,7 @@ import requests
 BASE_URL = (
     os.environ.get("EXPO_PUBLIC_BACKEND_URL")
     or os.environ.get("EXPO_BACKEND_URL")
-    or "https://app-publish-ready-1.preview.emergentagent.com"
+    or "https://sai-fund-deploy.preview.emergentagent.com"
 ).rstrip("/")
 
 
