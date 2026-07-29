@@ -9,7 +9,7 @@
       "android": {
         "buildType": "apk",
         "env": {
-          "EXPO_PUBLIC_BACKEND_URL": "https://saral-funding-app.onrender.com/api"
+          "EXPO_PUBLIC_BACKEND_URL": "https://saralfunding-backend-production.up.railway.app"
         }
       }
     },
@@ -17,7 +17,7 @@
       "android": {
         "buildType": "apk",
         "env": {
-          "EXPO_PUBLIC_BACKEND_URL": "https://saral-funding-app.onrender.com/api"
+          "EXPO_PUBLIC_BACKEND_URL": "https://saralfunding-backend-production.up.railway.app"
         }
       }
     },
@@ -25,12 +25,12 @@
       "android": {
         "buildType": "app-bundle",
         "env": {
-          "EXPO_PUBLIC_BACKEND_URL": "https://saral-funding-app.onrender.com/api"
+          "EXPO_PUBLIC_BACKEND_URL": "https://saralfunding-backend-production.up.railway.app"
         }
       },
       "ios": {
         "env": {
-          "EXPO_PUBLIC_BACKEND_URL": "https://saral-funding-app.onrender.com/api"
+          "EXPO_PUBLIC_BACKEND_URL": "https://saralfunding-backend-production.up.railway.app"
         }
       }
     }
