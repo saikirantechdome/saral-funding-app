@@ -5,8 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CheckCircle2, FileText, ChevronDown, ChevronUp, TrendingUp, Zap, MapPin, Tag, Phone } from "lucide-react-native";
 
@@ -127,6 +129,11 @@ function StepItem({ index, text }: { index: number; text: string }) {
       <Text style={detStyles.stepText}>{text}</Text>
     </View>
   );
+}
+
+function schemeWhatsAppUrl(schemeName: string) {
+  const text = `Hey team, I am looking for scheme details for ${schemeName} to apply. Can you help me?`;
+  return `https://wa.me/919893869899?text=${encodeURIComponent(text)}`;
 }
 
 const detStyles = StyleSheet.create({
@@ -282,6 +289,16 @@ export default function SchemeDetail() {
           <Phone size={16} color="#FFF" strokeWidth={2} />
           <Text style={styles.ctaText}>Book Free Consultation</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          testID="scheme-whatsapp-cta"
+          style={styles.whatsappCta}
+          onPress={() => Linking.openURL(schemeWhatsAppUrl(scheme.name))}
+          activeOpacity={0.85}
+        >
+          <MaterialCommunityIcons name="whatsapp" size={18} color={colors.primaryDark} />
+          <Text style={styles.whatsappCtaText}>Contact us on WhatsApp</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -399,5 +416,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.displayBold,
     color: "#FFF",
+  },
+  whatsappCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 10,
+    backgroundColor: colors.primarySoft,
+    paddingVertical: 15,
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  whatsappCtaText: {
+    fontSize: 15,
+    fontFamily: fonts.displayBold,
+    color: colors.primaryDark,
   },
 });

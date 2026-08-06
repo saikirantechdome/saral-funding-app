@@ -15,6 +15,8 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 import {
@@ -72,6 +74,7 @@ const badge = StyleSheet.create({
 
 function UserDocumentsTab() {
   const router = useRouter();
+  const tabBarHeight = useBottomTabBarHeight();
   const [docs, setDocs] = useState<any[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
@@ -222,7 +225,7 @@ function UserDocumentsTab() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: tabBarHeight + 24 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Upload section */}
@@ -247,7 +250,7 @@ function UserDocumentsTab() {
             activeOpacity={0.8}
             testID="bulk-upload-whatsapp-cta"
           >
-            <Text style={{ fontSize: 14 }}>💬</Text>
+            <MaterialCommunityIcons name="whatsapp" size={16} color={colors.primaryDark} />
             <Text style={s.bulkUploadBtnText}>Bulk upload? Contact us on WhatsApp</Text>
           </TouchableOpacity>
 
@@ -542,6 +545,7 @@ const STATUS_CFG: Record<string, { bg: string; color: string }> = {
 };
 
 function AdminUserDocuments() {
+  const tabBarHeight = useBottomTabBarHeight();
   const [allDocs, setAllDocs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -651,7 +655,7 @@ function AdminUserDocuments() {
           <FlatList
             data={userList}
             keyExtractor={(u) => u.id}
-            contentContainerStyle={{ padding: spacing.md, paddingBottom: 100 }}
+            contentContainerStyle={{ padding: spacing.md, paddingBottom: tabBarHeight + 24 }}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -721,7 +725,7 @@ function AdminUserDocuments() {
       <FlatList
         data={selectedDocs}
         keyExtractor={(d) => d.id}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: tabBarHeight + 24 }}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         renderItem={({ item: doc }) => {

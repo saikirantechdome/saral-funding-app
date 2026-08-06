@@ -132,6 +132,7 @@ export default function AdminUsers() {
             returnKeyType="search"
           />
         </View>
+        {/* Export only works on web (uses browser download APIs), hidden on mobile.
         <TouchableOpacity
           testID="export-users"
           style={styles.exportBtn}
@@ -140,6 +141,7 @@ export default function AdminUsers() {
         >
           <Download size={16} color={colors.primaryDark} strokeWidth={2} />
         </TouchableOpacity>
+        */}
       </View>
 
       {!loading && (

@@ -13,6 +13,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   ChevronRight, TrendingUp, Building2, AlertCircle,
@@ -31,6 +32,7 @@ type Readiness = { score: number; max: number; actions: ReadinessAction[]; break
 
 export default function FundingCase() {
   const router = useRouter();
+  const tabBarHeight = useBottomTabBarHeight();
   const [matches, setMatches] = useState<Match[]>([]);
   const [banks, setBanks] = useState<BankRec[]>([]);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
@@ -81,7 +83,7 @@ export default function FundingCase() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="funding-case-screen">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

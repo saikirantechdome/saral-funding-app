@@ -81,28 +81,30 @@ export default function BusinessScreen() {
     if (!valid) return;
     setLoading(true);
     try {
-      await Promise.all([
-        apiPost("/business-profile", {
-          business_stage: stage,
-          industry,
-          business_activity: activity.trim(),
-          funding_required: Number(funding || 0),
-          annual_turnover: Number(turnover || 0),
-          employees: Number(employees || 0),
-          gst_available: gst,
-          udyam_available: udyam,
-        }),
-        apiPost("/funding-assessment", {
-          business_type: industry,
-          funding_requirement: Number(funding || 0),
-          business_location: location,
-          existing_business: stage === "existing",
-          woman_entrepreneur: woman,
-          gst_registration: gst,
-          udyam_registration: udyam,
-          existing_loans: loans,
-        }),
-      ]);
+      // Sequential, not Promise.all: both endpoints write onboarding_step
+      // ("assessment" then "done"). Firing them concurrently races the two
+      // writes and can leave onboarding_step stuck on "assessment" forever,
+      // sending a fully-onboarded user back into this form on every relaunch.
+      await apiPost("/business-profile", {
+        business_stage: stage,
+        industry,
+        business_activity: activity.trim(),
+        funding_required: Number(funding || 0),
+        annual_turnover: Number(turnover || 0),
+        employees: Number(employees || 0),
+        gst_available: gst,
+        udyam_available: udyam,
+      });
+      await apiPost("/funding-assessment", {
+        business_type: industry,
+        funding_requirement: Number(funding || 0),
+        business_location: location,
+        existing_business: stage === "existing",
+        woman_entrepreneur: woman,
+        gst_registration: gst,
+        udyam_registration: udyam,
+        existing_loans: loans,
+      });
       router.replace("/documents");
     } finally {
       setLoading(false);
@@ -112,7 +114,7 @@ export default function BusinessScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="business-onboarding">
       <BackBar title="Business Profile" onBack={() => router.back()} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"

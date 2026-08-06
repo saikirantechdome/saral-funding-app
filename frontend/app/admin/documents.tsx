@@ -12,7 +12,7 @@ import {
   ScrollView,
   Linking,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   CheckCircle2,
@@ -50,6 +50,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function AdminDocuments() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [docs, setDocs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -276,7 +277,7 @@ export default function AdminDocuments() {
       {/* Reject modal */}
       <Modal visible={!!rejectDoc} transparent animationType="slide" onRequestClose={() => setRejectDoc(null)}>
         <View style={s.modalOverlay}>
-          <View style={s.modalSheet}>
+          <View style={[s.modalSheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>Reject Document</Text>
               <TouchableOpacity onPress={() => setRejectDoc(null)}>

@@ -178,11 +178,11 @@ class UserOut(BaseModel):
 
 class ProfileIn(BaseModel):
     full_name: str
-    state: str
-    district: str
-    gender: str
-    age: int
-    category: str
+    state: Optional[str] = None
+    district: Optional[str] = None
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    category: Optional[str] = None
 
 
 class BusinessProfileIn(BaseModel):
@@ -459,7 +459,11 @@ async def bootstrap_admin(user=Depends(get_current_user)):
 @api_router.post("/profile")
 async def save_profile(body: ProfileIn, request: Request, user=Depends(get_current_user)):
     update = body.dict()
-    update["onboarding_step"] = "business"
+    # This endpoint doubles as "edit profile" for already-onboarded users
+    # (Profile tab). Only advance the onboarding step forward if the user is
+    # still on the initial profile step — never regress a completed user.
+    if user.get("onboarding_step") == "profile":
+        update["onboarding_step"] = "business"
     update["updated_at"] = now_iso()
     await db.users.update_one({"id": user["id"]}, {"$set": update})
     updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})

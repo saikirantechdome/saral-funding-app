@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, SectionList, TextInput } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronDown, Check, Search } from "lucide-react-native";
 import { colors, spacing, radius, fonts } from "@/src/theme";
 
@@ -28,6 +29,7 @@ export default function Picker({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const insets = useSafeAreaInsets();
 
   const borderColor = error ? colors.danger : open ? colors.primary : colors.border;
   const bgColor = error ? colors.dangerSoft : open ? "#FFF" : colors.surface2;
@@ -77,7 +79,7 @@ export default function Picker({
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={close}>
-          <View style={styles.sheet} onStartShouldSetResponder={() => true}>
+          <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]} onStartShouldSetResponder={() => true}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>{label}</Text>
 

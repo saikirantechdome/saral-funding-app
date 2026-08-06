@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, ScrollView, Modal, TextInput, Alert, Linking, Share,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { X, User, Calendar, Clock, StickyNote, Phone, Video, Copy } from "lucide-react-native";
 
@@ -29,6 +29,7 @@ const pillStyles = StyleSheet.create({
 
 export default function AdminConsultations() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -146,7 +147,7 @@ export default function AdminConsultations() {
 
       <Modal visible={!!editing} animationType="slide" transparent onRequestClose={() => setEditing(null)}>
         <View style={styles.modalBg}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.sheetHeader}>
               <View>
                 <Text style={styles.sheetTitle}>{editing?.user?.full_name || "Consultation"}</Text>

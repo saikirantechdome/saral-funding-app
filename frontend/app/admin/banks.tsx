@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator,
   Modal, ScrollView, TextInput, Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Banknote, ChevronRight, Building2, Plus, X } from "lucide-react-native";
 
@@ -16,6 +16,7 @@ const BANK_TYPES = ["Public", "Private", "Development", "Small Finance Bank", "N
 
 export default function AdminBanks() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState("");
@@ -133,7 +134,7 @@ export default function AdminBanks() {
       {/* Create Bank Modal */}
       <Modal visible={showCreate} transparent animationType="slide" onRequestClose={() => setShowCreate(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create Bank</Text>
               <TouchableOpacity onPress={() => setShowCreate(false)}>

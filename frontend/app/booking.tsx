@@ -10,7 +10,7 @@ import {
   Linking,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Animated, { FadeIn, SlideInUp } from "react-native-reanimated";
 import { CheckCircle2, Calendar, Clock, Phone, ChevronRight, Video, Copy } from "lucide-react-native";
@@ -42,10 +42,14 @@ function nextDates(n: number) {
 
 // Confirmation screen with animation
 function ConfirmationView({ done, onBack }: { done: any; onBack: () => void }) {
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="booking-confirmed">
       <BackBar title="Booking Confirmed" onBack={onBack} />
-      <View style={confirmStyles.wrap}>
+      <ScrollView
+        contentContainerStyle={[confirmStyles.wrap, { paddingBottom: spacing.lg + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View entering={FadeIn.duration(400)} style={confirmStyles.checkCircle}>
           <CheckCircle2 size={48} color="#FFF" strokeWidth={2} />
         </Animated.View>
@@ -126,13 +130,13 @@ function ConfirmationView({ done, onBack }: { done: any; onBack: () => void }) {
           <Text style={confirmStyles.ctaText}>Back to Dashboard</Text>
           <ChevronRight size={18} color="#FFF" strokeWidth={2.5} />
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const confirmStyles = StyleSheet.create({
-  wrap: { flex: 1, alignItems: "center", padding: spacing.lg, paddingTop: 40 },
+  wrap: { flexGrow: 1, alignItems: "center", padding: spacing.lg, paddingTop: 40 },
   checkCircle: {
     width: 96,
     height: 96,
@@ -232,6 +236,7 @@ const confirmStyles = StyleSheet.create({
 
 export default function Booking() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [type, setType] = useState("");
   const [date, setDate] = useState("");
   const [slot, setSlot] = useState("");
@@ -331,7 +336,7 @@ export default function Booking() {
       </ScrollView>
 
       {/* Footer CTA */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: (Platform.OS === "ios" ? 32 : spacing.md) + insets.bottom }]}>
         {canBook && (
           <Text style={styles.footerMeta}>
             {type} on {date} at {slot}

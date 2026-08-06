@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -88,6 +90,9 @@ export default function Otp() {
       );
       await setTokens(r.token, r.refresh_token);
       const step = r.user.onboarding_step;
+      // Drop login/otp from history so the hardware back button from the
+      // destination screen doesn't pop back into the auth flow.
+      if (router.canDismiss()) router.dismissAll();
       if (step === "profile") router.replace("/onboarding/profile");
       else if (step === "business") router.replace("/onboarding/business");
       else if (step === "assessment") router.replace("/onboarding/business");
@@ -118,8 +123,12 @@ export default function Otp() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="otp-screen">
       <BackBar title="" onBack={() => router.back()} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.body}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Icon */}
           <View style={styles.iconWrap}>
             <ShieldCheck size={32} color={colors.primaryDark} strokeWidth={1.5} />
@@ -188,19 +197,25 @@ export default function Otp() {
             loading={loading}
             size="lg"
           />
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const BOX_SIZE = 52;
+const OTP_GAP = 8;
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const BOX_SIZE = Math.min(
+  56,
+  Math.floor((SCREEN_WIDTH - spacing.lg * 2 - OTP_GAP * (OTP_LENGTH - 1)) / OTP_LENGTH),
+);
 
 const styles = StyleSheet.create({
   body: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: 24,
+    paddingBottom: 24,
   },
   iconWrap: {
     width: 64,
@@ -231,7 +246,7 @@ const styles = StyleSheet.create({
   },
   boxRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: OTP_GAP,
     justifyContent: "center",
     marginBottom: 8,
   },
@@ -243,8 +258,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface2,
     textAlign: "center",
-    fontSize: 22,
-    fontFamily: fonts.displayBold,
+    fontSize: 20,
+    // Plain system font, not the custom DM Sans family — some Android
+    // devices were rendering the custom font's digits here with a visible
+    // slant, making the code hard to read. The system font renders crisp
+    // and upright everywhere.
+    fontWeight: "700",
     color: colors.text,
   },
   boxFilled: {

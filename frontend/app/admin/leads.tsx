@@ -11,7 +11,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { X, ChevronRight, User, Phone, MapPin, DollarSign, StickyNote } from "lucide-react-native";
 
@@ -36,6 +36,7 @@ const pillStyles = StyleSheet.create({
 
 export default function AdminLeads() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -192,7 +193,7 @@ export default function AdminLeads() {
         onRequestClose={() => setEditing(null)}
       >
         <View style={styles.modalBg}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.sheetHeader}>
               <View>
                 <Text style={styles.sheetTitle}>{editing?.full_name || "Lead"}</Text>

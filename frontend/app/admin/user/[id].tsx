@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Modal, Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   User, MapPin, Phone, Landmark, ChevronRight,
@@ -41,6 +41,7 @@ function StagePill({ stage }: { stage: string }) {
 
 export default function UserDetail() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [user, setUser] = useState<any>(null);
@@ -292,7 +293,7 @@ export default function UserDetail() {
       {/* Assign Scheme Modal */}
       <Modal visible={showModal} transparent animationType="slide" onRequestClose={() => setShowModal(false)}>
         <View style={s.modalOverlay}>
-          <View style={s.modalSheet}>
+          <View style={[s.modalSheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>Assign Scheme</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
@@ -362,7 +363,7 @@ const s = StyleSheet.create({
   addBtnText: { fontSize: 12, fontFamily: fonts.bold, color: colors.primaryDark },
   emptyBox: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: "center", gap: 8 },
   emptyText: { fontSize: 13, fontFamily: fonts.medium, color: colors.textMuted },
-  assignBtn: { backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: 12, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  assignBtn: { backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: 12, paddingHorizontal: 24, alignItems: "center", justifyContent: "center", marginTop: 4 },
   assignBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
   appCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center", gap: 10 },
   schemeIcon: { width: 36, height: 36, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },

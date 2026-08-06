@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform, Image } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { CheckCircle2 } from "lucide-react-native";
 
@@ -10,6 +10,7 @@ import Button from "@/src/components/ui/Button";
 
 export default function LanguageScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState("en");
 
   useEffect(() => { loadLang().then(() => setSelected(getLang())); }, []);
@@ -68,7 +69,7 @@ export default function LanguageScreen() {
         }}
       />
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: (Platform.OS === "ios" ? 36 : spacing.md) + insets.bottom }]}>
         <Button
           testID="lang-continue"
           label="Continue"

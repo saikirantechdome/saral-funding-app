@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronDown, Check, Search, X } from "lucide-react-native";
 import { colors, spacing, radius, fonts } from "@/src/theme";
 
@@ -23,6 +24,7 @@ export default function MultiSelectPicker({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const insets = useSafeAreaInsets();
 
   const allGroups: OptionGroup[] = groups ?? [{ label: "", options: options ?? [] }];
 
@@ -64,7 +66,7 @@ export default function MultiSelectPicker({
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
         <View style={styles.backdrop}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: 24 + insets.bottom }]}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>{label}</Text>

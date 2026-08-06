@@ -5,9 +5,9 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
+  Linking,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Building2, Shield, CheckCircle2, XCircle, GitCompare, ArrowRight, Clock } from "lucide-react-native";
 
@@ -15,6 +15,11 @@ import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SchemesSkeleton } from "@/src/components/SkeletonLoader";
+
+function bankApplyWhatsAppUrl(bankName: string) {
+  const text = `Hey team, I want to apply for the ${bankName} loan. Could you please help me with the next steps?`;
+  return `https://wa.me/919893869899?text=${encodeURIComponent(text)}`;
+}
 
 type Rec = {
   bank_id: string; name: string; short_name: string; type: string; score: number;
@@ -40,6 +45,7 @@ const ringStyles = StyleSheet.create({
 
 export default function BanksScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [recs, setRecs] = useState<Rec[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string[]>([]);
@@ -204,7 +210,7 @@ export default function BanksScreen() {
                 <TouchableOpacity
                   testID={`bank-apply-${item.bank_id}`}
                   style={styles.applyBtn}
-                  onPress={() => Alert.alert("Apply Now", `Opening application for ${item.name}.\n\nOur advisor will contact you with the next steps.`, [{ text: "Got it", style: "default" }])}
+                  onPress={() => Linking.openURL(bankApplyWhatsAppUrl(item.name))}
                   activeOpacity={0.85}
                 >
                   <Text style={styles.applyBtnText}>Apply Now</Text>
@@ -217,7 +223,7 @@ export default function BanksScreen() {
       />
 
       {selected.length >= 2 && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
           <TouchableOpacity
             testID="compare-go"
             style={styles.compareFooterBtn}

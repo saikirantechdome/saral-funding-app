@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Modal, TextInput, Alert, Linking,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   User, Phone, MapPin, Building2, DollarSign, StickyNote,
@@ -110,6 +110,7 @@ const tl = StyleSheet.create({
 export default function LeadDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -645,7 +646,7 @@ export default function LeadDetail() {
       {/* Stage + Notes edit modal */}
       <Modal visible={editing} animationType="slide" transparent onRequestClose={() => setEditing(false)}>
         <View style={styles.modalBg}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Update Lead</Text>
               <TouchableOpacity style={styles.closeBtn} onPress={() => setEditing(false)}>
@@ -705,7 +706,7 @@ export default function LeadDetail() {
       {/* Assign Scheme Modal */}
       <Modal visible={assignModal} animationType="slide" transparent onRequestClose={() => setAssignModal(false)}>
         <View style={styles.modalBg}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Assign Scheme</Text>
               <TouchableOpacity style={styles.closeBtn} onPress={() => setAssignModal(false)}>
@@ -780,7 +781,7 @@ export default function LeadDetail() {
       {/* Update Stage Modal */}
       <Modal visible={!!stageModal} animationType="slide" transparent onRequestClose={() => setStageModal(null)}>
         <View style={styles.modalBg}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.sheetHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.sheetTitle}>Update Stage</Text>

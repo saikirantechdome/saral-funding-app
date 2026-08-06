@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,13 @@ import {
   Modal,
   Share,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   Bell, ChevronRight, Phone, Building2, TrendingUp, AlertCircle, Calendar, Zap, FolderOpen, Landmark,
-  Users, Target, BarChart2, FolderOpen as FolderIcon, Settings, Shield, Percent, Eye, MessageSquare,
+  Users, Target, BarChart2, FolderOpen as FolderIcon, Settings, Shield,
   Banknote, Video, Copy, X,
 } from "lucide-react-native";
 
@@ -34,6 +36,7 @@ type Overview = {
   total_consultations: number; total_leads: number; total_chats: number;
   daily_active_users: number; conversion_rate: number;
   scheme_views: number; bank_recommendation_views: number;
+  total_banks: number; total_documents: number;
 };
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -49,6 +52,16 @@ function canAccess(role: string, module: string): boolean {
   return (ROLE_PERMISSIONS[role] ?? []).includes(module);
 }
 
+const STAT_DEFS = [
+  { id: "users",         label: "Total Users",   Icon: Users,      color: colors.primarySoft, iconColor: colors.primaryDark, route: "/admin/users",         key: "total_users" },
+  { id: "consultations", label: "Consultations", Icon: Phone,      color: "#FEF3C7",          iconColor: "#92400E",          route: "/admin/consultations", key: "total_consultations" },
+  { id: "leads",         label: "Leads",          Icon: Target,     color: "#FEE2E2",          iconColor: "#DC2626",          route: "/admin/leads",         key: "total_leads" },
+  { id: "schemes",       label: "Schemes",        Icon: Landmark,   color: colors.surfaceAlt,  iconColor: colors.textMuted,   route: "/admin/schemes",       key: "total_schemes" },
+  { id: "banks",         label: "Banks",          Icon: Banknote,   color: "#EFF6FF",          iconColor: "#1D4ED8",          route: "/admin/banks",         key: "total_banks" },
+  { id: "documents",     label: "Documents",      Icon: FolderIcon, color: "#EFF9F7",          iconColor: "#24655E",          route: "/(tabs)/documents",    key: "total_documents" },
+  { id: "team",          label: "Team Members",   Icon: Shield,     color: "#DDF3F0",          iconColor: "#24655E",          route: "/admin/team",          key: "total_admins" },
+] as const;
+
 const ALL_MODULES = [
   { id: "users",         label: "Users",          sub: "Manage & view",         Icon: Users,       color: colors.primarySoft, iconColor: colors.primaryDark },
   { id: "consultations", label: "Consultations",  sub: "Track & update",        Icon: Phone,       color: "#EDE9FE",          iconColor: "#5B21B6" },
@@ -62,15 +75,21 @@ const ALL_MODULES = [
   { id: "settings",     label: "Settings",        sub: "App configuration",     Icon: Settings,    color: "#F5F3FF",          iconColor: "#6D28D9" },
 ];
 
-function StatCard({ label, value, Icon, color, iconColor }: { label: string; value: string; Icon: any; color: string; iconColor: string }) {
+function StatCard({ label, value, Icon, color, iconColor, onPress, testID }: { label: string; value?: string; Icon: any; color: string; iconColor: string; onPress?: () => void; testID?: string }) {
   return (
-    <View style={statStyles.card}>
+    <TouchableOpacity
+      testID={testID}
+      style={statStyles.card}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={0.8}
+    >
       <View style={[statStyles.icon, { backgroundColor: color }]}>
         <Icon size={14} color={iconColor} strokeWidth={2} />
       </View>
-      <Text style={statStyles.value}>{value}</Text>
-      <Text style={statStyles.label}>{label}</Text>
-    </View>
+      {value != null && <Text style={statStyles.value}>{value}</Text>}
+      <Text style={[statStyles.label, value == null && { marginTop: 8 }]}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -107,6 +126,9 @@ export default function Dashboard() {
   const [hasAssignedBanks, setHasAssignedBanks] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedOnce = useRef(false);
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
 
   const load = useCallback(async () => {
     try {
@@ -152,12 +174,18 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      hasLoadedOnce.current = true;
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
+      // Only show the full skeleton on the very first load. On later tab
+      // switches, refresh silently in the background so the dashboard
+      // doesn't flash back to a loading state every time it regains focus.
+      if (!hasLoadedOnce.current) {
+        setLoading(true);
+      }
       load();
     }, [load])
   );
@@ -186,7 +214,7 @@ export default function Dashboard() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="admin-home-tab">
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -230,14 +258,18 @@ export default function Dashboard() {
             {/* Stats grid */}
             <Text style={adStyles.sectionLabel}>Overview</Text>
             <View style={adStyles.statsGrid}>
-              <StatCard label="Total Users"    value={String(overview?.total_users ?? 0)}        Icon={Users}        color={colors.primarySoft} iconColor={colors.primaryDark} />
-              <StatCard label="Daily Active"   value={String(overview?.daily_active_users ?? 0)} Icon={TrendingUp}   color="#DBEAFE"            iconColor="#1D4ED8" />
-              <StatCard label="AI Chats"       value={String(overview?.total_chats ?? 0)}        Icon={MessageSquare} color="#EDE9FE"           iconColor="#5B21B6" />
-              <StatCard label="Consultations"  value={String(overview?.total_consultations ?? 0)} Icon={Phone}       color="#FEF3C7"            iconColor="#92400E" />
-              <StatCard label="Leads"          value={String(overview?.total_leads ?? 0)}        Icon={Target}       color="#FEE2E2"            iconColor="#DC2626" />
-              <StatCard label="Schemes"        value={String(overview?.total_schemes ?? 0)}      Icon={Landmark}     color={colors.surfaceAlt}  iconColor={colors.textMuted} />
-              <StatCard label="Conversion"     value={`${overview?.conversion_rate ?? 0}%`}      Icon={Percent}      color="#EFF9F7"            iconColor="#24655E" />
-              <StatCard label="Scheme Views"   value={String(overview?.scheme_views ?? 0)}       Icon={Eye}          color="#FFF7ED"            iconColor="#C2410C" />
+              {STAT_DEFS.filter((s) => canAccess(user.role, s.id)).map((s) => (
+                <StatCard
+                  key={s.id}
+                  testID={`stat-${s.id}`}
+                  label={s.label}
+                  value={s.key ? String((overview as any)?.[s.key] ?? 0) : undefined}
+                  Icon={s.Icon}
+                  color={s.color}
+                  iconColor={s.iconColor}
+                  onPress={() => router.push(s.route as any)}
+                />
+              ))}
             </View>
 
             {/* Modules */}
@@ -272,7 +304,7 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="dashboard-screen">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -396,8 +428,7 @@ export default function Dashboard() {
             activeOpacity={0.85}
           >
             <View style={styles.waIcon}>
-              {/* WhatsApp SVG logo */}
-              <Text style={{ fontSize: 20, lineHeight: 24 }}>💬</Text>
+              <MaterialCommunityIcons name="whatsapp" size={20} color="#FFF" />
             </View>
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.waTitle}>WhatsApp Support</Text>
@@ -476,7 +507,7 @@ export default function Dashboard() {
           {/* Meet link modal */}
           <Modal visible={meetModal} transparent animationType="slide" onRequestClose={() => setMeetModal(false)}>
             <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }}>
-              <View style={{ backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, gap: 16 }}>
+              <View style={{ backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 24 + insets.bottom, gap: 16 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                   <Text style={{ fontSize: 18, fontFamily: fonts.displayBold, color: colors.text }}>Consultation Details</Text>
                   <TouchableOpacity onPress={() => setMeetModal(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center" }}>

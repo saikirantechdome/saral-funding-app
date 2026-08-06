@@ -16,6 +16,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 import {
@@ -246,7 +247,7 @@ export default function DocumentsScreen() {
             activeOpacity={0.8}
             testID="bulk-upload-whatsapp-cta"
           >
-            <Text style={{ fontSize: 14 }}>💬</Text>
+            <MaterialCommunityIcons name="whatsapp" size={16} color={colors.primaryDark} />
             <Text style={s.bulkUploadBtnText}>Bulk upload? Contact us on WhatsApp</Text>
           </TouchableOpacity>
 

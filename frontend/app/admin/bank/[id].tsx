@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Modal, ScrollView, TextInput, Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Users, CheckCircle2, UserPlus, X, ChevronRight, Building2 } from "lucide-react-native";
 
@@ -13,6 +13,7 @@ import { BackBar } from "@/src/components/StepBar";
 
 export default function BankDetail() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [bank, setBank] = useState<any>(null);

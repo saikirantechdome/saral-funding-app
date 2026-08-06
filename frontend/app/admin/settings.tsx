@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TextInput,
   TouchableOpacity, ActivityIndicator, Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Link2, Phone, CheckCircle2 } from "lucide-react-native";
 
@@ -19,6 +19,7 @@ type AdminConfig = {
 
 export default function AdminSettings() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [config, setConfig] = useState<AdminConfig>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -109,7 +110,7 @@ export default function AdminSettings() {
       </ScrollView>
 
       {/* Save button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
         <TouchableOpacity
           style={[styles.saveBtn, (saving || saved) && { opacity: 0.85 }]}
           onPress={save}

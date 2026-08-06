@@ -2,28 +2,19 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Check, Globe, Info, Shield, FileText, LogOut, ChevronRight } from "lucide-react-native";
+import { Info, Shield, FileText, LogOut, ChevronRight } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts } from "@/src/theme";
-import { apiPost, apiGet, apiLogout } from "@/src/api";
-import { LANGUAGES, loadLang, getLang, setLang } from "@/src/i18n";
+import { apiGet, apiLogout } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 
 export default function Settings() {
   const router = useRouter();
-  const [lang, setLangState] = useState("en");
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    loadLang().then(() => setLangState(getLang()));
     apiGet<any>("/auth/me").then(setUser).catch(() => {});
   }, []);
-
-  const change = async (code: string) => {
-    setLangState(code);
-    await setLang(code);
-    await apiPost("/language", { language: code }).catch(() => {});
-  };
 
   const logout = async () => {
     const doLogout = async () => {
@@ -72,39 +63,6 @@ export default function Settings() {
           </View>
         )}
 
-        {/* Language */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Globe size={13} color={colors.textDim} strokeWidth={2} />
-            <Text style={styles.sectionLabel}>App Language</Text>
-          </View>
-          <View style={styles.card}>
-            {LANGUAGES.map((l, i) => (
-              <TouchableOpacity
-                key={l.code}
-                testID={`set-lang-${l.code}`}
-                style={[
-                  styles.langRow,
-                  i < LANGUAGES.length - 1 && styles.langRowBorder,
-                  lang === l.code && styles.langRowActive,
-                ]}
-                onPress={() => change(l.code)}
-                activeOpacity={0.7}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.langNative, lang === l.code && styles.langNativeActive]}>
-                    {l.native}
-                  </Text>
-                  <Text style={styles.langLabel}>{l.label}</Text>
-                </View>
-                {lang === l.code && (
-                  <Check size={16} color={colors.primaryDark} strokeWidth={2.5} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
         {/* Legal */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
@@ -112,13 +70,21 @@ export default function Settings() {
             <Text style={styles.sectionLabel}>Legal</Text>
           </View>
           <View style={styles.card}>
-            <TouchableOpacity style={styles.legalRow} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.legalRow}
+              activeOpacity={0.7}
+              onPress={() => router.push({ pathname: "/legal", params: { doc: "privacy" } })}
+            >
               <FileText size={15} color={colors.textMuted} strokeWidth={2} />
               <Text style={styles.legalText}>Privacy Policy</Text>
               <ChevronRight size={14} color={colors.textDim} strokeWidth={2} />
             </TouchableOpacity>
             <View style={styles.legalDivider} />
-            <TouchableOpacity style={styles.legalRow} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.legalRow}
+              activeOpacity={0.7}
+              onPress={() => router.push({ pathname: "/legal", params: { doc: "terms" } })}
+            >
               <Shield size={15} color={colors.textMuted} strokeWidth={2} />
               <Text style={styles.legalText}>Terms of Service</Text>
               <ChevronRight size={14} color={colors.textDim} strokeWidth={2} />
@@ -226,34 +192,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textMuted,
     marginTop: 2,
-  },
-  langRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    paddingHorizontal: spacing.md,
-    minHeight: 58,
-  },
-  langRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  langRowActive: {
-    backgroundColor: colors.primarySoft,
-  },
-  langNative: {
-    fontSize: 15,
-    fontFamily: fonts.semiBold,
-    color: colors.text,
-  },
-  langNativeActive: {
-    color: colors.primaryDark,
-  },
-  langLabel: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    marginTop: 1,
   },
   legalRow: {
     flexDirection: "row",

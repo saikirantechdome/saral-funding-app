@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TextInput,
   TouchableOpacity, ActivityIndicator, Alert, Modal,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   UserPlus, Users, ChevronDown, X, Check, Trash2, Shield,
@@ -37,6 +37,7 @@ const badge = StyleSheet.create({
 
 export default function AdminTeam() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [team, setTeam] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserRole, setCurrentUserRole] = useState<string>("");
@@ -221,7 +222,7 @@ export default function AdminTeam() {
       {/* Invite Modal */}
       <Modal visible={showInvite} transparent animationType="slide" onRequestClose={() => setShowInvite(false)}>
         <View style={modal.overlay}>
-          <View style={modal.sheet}>
+          <View style={[modal.sheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={modal.header}>
               <Text style={modal.title}>Add Team Member</Text>
               <TouchableOpacity onPress={() => setShowInvite(false)}>

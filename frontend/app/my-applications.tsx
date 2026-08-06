@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, RefreshControl, ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   CheckCircle2, Circle, Clock, XCircle,
@@ -54,10 +55,13 @@ type SchemeApp = {
 
 export default function MyApplications() {
   const router = useRouter();
+  const tabBarHeight = useBottomTabBarHeight();
   const [apps, setApps] = useState<SchemeApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const cardTops = useRef<Record<string, number>>({});
 
   const load = async () => {
     try {
@@ -77,7 +81,7 @@ export default function MyApplications() {
 
   if (loading) {
     return (
-      <SafeAreaView style={s.root}>
+      <SafeAreaView style={s.root} edges={["top"]}>
         <BackBar title="My Applications" onBack={() => router.back()} />
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       </SafeAreaView>
@@ -85,10 +89,11 @@ export default function MyApplications() {
   }
 
   return (
-    <SafeAreaView style={s.root} edges={["top", "bottom"]}>
+    <SafeAreaView style={s.root} edges={["top"]}>
       <BackBar title="My Applications" onBack={() => router.back()} />
       <ScrollView
-        contentContainerStyle={s.content}
+        ref={scrollRef}
+        contentContainerStyle={[s.content, { paddingBottom: tabBarHeight + 24 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
@@ -96,12 +101,25 @@ export default function MyApplications() {
           <EmptyState />
         ) : (
           apps.map((app) => (
-            <AppCard
-              key={app.id}
-              app={app}
-              expanded={expanded === app.id}
-              onToggle={() => setExpanded(expanded === app.id ? null : app.id)}
-            />
+            <View key={app.id} onLayout={(e) => { cardTops.current[app.id] = e.nativeEvent.layout.y; }}>
+              <AppCard
+                app={app}
+                expanded={expanded === app.id}
+                onToggle={() => {
+                  const willExpand = expanded !== app.id;
+                  setExpanded(willExpand ? app.id : null);
+                  if (willExpand) {
+                    // Bring the card to the top of the viewport so its expanded
+                    // Activity section (added below the header) has room to show
+                    // instead of running behind the tab bar.
+                    setTimeout(() => {
+                      const y = cardTops.current[app.id];
+                      if (y != null) scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+                    }, 150);
+                  }
+                }}
+              />
+            </View>
           ))
         )}
       </ScrollView>

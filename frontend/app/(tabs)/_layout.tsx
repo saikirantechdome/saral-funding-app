@@ -12,25 +12,32 @@ import { apiGet } from "@/src/api";
 const TAB_ICON_SIZE = 22;
 
 interface TabIconProps {
-  label: string;
   focused: boolean;
   Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
 }
 
-function TabIcon({ label, focused, Icon }: TabIconProps) {
+// Icon-only — sits in the library's own tabBarIcon slot, which already
+// reserves the right amount of space and clears the device's safe area
+// correctly on its own, no manual height/padding math needed.
+function TabIcon({ focused, Icon }: TabIconProps) {
   return (
-    <View style={styles.tabItem}>
-      <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-        <Icon
-          size={TAB_ICON_SIZE}
-          color={focused ? colors.primary : colors.textDim}
-          strokeWidth={focused ? 2.2 : 1.8}
-        />
-      </View>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]} numberOfLines={1}>
-        {label}
-      </Text>
+    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+      <Icon
+        size={TAB_ICON_SIZE}
+        color={focused ? colors.primary : colors.textDim}
+        strokeWidth={focused ? 2.2 : 1.8}
+      />
     </View>
+  );
+}
+
+// Label-only — sits in the library's own tabBarLabel slot, sized to fit the
+// text instead of being squeezed into the icon's fixed box.
+function makeLabel(label: string) {
+  return ({ focused }: { focused: boolean }) => (
+    <Text style={[styles.tabLabel, focused && styles.tabLabelActive]} numberOfLines={1}>
+      {label}
+    </Text>
   );
 }
 
@@ -47,28 +54,21 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="Home" focused={focused} Icon={LayoutDashboard} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={LayoutDashboard} />,
+          tabBarLabel: makeLabel("Home"),
         }}
       />
       <Tabs.Screen
         name="applications"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon
-              label={isAdmin ? "Funnel" : "Applications"}
-              focused={focused}
-              Icon={isAdmin ? Users : ClipboardList}
-            />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={isAdmin ? Users : ClipboardList} />,
+          tabBarLabel: makeLabel(isAdmin ? "Funnel" : "Applications"),
         }}
       />
       <Tabs.Screen
@@ -83,33 +83,22 @@ export default function TabsLayout() {
         name="advisor"
         options={{
           href: isAdmin ? undefined : null,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon
-              label="Calendly"
-              focused={focused}
-              Icon={CalendarDays}
-            />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={CalendarDays} />,
+          tabBarLabel: makeLabel("Calendly"),
         }}
       />
       <Tabs.Screen
         name="documents"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon
-              label={isAdmin ? "Docs" : "Documents"}
-              focused={focused}
-              Icon={isAdmin ? FileSearch : FolderOpen}
-            />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={isAdmin ? FileSearch : FolderOpen} />,
+          tabBarLabel: makeLabel(isAdmin ? "Docs" : "Documents"),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="Profile" focused={focused} Icon={CircleUser} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={CircleUser} />,
+          tabBarLabel: makeLabel("Profile"),
         }}
       />
     </Tabs>
@@ -121,15 +110,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    height: 72,
-    paddingTop: 6,
-    paddingBottom: 14,
-  },
-  tabItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    paddingTop: 2,
   },
   iconWrap: {
     width: 40,

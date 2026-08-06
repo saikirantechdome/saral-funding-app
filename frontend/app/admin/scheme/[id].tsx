@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Modal, ScrollView, TextInput,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Users, CheckCircle2, Clock, UserPlus, X, ChevronRight } from "lucide-react-native";
 
@@ -36,6 +36,7 @@ function StagePill({ stage }: { stage: string }) {
 
 export default function SchemeDetail() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [scheme, setScheme] = useState<any>(null);
@@ -199,7 +200,7 @@ export default function SchemeDetail() {
       {/* Assign Modal */}
       <Modal visible={showAssignModal} transparent animationType="slide" onRequestClose={() => setShowAssignModal(false)}>
         <View style={s.modalOverlay}>
-          <View style={s.modalSheet}>
+          <View style={[s.modalSheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>Assign Scheme</Text>
               <TouchableOpacity onPress={() => setShowAssignModal(false)}>

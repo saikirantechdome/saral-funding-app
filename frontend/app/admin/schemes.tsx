@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator,
   Modal, ScrollView, TextInput, Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { CheckCircle2, XCircle, Landmark, Plus, X, Pencil } from "lucide-react-native";
 
@@ -35,6 +35,7 @@ const EMPTY_FORM = {
 
 export default function AdminSchemes() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -240,7 +241,7 @@ export default function AdminSchemes() {
       {/* Create / Edit Scheme Modal */}
       <Modal visible={showForm} transparent animationType="slide" onRequestClose={closeForm}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{editingId ? "Edit Scheme" : "Create Scheme"}</Text>
               <TouchableOpacity onPress={closeForm}>

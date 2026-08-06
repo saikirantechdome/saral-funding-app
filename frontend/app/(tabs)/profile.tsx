@@ -12,6 +12,7 @@ import {
   Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Settings, Bell, Phone, ShieldCheck, LogOut, ChevronRight, Pencil, X, Check, Shield } from "lucide-react-native";
 
@@ -20,6 +21,7 @@ import { apiGet, apiPost, apiLogout } from "@/src/api";
 
 export default function Profile() {
   const router = useRouter();
+  const tabBarHeight = useBottomTabBarHeight();
   const [me, setMe] = useState<any>(null);
   const [bp, setBp] = useState<any>(null);
   const [editing, setEditing] = useState(false);
@@ -98,6 +100,7 @@ export default function Profile() {
       const updated = await apiGet<any>("/auth/me");
       setMe(updated);
       setEditing(false);
+      showToast("Profile updated");
     } catch (e: any) {
       Alert.alert("Error", e.message || "Could not save changes");
     } finally {
@@ -142,7 +145,7 @@ export default function Profile() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="profile-tab">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Avatar header */}
@@ -181,7 +184,9 @@ export default function Profile() {
                 disabled={saving}
                 testID="save-profile-btn"
               >
-                <Check size={16} color="#FFF" strokeWidth={2.5} />
+                {saving
+                  ? <ActivityIndicator size="small" color="#FFF" />
+                  : <Check size={16} color="#FFF" strokeWidth={2.5} />}
               </TouchableOpacity>
             </View>
           ) : (

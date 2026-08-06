@@ -10,6 +10,8 @@ async def compute_overview(db) -> Dict[str, Any]:
     total_consultations = await db.consultations.count_documents({})
     total_leads = await db.leads.count_documents({})
     total_chats = await db.ai_conversations.count_documents({})
+    total_banks = await db.banks.count_documents({})
+    total_documents = await db.documents.count_documents({})
 
     yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     dau = await db.users.count_documents({"updated_at": {"$gte": yesterday}})
@@ -31,6 +33,8 @@ async def compute_overview(db) -> Dict[str, Any]:
         "total_consultations": total_consultations,
         "total_leads": total_leads,
         "total_chats": total_chats,
+        "total_banks": total_banks,
+        "total_documents": total_documents,
         "daily_active_users": dau,
         "conversion_rate": conversion_rate,
         "scheme_views": scheme_views,

@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -46,8 +47,12 @@ export default function Login() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]} testID="login-screen">
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.body}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
 
           {/* Brand */}
           <View style={styles.brandRow}>
@@ -120,7 +125,7 @@ export default function Login() {
           </TouchableOpacity>
 
           <Text style={styles.hint}>By continuing you agree to our Terms & Privacy Policy.</Text>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -128,7 +133,7 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFF" },
-  body: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, justifyContent: "center" },
+  body: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xl, justifyContent: "center" },
 
   // Brand
   brandRow: {
