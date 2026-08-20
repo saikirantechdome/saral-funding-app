@@ -11,7 +11,7 @@ import {
   Heart, FileText, CheckCircle2, XCircle,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, stageColor } from "@/src/theme";
+import { colors, spacing, radius, fonts, stageColor, formatMobile } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -141,7 +141,7 @@ export default function AdminConsultations() {
                 <InitialsAvatar name={item.user?.full_name || "Unknown"} size={34} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.userName}>{item.user?.full_name || "—"}</Text>
-                  <Text style={styles.userMobile}>+91 {item.user?.mobile || ""}</Text>
+                  <Text style={styles.userMobile}>{formatMobile(item.user?.mobile)}</Text>
                 </View>
                 <StatusPill status={item.status} />
               </View>

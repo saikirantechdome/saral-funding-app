@@ -9,7 +9,7 @@ import {
   UserPlus, Users, ChevronDown, X, Check, Trash2, Shield,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatMobile } from "@/src/theme";
 import { apiGet, apiPost, apiDelete } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -188,7 +188,7 @@ export default function AdminTeam() {
                   )}
                   {member.role !== "super_admin" && <RoleBadge role={member.role} />}
                 </View>
-                <Text style={s.memberMobile}>+91 {member.mobile}</Text>
+                <Text style={s.memberMobile}>{formatMobile(member.mobile)}</Text>
 
                 {/* Role change — only for non super_admin members, or if current user is super_admin */}
                 {(member.role !== "super_admin" || isSuperAdmin) && member.role !== "super_admin" && (

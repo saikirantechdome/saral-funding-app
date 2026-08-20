@@ -12,7 +12,7 @@ import {
   Plus, Trash2, ChevronRight, Bell, Send,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, stageColor, tints, elevation, tagColor } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, stageColor, tints, elevation, tagColor, formatMobile } from "@/src/theme";
 import { apiGet, apiPost, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
@@ -369,7 +369,7 @@ export default function LeadDetail() {
             <InitialsAvatar name={user.full_name || data.full_name || "Unknown"} size={48} />
             <View style={{ flex: 1 }}>
               <Text style={styles.leadName}>{user.full_name || data.full_name || "Unknown"}</Text>
-              <Text style={styles.leadMobile}>+91 {user.mobile || data.mobile || "—"}</Text>
+              <Text style={styles.leadMobile}>{formatMobile(user.mobile || data.mobile)}</Text>
             </View>
             <Button label="Edit" onPress={() => setEditing(true)} variant="tertiary" size="sm" fullWidth={false} />
           </View>
@@ -388,7 +388,7 @@ export default function LeadDetail() {
         <SectionCard title="User Profile">
           <InfoRow icon={<MapPin size={13} color={colors.primaryDark} />} label="State" value={user.state || "—"} />
           <InfoRow icon={<User size={13} color={colors.primaryDark} />} label="Category" value={user.category || "—"} />
-          <InfoRow icon={<Phone size={13} color={colors.primaryDark} />} label="Mobile" value={user.mobile || "—"} />
+          <InfoRow icon={<Phone size={13} color={colors.primaryDark} />} label="Mobile" value={formatMobile(user.mobile)} />
           <InfoRow icon={<DollarSign size={13} color={colors.primaryDark} />} label="Funding Required" value={data.funding_required ? formatINR(data.funding_required) : "—"} />
         </SectionCard>
 

@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, MapPin, Calendar, Tag, User as UserIcon, Briefcase, FileCheck, FileText } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, elevation, gradients } from "@/src/theme";
+import { colors, spacing, radius, fonts, elevation, gradients, formatMobile } from "@/src/theme";
 import { apiGet, apiPost, apiLogout } from "@/src/api";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
@@ -198,7 +198,7 @@ export default function Profile() {
           )}
           <Text style={styles.mobileDark}>
             {me?.role === "user" ? "User" : me?.role?.replace(/_/g, " ") || "User"}
-            {me?.email ? ` · ${me.email}` : ` · ${me?.mobile?.startsWith("+") ? me.mobile : `+91 ${me?.mobile}`}`}
+            {me?.email ? ` · ${me.email}` : ` · ${formatMobile(me?.mobile)}`}
           </Text>
         </LinearGradient>
 

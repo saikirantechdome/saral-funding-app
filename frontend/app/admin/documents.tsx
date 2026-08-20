@@ -26,7 +26,7 @@ import {
   XCircle,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, formatMobile } from "@/src/theme";
 import { apiGet, apiPost, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 
@@ -177,7 +177,7 @@ export default function AdminDocuments() {
           <Text style={s.userLabel}>User:</Text>
           <Text style={s.userValue}>
             {item.user?.full_name || "—"}
-            {item.user?.mobile ? `  ·  ${item.user.mobile}` : ""}
+            {item.user?.mobile ? `  ·  ${formatMobile(item.user.mobile)}` : ""}
           </Text>
         </View>
 

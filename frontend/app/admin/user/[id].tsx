@@ -10,7 +10,7 @@ import {
   CheckCircle2, Clock, XCircle, Plus, Trash2, Building2,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, elevation, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatINR, formatMobile } from "@/src/theme";
 import { apiGet, apiPost, apiDelete } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -178,7 +178,7 @@ export default function UserDetail() {
             <Text style={s.userName}>{user?.full_name || "Unnamed"}</Text>
             <View style={s.metaRow}>
               <Phone size={11} color={colors.textDim} strokeWidth={2} />
-              <Text style={s.metaText}>+91 {user?.mobile}</Text>
+              <Text style={s.metaText}>{formatMobile(user?.mobile)}</Text>
             </View>
             {user?.state && (
               <View style={s.metaRow}>

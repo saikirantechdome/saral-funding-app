@@ -7,7 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Users, CheckCircle2, UserPlus, X, ChevronRight, Building2 } from "lucide-react-native";
 
-import { colors, tints, spacing, radius, fonts, elevation, formatINR } from "@/src/theme";
+import { colors, tints, spacing, radius, fonts, elevation, formatINR, formatMobile } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import Button from "@/src/components/ui/Button";
@@ -178,7 +178,7 @@ export default function BankDetail() {
               <InitialsAvatar name={item.user?.full_name || "User"} size={36} />
               <View style={{ flex: 1 }}>
                 <Text style={s.userName}>{item.user?.full_name || "Unnamed"}</Text>
-                <Text style={s.userMobile}>{item.user?.mobile ? `+91 ${item.user.mobile}` : "—"}</Text>
+                <Text style={s.userMobile}>{formatMobile(item.user?.mobile)}</Text>
               </View>
               <ChevronRight size={14} color={colors.textDim} strokeWidth={2} />
             </TouchableOpacity>
@@ -269,7 +269,7 @@ export default function BankDetail() {
                                 <InitialsAvatar name={u.full_name || "User"} size={28} />
                                 <View style={{ flex: 1 }}>
                                   <Text style={s.userRowName}>{u.full_name || "Unnamed"}</Text>
-                                  <Text style={s.userRowMobile}>+91 {u.mobile}</Text>
+                                  <Text style={s.userRowMobile}>{formatMobile(u.mobile)}</Text>
                                 </View>
                                 {isAssigned && <Text style={{ fontSize: 10, color: colors.textDim }}>Already assigned</Text>}
                               </TouchableOpacity>

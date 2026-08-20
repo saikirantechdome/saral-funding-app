@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, Download, User, MapPin, Shield, CheckCircle2, Clock } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, formatMobile } from "@/src/theme";
 import { apiGet, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -182,7 +182,7 @@ export default function AdminUsers() {
                   <RolePill role={item.role} />
                 </View>
                 <View style={styles.metaRow}>
-                  <Text style={styles.mobile}>+91 {item.mobile}</Text>
+                  <Text style={styles.mobile}>{formatMobile(item.mobile)}</Text>
                   {item.state && (
                     <View style={styles.stateMeta}>
                       <MapPin size={10} color={colors.textDim} strokeWidth={2} />

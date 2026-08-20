@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { X, ChevronRight, Phone, MapPin, DollarSign, StickyNote, Briefcase } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, stageColor, tagColor } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, stageColor, tagColor, formatMobile } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -164,7 +164,7 @@ export default function AdminLeads() {
                   <Text style={styles.leadName} numberOfLines={1}>{item.full_name || "Unknown"}</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                     <Phone size={10} color={colors.textDim} strokeWidth={2} />
-                    <Text style={styles.leadMobile}>+91 {item.mobile || "—"}</Text>
+                    <Text style={styles.leadMobile}>{formatMobile(item.mobile)}</Text>
                   </View>
                 </View>
                 <StagePill stage={item.stage} />

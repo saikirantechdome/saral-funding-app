@@ -36,7 +36,7 @@ import {
   XCircle,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatMobile } from "@/src/theme";
 import { apiGet, apiDelete, getToken, API_BASE } from "@/src/api";
 import Picker from "@/src/components/Picker";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -588,7 +588,7 @@ function AdminUserDocuments() {
   allDocs.forEach((doc) => {
     const uid = doc.user?.id || doc.user_id || "unknown";
     const name = doc.user?.full_name || "Unknown User";
-    const mobile = doc.user?.mobile ? `+${doc.user.mobile}` : "";
+    const mobile = formatMobile(doc.user?.mobile);
     if (!userMap.has(uid)) userMap.set(uid, { id: uid, name, mobile, docs: [] });
     userMap.get(uid)!.docs.push(doc);
   });

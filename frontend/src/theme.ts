@@ -183,6 +183,17 @@ export const formatINR = (n: number): string => {
   return `₹${n}`;
 };
 
+// Stored `mobile` values are inconsistent — some already carry a "+91"/"91"
+// country code, some don't — so a plain `+91 ${mobile}` template doubles up
+// to "+91 +919876543210" for the ones that do. Normalize by digit count
+// instead of assuming either shape.
+export const formatMobile = (mobile?: string | null): string => {
+  if (!mobile) return "—";
+  let digits = mobile.replace(/\D/g, "");
+  if (digits.length > 10 && digits.startsWith("91")) digits = digits.slice(2);
+  return `+91 ${digits}`;
+};
+
 // Colour-code CRM stages — deliberately a richer, more varied palette than
 // the rest of the app. The marketing site has no lead/consultation status
 // system to audit against, so these stay a wider rainbow (by user request)
