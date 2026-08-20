@@ -13,19 +13,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, Download, User, MapPin, Shield, CheckCircle2, Clock } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints } from "@/src/theme";
 import { apiGet, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
 import EmptyState from "@/src/components/EmptyState";
 
 function RolePill({ role }: { role: string }) {
   if (role === "user") return null;
   const cfg: Record<string, { bg: string; text: string }> = {
-    super_admin: { bg: "#FEF3C7", text: "#92400E" },
-    manager: { bg: "#DBEAFE", text: "#1D4ED8" },
-    expert: { bg: "#EDE9FE", text: "#5B21B6" },
+    super_admin: { bg: tints.amber.bg, text: tints.amber.fg },
+    manager: { bg: tints.blue.bg, text: tints.blue.fg },
+    expert: { bg: tints.deepTeal.bg, text: tints.deepTeal.fg },
     sales_executive: { bg: colors.primarySoft, text: colors.primaryDark },
-    support_executive: { bg: "#FEE2E2", text: "#DC2626" },
+    support_executive: { bg: tints.red.bg, text: tints.red.fg },
   };
   const { bg, text } = cfg[role] ?? { bg: colors.surfaceAlt, text: colors.textMuted };
   return (
@@ -174,11 +175,7 @@ export default function AdminUsers() {
               activeOpacity={0.8}
             >
               {/* Avatar */}
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {(item.full_name || "U").charAt(0).toUpperCase()}
-                </Text>
-              </View>
+              <InitialsAvatar name={item.full_name || "Unknown"} size={40} />
               <View style={{ flex: 1 }}>
                 <View style={styles.nameRow}>
                   <Text style={styles.userName} numberOfLines={1}>{item.full_name || "Unnamed"}</Text>
@@ -257,24 +254,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 14,
     marginBottom: 8,
-    shadowColor: "#000",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 3,
     elevation: 1,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontSize: 16,
-    fontFamily: fonts.displayBold,
-    color: colors.primaryDark,
   },
   nameRow: {
     flexDirection: "row",

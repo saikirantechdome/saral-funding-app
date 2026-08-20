@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CheckCircle2, XCircle, Minus } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatINR } from "@/src/theme";
 import { apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
@@ -103,10 +103,10 @@ function BestBadge({ style }: { style: "lower" | "higher" }) {
 const badgeStyles = StyleSheet.create({
   wrap: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, alignSelf: "flex-start", marginTop: 3 },
   lower: { backgroundColor: colors.primarySoft },
-  higher: { backgroundColor: "#FEF3C7" },
+  higher: { backgroundColor: tints.amber.bg },
   text: { fontSize: 9, fontFamily: fonts.bold, textTransform: "uppercase", letterSpacing: 0.3 },
   textLower: { color: colors.primaryDark },
-  textHigher: { color: "#92400E" },
+  textHigher: { color: tints.amber.fg },
 });
 
 export default function BanksCompare() {
@@ -140,6 +140,7 @@ export default function BanksCompare() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.tableShadowWrap}>
           <View style={styles.table}>
             {/* Header row */}
             <View style={styles.headerRow}>
@@ -218,6 +219,7 @@ export default function BanksCompare() {
               );
             })}
           </View>
+          </View>
         </ScrollView>
 
         <View style={styles.legend}>
@@ -235,13 +237,17 @@ const COL_W = 148;
 const LABEL_W = 120;
 
 const styles = StyleSheet.create({
-  table: {
+  tableShadowWrap: {
     margin: spacing.md,
-    borderRadius: radius.xxl,
-    overflow: "hidden",
+    borderRadius: radius.xl,
+    backgroundColor: "#FFF",
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: "#FFF",
+    ...elevation.l1,
+  },
+  table: {
+    borderRadius: radius.xl,
+    overflow: "hidden",
   },
   headerRow: {
     flexDirection: "row",
@@ -280,16 +286,16 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginBottom: 4,
   },
-  bankPub: { backgroundColor: "rgba(34,197,94,0.2)" },
-  bankPriv: { backgroundColor: "rgba(59,130,246,0.2)" },
+  bankPub: { backgroundColor: tints.teal.fg + "33" },
+  bankPriv: { backgroundColor: tints.blue.fg + "33" },
   bankHeaderType: {
     fontSize: 9,
     fontFamily: fonts.bold,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
-  bankTypePub: { color: "#5AC4B7" },
-  bankTypePriv: { color: "#93C5FD" },
+  bankTypePub: { color: colors.primaryLight },
+  bankTypePriv: { color: tints.blue.bg },
   bankHeaderName: {
     fontSize: 13,
     fontFamily: fonts.displayBold,

@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Send, CheckCircle2, Info, Star, Bell } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import Input from "@/src/components/ui/Input";
@@ -16,8 +16,8 @@ import Button from "@/src/components/ui/Button";
 const NOTIFICATION_TYPES = [
   { id: "platform", label: "Platform Update", Icon: Info, color: colors.surfaceAlt, textColor: colors.textMuted },
   { id: "high_match", label: "Scheme Match", Icon: Star, color: colors.primarySoft, textColor: colors.primaryDark },
-  { id: "consultation_reminder", label: "Reminder", Icon: Bell, color: "#EDE9FE", textColor: "#5B21B6" },
-  { id: "recommendation", label: "Recommendation", Icon: CheckCircle2, color: "#DBEAFE", textColor: "#1D4ED8" },
+  { id: "consultation_reminder", label: "Reminder", Icon: Bell, color: tints.deepTeal.bg, textColor: tints.deepTeal.fg },
+  { id: "recommendation", label: "Recommendation", Icon: CheckCircle2, color: tints.blue.bg, textColor: tints.blue.fg },
 ];
 
 export default function AdminNotifications() {
@@ -54,7 +54,9 @@ export default function AdminNotifications() {
           {/* Success state */}
           {sentCount !== null && (
             <View style={styles.successCard}>
-              <CheckCircle2 size={20} color={colors.primaryDark} strokeWidth={2} />
+              <View style={styles.successIconChip}>
+                <CheckCircle2 size={20} color={colors.primaryDark} strokeWidth={2} />
+              </View>
               <View>
                 <Text style={styles.successTitle}>Notification Sent</Text>
                 <Text style={styles.successSub}>Delivered to {sentCount} users</Text>
@@ -150,13 +152,22 @@ const styles = StyleSheet.create({
   successCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.sm2,
     backgroundColor: colors.primarySoft,
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.primaryMid,
     padding: spacing.md,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
+    ...elevation.l1,
+  },
+  successIconChip: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primaryMid,
+    alignItems: "center",
+    justifyContent: "center",
   },
   successTitle: {
     fontSize: 14,
@@ -171,26 +182,26 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   fieldLabel: {
-    fontSize: 12,
-    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    fontFamily: fonts.bold,
     color: colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     marginBottom: 10,
   },
   typeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   typeCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm2,
     paddingVertical: 10,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: "#FFF",
@@ -201,14 +212,14 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   previewCard: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   previewLabel: {
     fontSize: 11,
     fontFamily: fonts.bold,
-    color: colors.textDim,
+    color: colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     marginBottom: 8,
   },
   preview: {
@@ -219,16 +230,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    padding: spacing.md,
+    ...elevation.l1,
   },
   previewIcon: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: radius.lg,
     backgroundColor: colors.primarySoft,
     alignItems: "center",

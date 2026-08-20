@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: fonts.displayBold,
     color: colors.text,
-    marginTop: 4,
-    marginBottom: 6,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs2,
     letterSpacing: -0.3,
   },
   subheading: {

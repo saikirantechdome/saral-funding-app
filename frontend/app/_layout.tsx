@@ -9,17 +9,11 @@ import * as Device from "expo-device";
 import { Platform } from "react-native";
 
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from "@expo-google-fonts/inter";
-import {
-  DMSans_400Regular,
-  DMSans_500Medium,
-  DMSans_600SemiBold,
-  DMSans_700Bold,
-} from "@expo-google-fonts/dm-sans";
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from "@expo-google-fonts/poppins";
 
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { loadLang } from "@/src/i18n";
@@ -69,14 +63,10 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [iconsLoaded, iconError] = useIconFonts();
   const [fontsLoaded, fontsError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    DMSans_400Regular,
-    DMSans_500Medium,
-    DMSans_600SemiBold,
-    DMSans_700Bold,
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
   });
 
   // Timeout fallback: if fonts haven't resolved after 4s (can happen on web

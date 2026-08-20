@@ -13,7 +13,7 @@ import {
   TrendingUp, MessageSquare, ChevronRight, Percent, Eye, Settings, Shield, Bell, BarChart2,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
@@ -28,14 +28,14 @@ type Overview = {
 
 const ALL_MODULES = [
   { id: "users",         label: "Users",          sub: "Manage & view",         Icon: Users,     color: colors.primarySoft, iconColor: colors.primaryDark },
-  { id: "consultations", label: "Consultations",  sub: "Track & update",        Icon: Phone,     color: "#EDE9FE", iconColor: "#5B21B6" },
-  { id: "leads",         label: "CRM / Leads",    sub: "Pipeline & stages",     Icon: Target,    color: "#FEF3C7", iconColor: "#92400E" },
-  { id: "schemes",       label: "Schemes",         sub: "Enable & disable",      Icon: Landmark,  color: "#FFF7ED", iconColor: "#C2410C" },
-  { id: "documents",    label: "Documents",       sub: "Review & approve docs", Icon: FolderOpen, color: "#EFF9F7", iconColor: "#24655E" },
-  { id: "analytics",    label: "Analytics",       sub: "Charts & trends",       Icon: BarChart2, color: "#DBEAFE", iconColor: "#1D4ED8" },
-  { id: "notifications",label: "Notifications",   sub: "Broadcast to all users",Icon: Bell,      color: "#FEF3C7", iconColor: "#B45309" },
-  { id: "team",          label: "Team Members",   sub: "Invite & manage roles", Icon: Shield,    color: "#DDF3F0", iconColor: "#24655E" },
-  { id: "settings",     label: "Settings",        sub: "App configuration",     Icon: Settings,  color: "#F5F3FF", iconColor: "#6D28D9" },
+  { id: "consultations", label: "Consultations",  sub: "Track & update",        Icon: Phone,     color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg },
+  { id: "leads",         label: "CRM / Leads",    sub: "Pipeline & stages",     Icon: Target,    color: tints.amber.bg, iconColor: tints.amber.fg },
+  { id: "schemes",       label: "Schemes",         sub: "Enable & disable",      Icon: Landmark,  color: tints.red.bg, iconColor: tints.red.fg },
+  { id: "documents",    label: "Documents",       sub: "Review & approve docs", Icon: FolderOpen, color: tints.teal.bg, iconColor: tints.teal.fg },
+  { id: "analytics",    label: "Analytics",       sub: "Charts & trends",       Icon: BarChart2, color: tints.blue.bg, iconColor: tints.blue.fg },
+  { id: "notifications",label: "Notifications",   sub: "Broadcast to all users",Icon: Bell,      color: tints.amber.bg, iconColor: tints.amber.fg },
+  { id: "team",          label: "Team Members",   sub: "Invite & manage roles", Icon: Shield,    color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg },
+  { id: "settings",     label: "Settings",        sub: "App configuration",     Icon: Settings,  color: tints.neutral.bg, iconColor: tints.neutral.fg },
 ];
 
 function StatCard({ label, value, Icon, color, iconColor }: { label: string; value: string; Icon: any; color: string; iconColor: string }) {
@@ -58,7 +58,7 @@ const statStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 12,
-    shadowColor: "#000",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -106,13 +106,13 @@ export default function AdminHome() {
         ) : (
           <View style={styles.statsGrid}>
             <StatCard label="Total Users" value={String(o?.total_users ?? 0)} Icon={Users} color={colors.primarySoft} iconColor={colors.primaryDark} />
-            <StatCard label="Daily Active" value={String(o?.daily_active_users ?? 0)} Icon={TrendingUp} color="#DBEAFE" iconColor="#1D4ED8" />
-            <StatCard label="AI Chats" value={String(o?.total_chats ?? 0)} Icon={MessageSquare} color="#EDE9FE" iconColor="#5B21B6" />
-            <StatCard label="Consultations" value={String(o?.total_consultations ?? 0)} Icon={Phone} color="#FEF3C7" iconColor="#92400E" />
-            <StatCard label="Leads" value={String(o?.total_leads ?? 0)} Icon={Target} color="#FEE2E2" iconColor="#DC2626" />
+            <StatCard label="Daily Active" value={String(o?.daily_active_users ?? 0)} Icon={TrendingUp} color={tints.blue.bg} iconColor={tints.blue.fg} />
+            <StatCard label="AI Chats" value={String(o?.total_chats ?? 0)} Icon={MessageSquare} color={tints.deepTeal.bg} iconColor={tints.deepTeal.fg} />
+            <StatCard label="Consultations" value={String(o?.total_consultations ?? 0)} Icon={Phone} color={tints.amber.bg} iconColor={tints.amber.fg} />
+            <StatCard label="Leads" value={String(o?.total_leads ?? 0)} Icon={Target} color={tints.red.bg} iconColor={tints.red.fg} />
             <StatCard label="Schemes" value={String(o?.total_schemes ?? 0)} Icon={Landmark} color={colors.surfaceAlt} iconColor={colors.textMuted} />
-            <StatCard label="Conversion" value={`${o?.conversion_rate ?? 0}%`} Icon={Percent} color="#EFF9F7" iconColor="#24655E" />
-            <StatCard label="Scheme Views" value={String(o?.scheme_views ?? 0)} Icon={Eye} color="#FFF7ED" iconColor="#C2410C" />
+            <StatCard label="Conversion" value={`${o?.conversion_rate ?? 0}%`} Icon={Percent} color={tints.teal.bg} iconColor={tints.teal.fg} />
+            <StatCard label="Scheme Views" value={String(o?.scheme_views ?? 0)} Icon={Eye} color={tints.neutral.bg} iconColor={tints.neutral.fg} />
           </View>
         )}
 
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     paddingVertical: 14,
     paddingHorizontal: spacing.md,
-    shadowColor: "#000",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,

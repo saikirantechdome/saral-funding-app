@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Image,
@@ -16,6 +15,7 @@ import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react-na
 
 import { colors, spacing, radius, fonts } from "@/src/theme";
 import { apiPost } from "@/src/api";
+import Button from "@/src/components/ui/Button";
 
 const TRUST_ITEMS = [
   { icon: <ShieldCheck size={13} color={colors.primaryDark} strokeWidth={2} />, label: "Secure & private" },
@@ -90,7 +90,7 @@ export default function Login() {
             <Text style={styles.fieldLabel}>Mobile Number</Text>
             <View style={[styles.inputWrap, isValid && styles.inputWrapValid]}>
               <View style={styles.prefixBox}>
-                <Text style={styles.prefix}>🇮🇳  +91</Text>
+                <Text style={styles.prefix}>+91</Text>
               </View>
               <View style={styles.divider} />
               <TextInput
@@ -113,16 +113,16 @@ export default function Login() {
           </View>
 
           {/* CTA */}
-          <TouchableOpacity
+          <Button
             testID="send-otp-btn"
-            style={[styles.cta, !isValid && styles.ctaDisabled]}
-            disabled={!isValid || loading}
+            label={loading ? "Sending OTP…" : "Continue"}
             onPress={onSend}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.ctaText}>{loading ? "Sending OTP…" : "Continue"}</Text>
-            {!loading && <ArrowRight size={18} color="#FFF" strokeWidth={2.5} />}
-          </TouchableOpacity>
+            disabled={!isValid}
+            loading={loading}
+            Icon={ArrowRight}
+            iconPosition="right"
+            size="lg"
+          />
 
           <Text style={styles.hint}>By continuing you agree to our Terms & Privacy Policy.</Text>
         </ScrollView>
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 10,
+    marginBottom: spacing.sm2,
   },
   heroSub: {
     fontSize: 14,
@@ -265,31 +265,6 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
 
-  // CTA
-  cta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.primary,
-    borderRadius: radius.xl,
-    paddingVertical: 15,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  ctaDisabled: {
-    backgroundColor: "#BCE7E2",
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  ctaText: {
-    fontSize: 16,
-    fontFamily: fonts.displayBold,
-    color: "#FFF",
-  },
   hint: {
     fontSize: 12,
     fontFamily: fonts.regular,

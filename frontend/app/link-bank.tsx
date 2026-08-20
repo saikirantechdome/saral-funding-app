@@ -14,10 +14,11 @@ import { WebView } from "react-native-webview";
 import Animated, { FadeIn, SlideInUp } from "react-native-reanimated";
 import { CheckCircle2, ShieldCheck, ChevronRight, Link as LinkIcon, RefreshCw } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiPost, apiGet } from "@/src/api";
 import Saathi from "@/src/components/Saathi";
 import { BackBar } from "@/src/components/StepBar";
+import Button from "@/src/components/ui/Button";
 
 type Step = "intro" | "webview" | "polling" | "success" | "error";
 
@@ -122,19 +123,22 @@ export default function LinkBank() {
           </Animated.View>
 
           <Animated.View entering={SlideInUp.delay(350).duration(400)} style={s.securityNote}>
-            <ShieldCheck size={16} color="#6D28D9" strokeWidth={2} />
+            <ShieldCheck size={16} color={tints.deepTeal.fg} strokeWidth={2} />
             <Text style={s.securityText}>
               Secured by <Text style={{ fontFamily: fonts.bold }}>RBI Account Aggregator</Text> framework.
               Your data is encrypted and you can revoke access anytime.
             </Text>
           </Animated.View>
 
-          <TouchableOpacity style={s.ctaBtn} onPress={startConsent} activeOpacity={0.85}>
-            <LinkIcon size={18} color="#FFF" strokeWidth={2.5} />
-            <Text style={s.ctaBtnText}>Link Bank Account</Text>
-          </TouchableOpacity>
+          <Button
+            label="Link Bank Account"
+            onPress={startConsent}
+            size="lg"
+            Icon={LinkIcon}
+            iconPosition="left"
+          />
 
-          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: spacing.sm2 }}>
             <Text style={s.skipText}>Skip for now</Text>
           </TouchableOpacity>
         </View>
@@ -231,14 +235,12 @@ export default function LinkBank() {
             </View>
           </Animated.View>
 
-          <TouchableOpacity
-            style={s.ctaBtn}
+          <Button
+            label="Back to Dashboard"
             onPress={() => router.replace("/(tabs)")}
-            activeOpacity={0.85}
-          >
-            <Text style={s.ctaBtnText}>Back to Dashboard</Text>
-            <ChevronRight size={18} color="#FFF" strokeWidth={2.5} />
-          </TouchableOpacity>
+            size="lg"
+            Icon={ChevronRight}
+          />
         </View>
       </SafeAreaView>
     );
@@ -251,10 +253,15 @@ export default function LinkBank() {
       <View style={s.centerWrap}>
         <Saathi expression="happy" size={100} animate message="Koi problem nahi — baad mein try kar sakte hain!" />
         <Text style={s.errorText}>{error || "Something went wrong"}</Text>
-        <TouchableOpacity style={[s.ctaBtn, { marginTop: 24, paddingHorizontal: 32 }]} onPress={() => setStep("intro")} activeOpacity={0.85}>
-          <RefreshCw size={16} color="#FFF" strokeWidth={2.5} />
-          <Text style={s.ctaBtnText}>Try Again</Text>
-        </TouchableOpacity>
+        <View style={{ marginTop: spacing.lg, width: "100%" }}>
+          <Button
+            label="Try Again"
+            onPress={() => setStep("intro")}
+            size="lg"
+            Icon={RefreshCw}
+            iconPosition="left"
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -297,7 +304,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
-    backgroundColor: "#EDE9FE",
+    backgroundColor: tints.deepTeal.bg,
     borderRadius: radius.xl,
     padding: spacing.sm2,
     marginBottom: spacing.xl,
@@ -306,33 +313,17 @@ const s = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontFamily: fonts.regular,
-    color: "#5B21B6",
+    color: tints.deepTeal.fg,
     lineHeight: 18,
   },
 
-  ctaBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.primary,
-    borderRadius: radius.xl,
-    paddingVertical: 15,
-    width: "100%",
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  ctaBtnText: { fontSize: 16, fontFamily: fonts.displayBold, color: "#FFF" },
   skipText: { fontSize: 14, fontFamily: fonts.medium, color: colors.textMuted },
 
   centerWrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
   loadingText: { marginTop: 12, fontSize: 14, fontFamily: fonts.medium, color: colors.textMuted },
-  errorText: { marginTop: 16, fontSize: 14, fontFamily: fonts.medium, color: "#EF4444", textAlign: "center" },
+  errorText: { marginTop: 16, fontSize: 14, fontFamily: fonts.medium, color: colors.danger, textAlign: "center" },
 
-  successWrap: { flex: 1, alignItems: "center", padding: spacing.md, paddingTop: 24 },
+  successWrap: { flex: 1, alignItems: "center", padding: spacing.md, paddingTop: spacing.lg },
   successTitle: { fontSize: 24, fontFamily: fonts.displayBold, color: colors.text, marginBottom: 8 },
   successSubtitle: { fontSize: 14, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center", lineHeight: 20 },
 

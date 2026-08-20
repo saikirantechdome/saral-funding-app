@@ -9,16 +9,19 @@ import {
   UserPlus, Users, ChevronDown, X, Check, Trash2, Shield,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiGet, apiPost, apiDelete } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
+import EmptyState from "@/src/components/EmptyState";
+import Button from "@/src/components/ui/Button";
 
 const ROLES = [
-  { value: "super_admin",       label: "Super Admin",       desc: "Full access including team & config",      color: "#FEF3C7", text: "#92400E" },
-  { value: "manager",           label: "Manager",           desc: "Full access except super admin actions",  color: "#DBEAFE", text: "#1D4ED8" },
-  { value: "expert",            label: "Expert",            desc: "View leads, add notes, recommend schemes", color: "#EDE9FE", text: "#5B21B6" },
+  { value: "super_admin",       label: "Super Admin",       desc: "Full access including team & config",      color: tints.amber.bg, text: tints.amber.fg },
+  { value: "manager",           label: "Manager",           desc: "Full access except super admin actions",  color: tints.blue.bg, text: tints.blue.fg },
+  { value: "expert",            label: "Expert",            desc: "View leads, add notes, recommend schemes", color: tints.deepTeal.bg, text: tints.deepTeal.fg },
   { value: "sales_executive",   label: "Sales Executive",   desc: "Manage leads and consultations",           color: colors.primarySoft, text: colors.primaryDark },
-  { value: "support_executive", label: "Support Executive", desc: "View users, handle support queries",       color: "#FEE2E2", text: "#DC2626" },
+  { value: "support_executive", label: "Support Executive", desc: "View users, handle support queries",       color: tints.red.bg, text: tints.red.fg },
 ];
 
 function RoleBadge({ role }: { role: string }) {
@@ -148,35 +151,39 @@ export default function AdminTeam() {
         {/* Header row */}
         <View style={s.headerRow}>
           <View style={s.headerLeft}>
-            <Users size={14} color={colors.primaryDark} strokeWidth={2} />
+            <View style={s.headerIconChip}>
+              <Users size={15} color={colors.primaryDark} strokeWidth={2} />
+            </View>
             <Text style={s.headerText}>{team.length} team member{team.length !== 1 ? "s" : ""}</Text>
           </View>
-          <TouchableOpacity style={s.inviteBtn} onPress={() => setShowInvite(true)} activeOpacity={0.85}>
-            <UserPlus size={14} color="#FFF" strokeWidth={2.5} />
-            <Text style={s.inviteBtnText}>Add Member</Text>
-          </TouchableOpacity>
+          <Button
+            label="Add Member"
+            Icon={UserPlus}
+            iconPosition="left"
+            onPress={() => setShowInvite(true)}
+            size="sm"
+            fullWidth={false}
+          />
         </View>
 
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
         ) : team.length === 0 ? (
-          <View style={s.emptyCard}>
-            <Shield size={32} color={colors.textDim} strokeWidth={1.5} />
-            <Text style={s.emptyTitle}>No team members yet</Text>
-            <Text style={s.emptyHint}>Tap "Add Member" to invite your first team member.</Text>
-          </View>
+          <EmptyState
+            Icon={Shield}
+            title="No team members yet"
+            subtitle='Tap "Add Member" to invite your first team member.'
+          />
         ) : (
           team.map((member) => (
             <View key={member.id} style={s.memberCard}>
-              <View style={s.avatar}>
-                <Text style={s.avatarText}>{(member.full_name || "U").charAt(0).toUpperCase()}</Text>
-              </View>
+              <InitialsAvatar name={member.full_name || "Unnamed"} size={44} />
               <View style={{ flex: 1 }}>
                 <View style={s.nameRow}>
                   <Text style={s.memberName} numberOfLines={1}>{member.full_name || "Unnamed"}</Text>
                   {member.role === "super_admin" && (
-                    <View style={[badge.wrap, { backgroundColor: "#FEF3C7" }]}>
-                      <Text style={[badge.text, { color: "#92400E" }]}>Super Admin</Text>
+                    <View style={[badge.wrap, { backgroundColor: tints.amber.bg }]}>
+                      <Text style={[badge.text, { color: tints.amber.fg }]}>Super Admin</Text>
                     </View>
                   )}
                   {member.role !== "super_admin" && <RoleBadge role={member.role} />}
@@ -211,7 +218,7 @@ export default function AdminTeam() {
               {/* Remove button */}
               {member.role !== "super_admin" && (
                 <TouchableOpacity style={s.removeBtn} onPress={() => handleRemove(member)} activeOpacity={0.75}>
-                  <Trash2 size={14} color="#DC2626" strokeWidth={2} />
+                  <Trash2 size={14} color={tints.red.fg} strokeWidth={2} />
                 </TouchableOpacity>
               )}
             </View>
@@ -279,21 +286,17 @@ export default function AdminTeam() {
               </View>
             )}
 
-            <TouchableOpacity
-              style={[modal.addBtn, inviting && { opacity: 0.7 }]}
-              onPress={handleInvite}
-              disabled={inviting}
-              activeOpacity={0.85}
-            >
-              {inviting ? (
-                <ActivityIndicator color="#FFF" size="small" />
-              ) : (
-                <>
-                  <UserPlus size={16} color="#FFF" strokeWidth={2.5} />
-                  <Text style={modal.addBtnText}>Add Team Member</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            <View style={{ marginTop: spacing.sm2 }}>
+              <Button
+                label="Add Team Member"
+                Icon={UserPlus}
+                iconPosition="left"
+                onPress={handleInvite}
+                loading={inviting}
+                disabled={inviting}
+                size="lg"
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -302,34 +305,21 @@ export default function AdminTeam() {
 }
 
 const s = StyleSheet.create({
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
-  headerText: { fontSize: 13, fontFamily: fonts.medium, color: colors.textMuted },
-  inviteBtn: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: colors.primary, borderRadius: radius.xl,
-    paddingHorizontal: 14, paddingVertical: 9,
-  },
-  inviteBtnText: { fontSize: 13, fontFamily: fonts.displayBold, color: "#FFF" },
-  emptyCard: {
-    backgroundColor: "#FFF", borderRadius: radius.xxl,
-    borderWidth: 1, borderColor: colors.border,
-    padding: spacing.lg, alignItems: "center", gap: 8,
-  },
-  emptyTitle: { fontSize: 15, fontFamily: fonts.displayBold, color: colors.text },
-  emptyHint: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center", lineHeight: 18 },
-  memberCard: {
-    flexDirection: "row", alignItems: "flex-start", gap: 12,
-    backgroundColor: "#FFF", borderRadius: radius.xxl,
-    borderWidth: 1, borderColor: colors.border,
-    padding: spacing.md, marginBottom: 10,
-  },
-  avatar: {
-    width: 44, height: 44, borderRadius: 22,
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  headerIconChip: {
+    width: 32, height: 32, borderRadius: radius.md,
     backgroundColor: colors.primarySoft,
-    alignItems: "center", justifyContent: "center", flexShrink: 0,
+    alignItems: "center", justifyContent: "center",
   },
-  avatarText: { fontSize: 18, fontFamily: fonts.displayBold, color: colors.primaryDark },
+  headerText: { fontSize: 13, fontFamily: fonts.medium, color: colors.textMuted },
+  memberCard: {
+    flexDirection: "row", alignItems: "flex-start", gap: spacing.sm2,
+    backgroundColor: "#FFF", borderRadius: radius.xxl,
+    borderWidth: 1, borderColor: colors.border,
+    padding: spacing.md, marginBottom: spacing.sm2,
+    ...elevation.l1,
+  },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
   memberName: { flex: 1, fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
   memberMobile: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginBottom: 8 },
@@ -343,16 +333,17 @@ const s = StyleSheet.create({
   roleChipText: { fontSize: 11, fontFamily: fonts.medium, color: colors.textMuted },
   removeBtn: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: "#FEE2E2", alignItems: "center", justifyContent: "center",
+    backgroundColor: tints.red.bg, alignItems: "center", justifyContent: "center",
     flexShrink: 0, alignSelf: "center",
   },
 });
 
 const modal = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end" },
   sheet: {
     backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: spacing.md, paddingBottom: 40,
+    ...elevation.l2,
   },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   title: { fontSize: 18, fontFamily: fonts.displayBold, color: colors.text },
@@ -380,10 +371,4 @@ const modal = StyleSheet.create({
     padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   roleOptionDesc: { flex: 1, fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted },
-  addBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: colors.primary, borderRadius: radius.xl,
-    paddingVertical: 14, marginTop: 8,
-  },
-  addBtnText: { fontSize: 15, fontFamily: fonts.displayBold, color: "#FFF" },
 });

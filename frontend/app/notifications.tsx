@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Bell, Target, Building2, Zap, CheckCheck, CheckCircle2, Info } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import EmptyState from "@/src/components/EmptyState";
@@ -19,12 +19,12 @@ import EmptyState from "@/src/components/EmptyState";
 function notifIcon(type: string) {
   const cfg: Record<string, { icon: any; bg: string; color: string }> = {
     high_match: { icon: Target, bg: colors.primarySoft, color: colors.primaryDark },
-    state_scheme: { icon: Building2, bg: "#DBEAFE", color: "#1D4ED8" },
-    readiness: { icon: Zap, bg: "#FEF3C7", color: "#92400E" },
-    consultation_reminder: { icon: Bell, bg: "#EDE9FE", color: "#5B21B6" },
-    platform: { icon: Bell, bg: "#EEF2FF", color: "#4F46E5" },
-    reminder: { icon: Bell, bg: "#EDE9FE", color: "#5B21B6" },
-    recommendation: { icon: CheckCircle2, bg: "#DBEAFE", color: "#1D4ED8" },
+    state_scheme: { icon: Building2, bg: tints.blue.bg, color: tints.blue.fg },
+    readiness: { icon: Zap, bg: tints.amber.bg, color: tints.amber.fg },
+    consultation_reminder: { icon: Bell, bg: tints.deepTeal.bg, color: tints.deepTeal.fg },
+    platform: { icon: Bell, bg: tints.teal.bg, color: tints.teal.fg },
+    reminder: { icon: Bell, bg: tints.deepTeal.bg, color: tints.deepTeal.fg },
+    recommendation: { icon: CheckCircle2, bg: tints.blue.bg, color: tints.blue.fg },
   };
   return cfg[type] ?? { icon: Info, bg: colors.surfaceAlt, color: colors.textMuted };
 }
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.md,
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: "#FFF",
@@ -138,9 +138,9 @@ const styles = StyleSheet.create({
   markAllBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm2,
+    paddingVertical: spacing.xs2,
     borderRadius: radius.pill,
     backgroundColor: colors.primarySoft,
   },
@@ -151,18 +151,14 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.sm2,
     backgroundColor: "#FFF",
     borderRadius: radius.xl,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
   cardUnread: {
     backgroundColor: colors.primarySoft,

@@ -12,10 +12,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CheckCircle2, FileText, ChevronDown, ChevronUp, TrendingUp, Zap, MapPin, Tag, Phone } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatINR } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
+import Button from "@/src/components/ui/Button";
 
 function SchemeSkeleton() {
   return (
@@ -39,11 +40,13 @@ function AccordionSection({
   icon,
   children,
   defaultOpen = false,
+  tint = tints.teal,
 }: {
   title: string;
   icon: any;
   children: any;
   defaultOpen?: boolean;
+  tint?: { bg: string; fg: string };
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -55,7 +58,7 @@ function AccordionSection({
         activeOpacity={0.7}
       >
         <View style={accStyles.headerLeft}>
-          <View style={accStyles.iconBox}>{icon}</View>
+          <View style={[accStyles.iconBox, { backgroundColor: tint.bg }]}>{icon}</View>
           <Text style={accStyles.title}>{title}</Text>
         </View>
         {open
@@ -73,8 +76,8 @@ const accStyles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 8,
-    overflow: "hidden",
+    marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
   header: {
     flexDirection: "row",
@@ -89,8 +92,8 @@ const accStyles = StyleSheet.create({
     flex: 1,
   },
   iconBox: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: radius.lg,
     backgroundColor: colors.primarySoft,
     alignItems: "center",
@@ -219,7 +222,8 @@ export default function SchemeDetail() {
         {(scheme.eligibility || []).length > 0 && (
           <AccordionSection
             title="Eligibility"
-            icon={<CheckCircle2 size={15} color={colors.primaryDark} strokeWidth={2} />}
+            icon={<CheckCircle2 size={15} color={tints.teal.fg} strokeWidth={2} />}
+            tint={tints.teal}
             defaultOpen={true}
           >
             {scheme.eligibility.map((item: string, i: number) => (
@@ -231,7 +235,8 @@ export default function SchemeDetail() {
         {(scheme.benefits || []).length > 0 && (
           <AccordionSection
             title="Benefits"
-            icon={<Zap size={15} color={colors.primaryDark} strokeWidth={2} />}
+            icon={<Zap size={15} color={tints.amber.fg} strokeWidth={2} />}
+            tint={tints.amber}
             defaultOpen={true}
           >
             {scheme.benefits.map((item: string, i: number) => (
@@ -243,7 +248,8 @@ export default function SchemeDetail() {
         {(scheme.documents || []).length > 0 && (
           <AccordionSection
             title="Documents Required"
-            icon={<FileText size={15} color={colors.primaryDark} strokeWidth={2} />}
+            icon={<FileText size={15} color={tints.blue.fg} strokeWidth={2} />}
+            tint={tints.blue}
           >
             {scheme.documents.map((item: string, i: number) => (
               <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
@@ -257,7 +263,8 @@ export default function SchemeDetail() {
         {processList.length > 0 && (
           <AccordionSection
             title="Application Process"
-            icon={<CheckCircle2 size={15} color={colors.primaryDark} strokeWidth={2} />}
+            icon={<CheckCircle2 size={15} color={tints.deepTeal.fg} strokeWidth={2} />}
+            tint={tints.deepTeal}
           >
             {processList.map((step: string, i: number) => (
               <StepItem key={i} index={i + 1} text={step} />
@@ -268,7 +275,8 @@ export default function SchemeDetail() {
         {(scheme.states || []).length > 0 && (
           <AccordionSection
             title="State Applicability"
-            icon={<MapPin size={15} color={colors.primaryDark} strokeWidth={2} />}
+            icon={<MapPin size={15} color={tints.green.fg} strokeWidth={2} />}
+            tint={tints.green}
           >
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {scheme.states.map((s: string) => (
@@ -280,15 +288,15 @@ export default function SchemeDetail() {
           </AccordionSection>
         )}
 
-        <TouchableOpacity
-          testID="book-from-scheme"
-          style={styles.cta}
-          onPress={() => router.push("/booking")}
-          activeOpacity={0.85}
-        >
-          <Phone size={16} color="#FFF" strokeWidth={2} />
-          <Text style={styles.ctaText}>Book Free Consultation</Text>
-        </TouchableOpacity>
+        <View style={styles.ctaWrap}>
+          <Button
+            testID="book-from-scheme"
+            label="Book Free Consultation"
+            onPress={() => router.push("/booking")}
+            size="lg"
+            Icon={Phone}
+          />
+        </View>
 
         <TouchableOpacity
           testID="scheme-whatsapp-cta"
@@ -307,16 +315,12 @@ export default function SchemeDetail() {
 const styles = StyleSheet.create({
   heroCard: {
     backgroundColor: "#FFF",
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
   schemeName: {
     fontSize: 20,
@@ -369,7 +373,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 6,
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.lg,
   },
   tag: {
     backgroundColor: colors.surfaceAlt,
@@ -397,32 +401,15 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     color: colors.text,
   },
-  cta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 16,
-    backgroundColor: colors.primary,
-    paddingVertical: 15,
-    borderRadius: radius.xl,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  ctaText: {
-    fontSize: 16,
-    fontFamily: fonts.displayBold,
-    color: "#FFF",
+  ctaWrap: {
+    marginTop: spacing.md,
   },
   whatsappCta: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    marginTop: 10,
+    marginTop: spacing.sm2,
     backgroundColor: colors.primarySoft,
     paddingVertical: 15,
     borderRadius: radius.xl,

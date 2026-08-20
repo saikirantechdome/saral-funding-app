@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  TouchableOpacity, ActivityIndicator, Alert,
+  ActivityIndicator, Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Link2, Phone, CheckCircle2 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import Button from "@/src/components/ui/Button";
 
 type AdminConfig = {
   calendly_url?: string;
@@ -58,7 +59,7 @@ export default function AdminSettings() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionIcon}>
-                  <Link2 size={14} color={colors.primaryDark} strokeWidth={2} />
+                  <Link2 size={16} color={colors.primaryDark} strokeWidth={2} />
                 </View>
                 <Text style={styles.sectionTitle}>Calendly Integration</Text>
               </View>
@@ -76,7 +77,7 @@ export default function AdminSettings() {
 
               <Text style={styles.fieldLabel}>Consultation Duration (minutes)</Text>
               <TextInput
-                style={styles.input}
+                style={styles.inputLast}
                 value={String(config.consultation_duration_min ?? 30)}
                 onChangeText={(v) => setConfig((c) => ({ ...c, consultation_duration_min: parseInt(v) || 30 }))}
                 keyboardType="number-pad"
@@ -88,15 +89,15 @@ export default function AdminSettings() {
             {/* WhatsApp */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: "#DDF3F0" }]}>
-                  <Phone size={14} color="#24655E" strokeWidth={2} />
+                <View style={[styles.sectionIcon, { backgroundColor: tints.deepTeal.bg }]}>
+                  <Phone size={16} color={tints.deepTeal.fg} strokeWidth={2} />
                 </View>
                 <Text style={styles.sectionTitle}>WhatsApp Support</Text>
               </View>
 
               <Text style={styles.fieldLabel}>WhatsApp Number (with country code)</Text>
               <TextInput
-                style={styles.input}
+                style={styles.inputLast}
                 value={config.whatsapp_number || ""}
                 onChangeText={(v) => setConfig((c) => ({ ...c, whatsapp_number: v }))}
                 placeholder="919876543210"
@@ -111,22 +112,15 @@ export default function AdminSettings() {
 
       {/* Save button */}
       <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
-        <TouchableOpacity
-          style={[styles.saveBtn, (saving || saved) && { opacity: 0.85 }]}
+        <Button
+          label={saved ? "Saved!" : "Save Settings"}
           onPress={save}
           disabled={saving || loading}
-        >
-          {saving ? (
-            <ActivityIndicator color="#FFF" size="small" />
-          ) : saved ? (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <CheckCircle2 size={16} color="#FFF" strokeWidth={2} />
-              <Text style={styles.saveBtnText}>Saved!</Text>
-            </View>
-          ) : (
-            <Text style={styles.saveBtnText}>Save Settings</Text>
-          )}
-        </TouchableOpacity>
+          loading={saving}
+          Icon={saved ? CheckCircle2 : undefined}
+          iconPosition="left"
+          size="lg"
+        />
       </View>
     </SafeAreaView>
   );
@@ -134,37 +128,42 @@ export default function AdminSettings() {
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: "#FFF", borderRadius: radius.xxl,
+    backgroundColor: "#FFF", borderRadius: radius.xl,
     borderWidth: 1, borderColor: colors.border,
-    padding: spacing.md, marginBottom: 12,
+    padding: spacing.md, marginBottom: spacing.lg,
+    ...elevation.l1,
   },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 },
+  sectionHeader: {
+    flexDirection: "row", alignItems: "center", gap: spacing.sm2,
+    marginBottom: spacing.md, paddingBottom: spacing.sm2,
+    borderBottomWidth: 1, borderBottomColor: colors.border,
+  },
   sectionIcon: {
-    width: 32, height: 32, borderRadius: radius.md,
+    width: 36, height: 36, borderRadius: radius.lg,
     backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center",
   },
   sectionTitle: { fontSize: 15, fontFamily: fonts.displayBold, color: colors.text },
   fieldLabel: {
     fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted,
-    textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6,
+    textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6,
   },
   input: {
     borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl,
     padding: 12, fontSize: 14, fontFamily: fonts.regular,
-    color: colors.text, backgroundColor: colors.surface2, marginBottom: 14,
+    color: colors.text, backgroundColor: colors.surface2, marginBottom: spacing.sm2,
+  },
+  inputLast: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl,
+    padding: 12, fontSize: 14, fontFamily: fonts.regular,
+    color: colors.text, backgroundColor: colors.surface2, marginBottom: 0,
   },
   hint: {
     fontSize: 11, fontFamily: fonts.regular, color: colors.textDim,
-    marginTop: -10, marginBottom: 4,
+    marginTop: spacing.xs, marginBottom: 0,
   },
   footer: {
     position: "absolute", bottom: 0, left: 0, right: 0,
     padding: spacing.md, backgroundColor: "#FFF",
     borderTopWidth: 1, borderTopColor: colors.border,
   },
-  saveBtn: {
-    backgroundColor: colors.primary, borderRadius: radius.xl,
-    paddingVertical: 14, alignItems: "center",
-  },
-  saveBtnText: { fontSize: 15, fontFamily: fonts.displayBold, color: "#FFF" },
 });

@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { CheckCircle2, Circle, Building2, Sprout } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, elevation } from "@/src/theme";
 import { apiPost } from "@/src/api";
 import { INDUSTRIES, INDIAN_STATES } from "@/src/constants";
 import Picker from "@/src/components/Picker";
@@ -141,7 +141,9 @@ export default function BusinessScreen() {
                   onPress={() => setStage(s)}
                   activeOpacity={0.8}
                 >
-                  <Icon size={18} color={active ? colors.primaryDark : colors.textDim} strokeWidth={2} />
+                  <View style={[styles.segmentIconChip, active && styles.segmentIconChipActive]}>
+                    <Icon size={18} color={active ? colors.primaryDark : colors.textDim} strokeWidth={2} />
+                  </View>
                   <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
                     {s === "new" ? "New Business" : "Existing Business"}
                   </Text>
@@ -268,8 +270,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: fonts.displayBold,
     color: colors.text,
-    marginTop: 4,
-    marginBottom: 6,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs2,
     letterSpacing: -0.3,
   },
   subheading: {
@@ -285,11 +287,11 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 10,
+    marginBottom: spacing.sm2,
   },
   segmentRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.sm2,
     marginBottom: spacing.md,
   },
   segment: {
@@ -300,13 +302,26 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: radius.xl,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface,
+    ...elevation.l1,
   },
   segmentActive: {
     backgroundColor: colors.primarySoft,
     borderColor: colors.primary,
+    borderWidth: 1.5,
+  },
+  segmentIconChip: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceAlt,
+  },
+  segmentIconChipActive: {
+    backgroundColor: colors.primarySoft,
   },
   segmentText: {
     fontSize: 13,
@@ -319,20 +334,22 @@ const styles = StyleSheet.create({
   },
   toggleGrid: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 8,
+    gap: spacing.sm2,
+    marginBottom: spacing.sm,
   },
   toggleCard: {
     flex: 1,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.xl,
     padding: 14,
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface,
+    ...elevation.l1,
   },
   toggleCardOn: {
     borderColor: colors.primary,
     backgroundColor: colors.primarySoft,
+    borderWidth: 1.5,
   },
   toggleLeft: {
     flexDirection: "row",

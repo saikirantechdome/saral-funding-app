@@ -8,7 +8,7 @@ import {
   TrendingUp, TrendingDown as TrendingDownIcon, Minus,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatINR } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
@@ -19,7 +19,7 @@ function BankSkeleton() {
     <View style={{ padding: spacing.md, gap: 12 }}>
       <SkeletonBox width="70%" height={14} />
       <SkeletonBox width="50%" height={30} />
-      <SkeletonBox width="100%" height={60} borderRadius={16} />
+      <SkeletonBox width="100%" height={60} borderRadius={radius.lg} />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <SkeletonBox key={i} width="48%" height={72} borderRadius={radius.xl} />
@@ -30,7 +30,7 @@ function BankSkeleton() {
 }
 
 function MatchScoreRing({ score }: { score: number }) {
-  const color = score >= 80 ? colors.primary : score >= 60 ? "#F59E0B" : "#9CA3AF";
+  const color = score >= 80 ? colors.primary : score >= 60 ? colors.warning : colors.textDim;
   const label = score >= 80 ? "Strong Match" : score >= 60 ? "Good Match" : "Partial Match";
   return (
     <View style={matchStyles.wrap}>
@@ -91,17 +91,19 @@ function MetricTile({
   value,
   valueColor,
   highlight,
+  tint = tints.neutral,
 }: {
   Icon: any;
   label: string;
   value: string;
   valueColor?: string;
   highlight?: boolean;
+  tint?: { bg: string; fg: string };
 }) {
   return (
     <View style={[styles.tile, highlight && styles.tileHighlight]}>
-      <View style={[styles.tileIconWrap, highlight && styles.tileIconWrapHL]}>
-        <Icon size={14} color={highlight ? colors.primaryDark : colors.textDim} strokeWidth={2} />
+      <View style={[styles.tileIconWrap, { backgroundColor: tint.bg }, highlight && styles.tileIconWrapHL]}>
+        <Icon size={16} color={highlight ? colors.primaryDark : tint.fg} strokeWidth={2} />
       </View>
       <Text style={styles.tileLabel}>{label}</Text>
       <Text style={[styles.tileValue, valueColor && { color: valueColor }]}>{value}</Text>
@@ -140,7 +142,7 @@ export default function BankDetail() {
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
             <View style={[styles.bankAvatar, !isPublic && styles.bankAvatarPrivate]}>
-              <Building2 size={24} color={isPublic ? colors.primaryDark : "#1D4ED8"} strokeWidth={1.5} />
+              <Building2 size={24} color={isPublic ? colors.primaryDark : tints.blue.fg} strokeWidth={1.5} />
             </View>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -193,17 +195,20 @@ export default function BankDetail() {
               label="Processing Fee"
               value={`${bank.processing_fee_percent}%`}
               highlight={bank.processing_fee_percent < 1}
+              tint={tints.amber}
             />
             <MetricTile
               Icon={CreditCard}
               label="Min Credit Score"
               value={String(bank.min_credit_score)}
+              tint={tints.blue}
             />
             <MetricTile
               Icon={DollarSign}
               label="Min Turnover"
               value={bank.min_turnover ? formatINR(bank.min_turnover) : "None"}
               highlight={!bank.min_turnover}
+              tint={tints.teal}
             />
             <MetricTile
               Icon={ShieldCheck}
@@ -211,6 +216,7 @@ export default function BankDetail() {
               value={bank.collateral_required ? "Required" : "Not Required"}
               valueColor={bank.collateral_required ? colors.warning : colors.primary}
               highlight={!bank.collateral_required}
+              tint={bank.collateral_required ? tints.red : tints.green}
             />
             {bank.processing_time_days != null && (
               <MetricTile
@@ -218,6 +224,7 @@ export default function BankDetail() {
                 label="Processing Time"
                 value={`~${bank.processing_time_days} days`}
                 highlight={bank.processing_time_days <= 7}
+                tint={tints.deepTeal}
               />
             )}
           </View>
@@ -287,16 +294,12 @@ const styles = StyleSheet.create({
   heroCard: {
     backgroundColor: "#FFF",
     margin: spacing.md,
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: spacing.sm2,
+    ...elevation.l1,
+    marginBottom: spacing.lg,
   },
   heroTop: {
     flexDirection: "row",
@@ -313,7 +316,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   bankAvatarPrivate: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: tints.blue.bg,
   },
   typePill: {
     paddingHorizontal: 8,
@@ -322,10 +325,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   typePillPub: { backgroundColor: colors.primarySoft },
-  typePillPriv: { backgroundColor: "#DBEAFE" },
+  typePillPriv: { backgroundColor: tints.blue.bg },
   typePillText: { fontSize: 10, fontFamily: fonts.bold, textTransform: "uppercase", letterSpacing: 0.4 },
   typePillTextPub: { color: colors.primaryDark },
-  typePillTextPriv: { color: "#1D4ED8" },
+  typePillTextPriv: { color: tints.blue.fg },
   bankName: {
     fontSize: 20,
     fontFamily: fonts.displayBold,
@@ -376,8 +379,8 @@ const styles = StyleSheet.create({
   tileGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: spacing.sm2,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   tile: {
     width: "48%",
@@ -387,15 +390,16 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 14,
     gap: 4,
+    ...elevation.l1,
   },
   tileHighlight: {
     backgroundColor: colors.primarySoft,
     borderColor: colors.primaryMid,
   },
   tileIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.md,
+    width: 36,
+    height: 36,
+    borderRadius: radius.lg,
     backgroundColor: colors.surfaceAlt,
     alignItems: "center",
     justifyContent: "center",
@@ -417,7 +421,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   section: {
-    marginBottom: spacing.sm2,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     fontSize: 13,
@@ -462,17 +466,18 @@ const styles = StyleSheet.create({
   },
   matchCard: {
     backgroundColor: "#FFF",
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: spacing.sm2,
+    marginBottom: spacing.lg,
+    ...elevation.l1,
   },
   whyCard: {
     backgroundColor: colors.primarySoft,
     borderRadius: radius.xl,
     padding: spacing.md,
-    marginBottom: spacing.sm2,
+    marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.primaryMid,
   },

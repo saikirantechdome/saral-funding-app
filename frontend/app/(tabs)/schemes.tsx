@@ -12,14 +12,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, X, Landmark, ChevronLeft } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, elevation } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { SCHEME_CATEGORIES } from "@/src/constants";
 import { SchemesSkeleton } from "@/src/components/SkeletonLoader";
 import EmptyState from "@/src/components/EmptyState";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 export default function Schemes() {
   const router = useRouter();
+  const tabBarSpacing = useTabBarSpacing();
   const [allAssigned, setAllAssigned] = useState<any[]>([]); // full assigned scheme list
   const [items, setItems] = useState<any[]>([]);
   const [q, setQ] = useState("");
@@ -109,7 +111,7 @@ export default function Schemes() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingBottom: 10, paddingHorizontal: 2 }}
+          contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.sm2, paddingHorizontal: 2 }}
         >
           {SCHEME_CATEGORIES.map((c) => {
             const active = c === cat;
@@ -141,7 +143,8 @@ export default function Schemes() {
         <FlatList
           data={items}
           keyExtractor={(x) => x.id}
-          contentContainerStyle={{ padding: spacing.md, paddingBottom: 100 }}
+          style={{ flex: 1, marginBottom: tabBarSpacing }}
+          contentContainerStyle={{ padding: spacing.md, paddingBottom: 4 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <SchemeCard item={item} onPress={() => router.push({ pathname: "/scheme/[id]", params: { id: item.id } })} />}
         />
@@ -202,12 +205,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginBottom: 12,
+    marginBottom: spacing.sm2,
   },
   backBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.xl,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -218,7 +221,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   searchRow: {
-    marginBottom: 10,
+    marginBottom: spacing.sm2,
   },
   searchBox: {
     flexDirection: "row",
@@ -270,12 +273,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
   cardTop: {
     flexDirection: "row",

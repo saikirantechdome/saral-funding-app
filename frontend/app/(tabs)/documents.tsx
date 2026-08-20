@@ -15,7 +15,6 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
@@ -34,12 +33,15 @@ import {
   ChevronRight,
   FileSearch,
   User as UserIcon,
+  XCircle,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiGet, apiDelete, getToken, API_BASE } from "@/src/api";
 import Picker from "@/src/components/Picker";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
 import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 const BULK_UPLOAD_WHATSAPP_URL = `https://wa.me/919893869899?text=${encodeURIComponent(
   "Hello, I have multiple documents to upload for my Saral Funding application. Could your team please help me with a bulk upload?"
@@ -51,10 +53,17 @@ type PickedFile = {
   mimeType?: string;
 };
 
+// Reject reasons come from free-text/legacy values with inconsistent casing
+// ("REJECT", "details missing", etc.) — normalize display casing so badges
+// look consistent regardless of how the source string was stored.
+function toSentenceCase(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 function statusStyle(status: string) {
   if (status === "verified") return { bg: colors.primarySoft, text: colors.primaryDark };
-  if (status === "rejected") return { bg: "#FEE2E2", text: "#DC2626" };
-  return { bg: "#FEF3C7", text: "#92400E" };
+  if (status === "rejected") return { bg: colors.dangerSoft, text: colors.danger };
+  return { bg: tints.amber.bg, text: tints.amber.fg };
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -74,7 +83,7 @@ const badge = StyleSheet.create({
 
 function UserDocumentsTab() {
   const router = useRouter();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarSpacing = useTabBarSpacing();
   const [docs, setDocs] = useState<any[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
@@ -225,7 +234,8 @@ function UserDocumentsTab() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: tabBarHeight + 24 }}
+        style={{ flex: 1, marginBottom: tabBarSpacing }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: 4 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Upload section */}
@@ -301,8 +311,10 @@ function UserDocumentsTab() {
             </Text>
           </View>
         ) : (
-          docs.map((doc) => (
-            <View key={doc.id} style={s.docCard}>
+          docs.map((doc) => {
+            const cfg = statusStyle(doc.status);
+            return (
+            <View key={doc.id} style={[s.docCard, { borderLeftWidth: 4, borderLeftColor: cfg.text }]}>
               <View style={s.docIcon}>
                 <FileText size={18} color={colors.primaryDark} strokeWidth={2} />
               </View>
@@ -321,8 +333,8 @@ function UserDocumentsTab() {
                 </View>
                 {doc.status === "rejected" && doc.reject_reason && (
                   <View style={s.rejectReasonBox}>
-                    <Info size={11} color="#DC2626" strokeWidth={2} />
-                    <Text style={s.rejectReasonText}>{doc.reject_reason}</Text>
+                    <Info size={11} color={colors.danger} strokeWidth={2} />
+                    <Text style={s.rejectReasonText}>{toSentenceCase(doc.reject_reason)}</Text>
                   </View>
                 )}
               </View>
@@ -338,12 +350,13 @@ function UserDocumentsTab() {
                   <TouchableOpacity style={s.deleteBtn} onPress={() => handleDelete(doc.id)} disabled={deleting === doc.id}>
                     {deleting === doc.id
                       ? <ActivityIndicator color={colors.textDim} size="small" />
-                      : <X size={14} color="#DC2626" strokeWidth={2.5} />}
+                      : <X size={14} color={colors.danger} strokeWidth={2.5} />}
                   </TouchableOpacity>
                 )}
               </View>
             </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
@@ -470,14 +483,15 @@ const s = StyleSheet.create({
   emptyHint: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center", lineHeight: 18 },
   docCard: {
     backgroundColor: "#FFF",
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: 8,
+    marginBottom: spacing.sm2,
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
+    ...elevation.l1,
   },
   docIcon: {
     width: 40,
@@ -511,7 +525,7 @@ const s = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#FEE2E2",
+    backgroundColor: colors.dangerSoft,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
@@ -521,17 +535,17 @@ const s = StyleSheet.create({
     alignItems: "flex-start",
     gap: 5,
     marginTop: 5,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.dangerSoft,
     borderRadius: radius.md,
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: colors.danger,
   },
   rejectReasonText: {
     fontSize: 11,
     fontFamily: fonts.medium,
-    color: "#DC2626",
+    color: colors.danger,
     flex: 1,
     lineHeight: 16,
   },
@@ -540,16 +554,18 @@ const s = StyleSheet.create({
 // ── Admin: User-first Documents View ──
 const STATUS_CFG: Record<string, { bg: string; color: string }> = {
   verified: { bg: colors.primarySoft, color: colors.primaryDark },
-  rejected: { bg: "#FEE2E2", color: "#DC2626" },
-  pending:  { bg: "#FEF3C7", color: "#92400E" },
+  rejected: { bg: colors.dangerSoft, color: colors.danger },
+  pending:  { bg: tints.amber.bg, color: tints.amber.fg },
 };
 
 function AdminUserDocuments() {
-  const tabBarHeight = useBottomTabBarHeight();
+  const router = useRouter();
+  const tabBarSpacing = useTabBarSpacing();
   const [allDocs, setAllDocs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string; mobile: string } | null>(null);
+  const [docFilter, setDocFilter] = useState<"all" | "pending" | "rejected" | "verified">("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectModal, setRejectModal] = useState<{ visible: boolean; docId: string; reason: string }>({ visible: false, docId: "", reason: "" });
 
@@ -580,6 +596,7 @@ function AdminUserDocuments() {
 
   // Docs for selected user
   const selectedDocs = selectedUser ? (userMap.get(selectedUser.id)?.docs ?? []) : [];
+  const filteredDocs = docFilter === "all" ? selectedDocs : selectedDocs.filter((d: any) => d.status === docFilter);
 
   const handleView = async (docId: string) => {
     try {
@@ -636,12 +653,50 @@ function AdminUserDocuments() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]}>
         <View style={adS.header}>
+          {router.canGoBack() && (
+            <TouchableOpacity
+              testID="user-documents-back"
+              onPress={() => router.back()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={{ marginRight: 2 }}
+            >
+              <ChevronLeft size={22} color={colors.text} strokeWidth={2} />
+            </TouchableOpacity>
+          )}
           <FileSearch size={18} color={colors.primaryDark} strokeWidth={2} />
           <View style={{ flex: 1 }}>
             <Text style={adS.headerTitle}>User Documents</Text>
             <Text style={adS.headerSub}>{userList.length} users · {allDocs.length} docs total</Text>
           </View>
         </View>
+
+        {!loading && allDocs.length > 0 && (
+          <View style={adS.summaryRow}>
+            <View style={adS.summaryStat}>
+              <View style={[adS.summaryIcon, { backgroundColor: tints.amber.bg }]}>
+                <Clock size={14} color={tints.amber.fg} strokeWidth={2} />
+              </View>
+              <Text style={adS.summaryVal}>{allDocs.filter((d) => d.status === "pending").length}</Text>
+              <Text style={adS.summaryLabel}>Pending</Text>
+            </View>
+            <View style={adS.summaryDivider} />
+            <View style={adS.summaryStat}>
+              <View style={[adS.summaryIcon, { backgroundColor: colors.dangerSoft }]}>
+                <XCircle size={14} color={colors.danger} strokeWidth={2} />
+              </View>
+              <Text style={adS.summaryVal}>{allDocs.filter((d) => d.status === "rejected").length}</Text>
+              <Text style={adS.summaryLabel}>Rejected</Text>
+            </View>
+            <View style={adS.summaryDivider} />
+            <View style={adS.summaryStat}>
+              <View style={[adS.summaryIcon, { backgroundColor: colors.primarySoft }]}>
+                <CheckCircle2 size={14} color={colors.primaryDark} strokeWidth={2} />
+              </View>
+              <Text style={adS.summaryVal}>{allDocs.filter((d) => d.status === "verified").length}</Text>
+              <Text style={adS.summaryLabel}>Verified</Text>
+            </View>
+          </View>
+        )}
 
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
@@ -655,7 +710,8 @@ function AdminUserDocuments() {
           <FlatList
             data={userList}
             keyExtractor={(u) => u.id}
-            contentContainerStyle={{ padding: spacing.md, paddingBottom: tabBarHeight + 24 }}
+            style={{ flex: 1, marginBottom: tabBarSpacing }}
+            contentContainerStyle={{ padding: spacing.md, paddingBottom: 4 }}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -669,15 +725,14 @@ function AdminUserDocuments() {
               const verified = u.docs.filter((d: any) => d.status === "verified").length;
               const pending  = u.docs.filter((d: any) => d.status === "pending").length;
               const rejected = u.docs.filter((d: any) => d.status === "rejected").length;
+              const accent = rejected > 0 ? colors.danger : pending > 0 ? tints.amber.fg : colors.primary;
               return (
                 <TouchableOpacity
-                  style={adS.userCard}
-                  onPress={() => setSelectedUser({ id: u.id, name: u.name, mobile: u.mobile })}
+                  style={[adS.userCard, { borderLeftWidth: 4, borderLeftColor: accent }]}
+                  onPress={() => { setSelectedUser({ id: u.id, name: u.name, mobile: u.mobile }); setDocFilter("all"); }}
                   activeOpacity={0.8}
                 >
-                  <View style={adS.avatar}>
-                    <Text style={adS.avatarText}>{u.name.charAt(0).toUpperCase()}</Text>
-                  </View>
+                  <InitialsAvatar name={u.name || "Unknown"} size={40} />
                   <View style={{ flex: 1 }}>
                     <Text style={adS.userName}>{u.name}</Text>
                     <Text style={adS.userMobile}>{u.mobile}</Text>
@@ -688,13 +743,13 @@ function AdminUserDocuments() {
                         </View>
                       )}
                       {pending > 0 && (
-                        <View style={[adS.miniPill, { backgroundColor: "#FEF3C7" }]}>
-                          <Text style={[adS.miniPillText, { color: "#92400E" }]}>{pending} pending</Text>
+                        <View style={[adS.miniPill, { backgroundColor: tints.amber.bg }]}>
+                          <Text style={[adS.miniPillText, { color: tints.amber.fg }]}>{pending} pending</Text>
                         </View>
                       )}
                       {rejected > 0 && (
-                        <View style={[adS.miniPill, { backgroundColor: "#FEE2E2" }]}>
-                          <Text style={[adS.miniPillText, { color: "#DC2626" }]}>{rejected} rejected</Text>
+                        <View style={[adS.miniPill, { backgroundColor: colors.dangerSoft }]}>
+                          <Text style={[adS.miniPillText, { color: colors.danger }]}>{rejected} rejected</Text>
                         </View>
                       )}
                     </View>
@@ -710,28 +765,70 @@ function AdminUserDocuments() {
   }
 
   // ── User documents detail view ──
+  const filterCounts = {
+    all: selectedDocs.length,
+    pending: selectedDocs.filter((d: any) => d.status === "pending").length,
+    rejected: selectedDocs.filter((d: any) => d.status === "rejected").length,
+    verified: selectedDocs.filter((d: any) => d.status === "verified").length,
+  };
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]}>
       <View style={adS.detailHeader}>
         <TouchableOpacity onPress={() => setSelectedUser(null)} style={adS.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <ChevronLeft size={22} color={colors.text} strokeWidth={2} />
         </TouchableOpacity>
+        <InitialsAvatar name={selectedUser.name || "Unknown"} size={38} />
         <View style={{ flex: 1 }}>
           <Text style={adS.headerTitle}>{selectedUser.name}</Text>
           <Text style={adS.headerSub}>{selectedUser.mobile} · {selectedDocs.length} document{selectedDocs.length !== 1 ? "s" : ""}</Text>
         </View>
       </View>
 
+      <View style={adS.filterRow}>
+        {(["all", "pending", "rejected", "verified"] as const).map((f) => {
+          const active = docFilter === f;
+          const cfg = f === "all" ? { bg: colors.primarySoft, color: colors.primaryDark } : STATUS_CFG[f];
+          return (
+            <TouchableOpacity
+              key={f}
+              testID={`doc-filter-${f}`}
+              style={[
+                adS.filterChip,
+                { backgroundColor: active ? (f === "all" ? colors.primary : cfg.bg) : "#FFF" },
+                active && f !== "all" && { borderWidth: 1.5, borderColor: cfg.color },
+              ]}
+              onPress={() => setDocFilter(f)}
+            >
+              <Text style={[
+                adS.filterChipText,
+                { color: active ? (f === "all" ? "#FFF" : cfg.color) : colors.textMuted },
+                active && { fontFamily: fonts.bold },
+              ]}>
+                {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)} ({filterCounts[f]})
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       <FlatList
-        data={selectedDocs}
+        data={filteredDocs}
         keyExtractor={(d) => d.id}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: tabBarHeight + 24 }}
+        style={{ flex: 1, marginBottom: tabBarSpacing }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: 4 }}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        ListEmptyComponent={
+          <View style={adS.emptyBox}>
+            <FileSearch size={36} color={colors.textDim} strokeWidth={1.5} />
+            <Text style={adS.emptyTitle}>No documents here</Text>
+            <Text style={adS.emptySub}>Nothing in the "{docFilter}" filter yet.</Text>
+          </View>
+        }
         renderItem={({ item: doc }) => {
           const cfg = STATUS_CFG[doc.status] ?? STATUS_CFG.pending;
           return (
-            <View style={adS.docCard}>
+            <View style={[adS.docCard, { borderLeftWidth: 4, borderLeftColor: cfg.color }]}>
               <View style={adS.docCardHeader}>
                 <View style={adS.docIcon}>
                   <FileText size={16} color={colors.primaryDark} strokeWidth={2} />
@@ -751,8 +848,8 @@ function AdminUserDocuments() {
               </Text>
               {doc.status === "rejected" && doc.reject_reason && (
                 <View style={adS.reasonBox}>
-                  <AlertCircle size={11} color="#DC2626" strokeWidth={2} />
-                  <Text style={adS.reasonText}>{doc.reject_reason}</Text>
+                  <AlertCircle size={11} color={colors.danger} strokeWidth={2} />
+                  <Text style={adS.reasonText}>{toSentenceCase(doc.reject_reason)}</Text>
                 </View>
               )}
               <View style={adS.docFooterRow}>
@@ -788,7 +885,7 @@ function AdminUserDocuments() {
                       disabled={actionLoading === doc.id}
                       activeOpacity={0.8}
                     >
-                      <X size={13} color="#DC2626" strokeWidth={2.5} />
+                      <X size={13} color={colors.danger} strokeWidth={2.5} />
                       <Text style={adS.rejectBtnText}>Reject</Text>
                     </TouchableOpacity>
                   </>
@@ -844,6 +941,31 @@ const adS = StyleSheet.create({
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   headerTitle: { fontSize: 16, fontFamily: fonts.displayBold, color: colors.text },
   headerSub: { fontSize: 11, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 1 },
+  filterRow: {
+    flexDirection: "row", flexWrap: "wrap", gap: 6,
+    paddingHorizontal: spacing.md, paddingVertical: 10,
+    backgroundColor: "#FFF", borderBottomWidth: 1, borderBottomColor: colors.border,
+  },
+  filterChip: {
+    paddingHorizontal: 10, height: 28, borderRadius: radius.pill,
+    borderWidth: 1.5, borderColor: "transparent",
+    alignItems: "center", justifyContent: "center",
+  },
+  filterChipText: { fontSize: 11, fontFamily: fonts.medium },
+  summaryRow: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#FFF", marginHorizontal: spacing.md, marginTop: spacing.sm2,
+    borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border,
+    paddingVertical: 12, paddingHorizontal: 8,
+  },
+  summaryStat: { flex: 1, alignItems: "center", gap: 3 },
+  summaryDivider: { width: 1, height: 34, backgroundColor: colors.border },
+  summaryIcon: {
+    width: 26, height: 26, borderRadius: radius.md,
+    alignItems: "center", justifyContent: "center", marginBottom: 2,
+  },
+  summaryVal: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
+  summaryLabel: { fontSize: 10, fontFamily: fonts.medium, color: colors.textMuted },
   emptyBox: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, marginTop: -60 },
   emptyTitle: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   emptySub: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center", lineHeight: 20 },
@@ -852,11 +974,6 @@ const adS = StyleSheet.create({
     backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1,
     borderColor: colors.border, padding: 14, marginBottom: 8,
   },
-  avatar: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center",
-  },
-  avatarText: { fontSize: 18, fontFamily: fonts.displayBold, color: colors.primaryDark },
   userName: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
   userMobile: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 1 },
   docCountRow: { flexDirection: "row", gap: 6, marginTop: 6, flexWrap: "wrap" },
@@ -878,16 +995,16 @@ const adS = StyleSheet.create({
   docDate: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted },
   reasonBox: {
     flexDirection: "row", alignItems: "flex-start", gap: 6,
-    backgroundColor: "#FEF2F2", borderRadius: radius.lg, padding: 10,
-    borderWidth: 1, borderColor: "#FECACA",
+    backgroundColor: colors.dangerSoft, borderRadius: radius.lg, padding: 10,
+    borderWidth: 1, borderColor: colors.danger,
   },
-  reasonText: { fontSize: 12, fontFamily: fonts.medium, color: "#DC2626", flex: 1, lineHeight: 17 },
+  reasonText: { fontSize: 12, fontFamily: fonts.medium, color: colors.danger, flex: 1, lineHeight: 17 },
   docFooterRow: {
     flexDirection: "row", gap: 8, flexWrap: "wrap",
   },
   viewBtn: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8,
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    paddingHorizontal: 14, paddingVertical: 9,
     borderRadius: radius.lg, borderWidth: 1,
     borderColor: colors.border, backgroundColor: colors.surface2,
   },
@@ -901,11 +1018,11 @@ const adS = StyleSheet.create({
   rejectBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
     paddingVertical: 9, borderRadius: radius.lg,
-    borderWidth: 1.5, borderColor: "#FECACA", backgroundColor: "#FEF2F2",
+    borderWidth: 1.5, borderColor: colors.danger, backgroundColor: colors.dangerSoft,
   },
-  rejectBtnText: { fontSize: 12, fontFamily: fonts.displayBold, color: "#DC2626" },
+  rejectBtnText: { fontSize: 12, fontFamily: fonts.displayBold, color: colors.danger },
   modalOverlay: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.45)",
+    flex: 1, backgroundColor: colors.overlay,
     alignItems: "center", justifyContent: "center", padding: 24,
   },
   modalBox: {
@@ -926,7 +1043,7 @@ const adS = StyleSheet.create({
   modalCancelText: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.textMuted },
   modalConfirm: {
     flex: 1, paddingVertical: 11, borderRadius: radius.lg,
-    backgroundColor: "#DC2626", alignItems: "center",
+    backgroundColor: colors.danger, alignItems: "center",
   },
   modalConfirmText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
 });

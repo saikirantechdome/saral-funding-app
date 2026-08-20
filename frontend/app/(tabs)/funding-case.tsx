@@ -13,17 +13,17 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   ChevronRight, TrendingUp, Building2, AlertCircle,
   CheckCircle2, Circle, Zap, FileText, Clock, Star,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, elevation } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, elevation, tints } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { FundingCaseSkeleton } from "@/src/components/SkeletonLoader";
 import ReadinessRing from "@/src/components/ReadinessRing";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 type Match = { scheme_id: string; name: string; score: number; funding_estimate: number; subsidy_estimate: number; reason: string };
 type BankRec = { bank_id: string; name: string; short_name: string; score: number; interest_range: string; why: string; processing_time_days?: number };
@@ -32,7 +32,7 @@ type Readiness = { score: number; max: number; actions: ReadinessAction[]; break
 
 export default function FundingCase() {
   const router = useRouter();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarSpacing = useTabBarSpacing();
   const [matches, setMatches] = useState<Match[]>([]);
   const [banks, setBanks] = useState<BankRec[]>([]);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
@@ -83,7 +83,8 @@ export default function FundingCase() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="funding-case-screen">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
+        style={{ flex: 1, marginBottom: tabBarSpacing }}
+        contentContainerStyle={{ paddingBottom: 4 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -105,7 +106,7 @@ export default function FundingCase() {
           <View style={s.adminRecCard}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <View style={s.adminRecIconWrap}>
-                <Star size={14} color="#1E534C" strokeWidth={2.5} />
+                <Star size={14} color={tints.deepTeal.fg} strokeWidth={2.5} />
               </View>
               <Text style={s.adminRecTitle}>Advisor Recommendation</Text>
             </View>
@@ -195,9 +196,9 @@ export default function FundingCase() {
                       <Text style={s.docCountText}>{docs.length} uploaded</Text>
                     </View>
                     {pendingCount > 0 && (
-                      <View style={[s.docCountPill, { backgroundColor: "#FEF3C7" }]}>
-                        <Clock size={10} color="#92400E" strokeWidth={2.5} />
-                        <Text style={[s.docCountText, { color: "#92400E" }]}>{pendingCount} pending</Text>
+                      <View style={[s.docCountPill, { backgroundColor: tints.amber.bg }]}>
+                        <Clock size={10} color={tints.amber.fg} strokeWidth={2.5} />
+                        <Text style={[s.docCountText, { color: tints.amber.fg }]}>{pendingCount} pending</Text>
                       </View>
                     )}
                   </View>
@@ -207,22 +208,22 @@ export default function FundingCase() {
                     {docs.slice(0, 5).map((d) => {
                       const bgMap: Record<string, string> = {
                         verified: colors.primarySoft,
-                        rejected: "#FEE2E2",
-                        pending: "#FEF3C7",
+                        rejected: colors.dangerSoft,
+                        pending: tints.amber.bg,
                       };
                       const textMap: Record<string, string> = {
                         verified: colors.primaryDark,
-                        rejected: "#DC2626",
-                        pending: "#92400E",
+                        rejected: colors.danger,
+                        pending: tints.amber.fg,
                       };
                       return (
                         <View
                           key={d.id}
-                          style={[s.docChip, { backgroundColor: bgMap[d.status] || "#FEF3C7" }]}
+                          style={[s.docChip, { backgroundColor: bgMap[d.status] || tints.amber.bg }]}
                         >
-                          <FileText size={10} color={textMap[d.status] || "#92400E"} strokeWidth={2.5} />
+                          <FileText size={10} color={textMap[d.status] || tints.amber.fg} strokeWidth={2.5} />
                           <Text
-                            style={[s.docChipText, { color: textMap[d.status] || "#92400E" }]}
+                            style={[s.docChipText, { color: textMap[d.status] || tints.amber.fg }]}
                             numberOfLines={1}
                           >
                             {d.doc_type}
@@ -376,7 +377,7 @@ const s = StyleSheet.create({
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm2,
     backgroundColor: colors.primary,
-    borderRadius: 20,
+    borderRadius: radius.xxl,
     padding: spacing.md,
     ...elevation.l1,
     shadowColor: colors.primaryDark,
@@ -412,11 +413,7 @@ const s = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.sm2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   sectionLabel: {
     fontSize: 11,
@@ -424,7 +421,7 @@ const s = StyleSheet.create({
     color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: spacing.sm2,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -454,9 +451,9 @@ const s = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  actionNumHigh: { backgroundColor: "#FEE2E2" },
+  actionNumHigh: { backgroundColor: colors.dangerSoft },
   actionNumText: { fontSize: 12, fontFamily: fonts.bold, color: colors.textMuted },
-  actionNumTextHigh: { color: "#DC2626" },
+  actionNumTextHigh: { color: colors.danger },
   actionTitle: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text },
   actionDetail: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 2, lineHeight: 16 },
   weightPill: {
@@ -465,9 +462,9 @@ const s = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.surface2,
   },
-  weightHigh: { backgroundColor: "#FEE2E2" },
+  weightHigh: { backgroundColor: colors.dangerSoft },
   weightText: { fontSize: 10, fontFamily: fonts.bold, color: colors.textMuted },
-  weightTextHigh: { color: "#DC2626" },
+  weightTextHigh: { color: colors.danger },
 
   // Scheme cards
   schemeCard: {
@@ -476,20 +473,16 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: 8,
+    marginBottom: spacing.sm2,
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   schemeName: { fontSize: 15, fontFamily: fonts.displayBold, color: colors.text },
   schemeReason: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 3, lineHeight: 17 },
   schemeAmount: { fontSize: 12, fontFamily: fonts.semiBold, color: colors.primary },
-  schemeSub: { fontSize: 12, fontFamily: fonts.medium, color: "#F59E0B" },
+  schemeSub: { fontSize: 12, fontFamily: fonts.medium, color: colors.warning },
   scoreBadge: {
     alignItems: "center",
     backgroundColor: colors.primarySoft,
@@ -507,17 +500,13 @@ const s = StyleSheet.create({
     backgroundColor: "#FFF",
     borderRadius: radius.xxl,
     borderWidth: 1,
-    borderColor: colors.primarySoft,
+    borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: 8,
+    marginBottom: spacing.sm2,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   bankBadge: {
     width: 40,
@@ -535,26 +524,27 @@ const s = StyleSheet.create({
   adminRecCard: {
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm2,
-    backgroundColor: "#EFF9F7",
-    borderRadius: 20,
+    backgroundColor: tints.deepTeal.bg,
+    borderRadius: radius.xxl,
     borderWidth: 1.5,
-    borderColor: "#BCE7E2",
+    borderColor: tints.deepTeal.fg + "40",
     padding: spacing.md,
+    ...elevation.l1,
   },
   adminRecIconWrap: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#DDF3F0",
+    backgroundColor: tints.deepTeal.bg,
     alignItems: "center",
     justifyContent: "center",
   },
-  adminRecTitle: { fontSize: 14, fontFamily: fonts.displayBold, color: "#1E534C" },
-  adminRecBody: { fontSize: 13, fontFamily: fonts.regular, color: "#1E534C", lineHeight: 18 },
-  adminRecSubLabel: { fontSize: 10, fontFamily: fonts.bold, color: "#1E534C", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
-  adminRecItem: { fontSize: 13, fontFamily: fonts.medium, color: "#1E534C", lineHeight: 20 },
-  adminRecNote: { fontSize: 13, fontFamily: fonts.regular, color: "#1E534C", fontStyle: "italic", marginTop: 8, lineHeight: 18 },
-  adminRecDate: { fontSize: 11, fontFamily: fonts.regular, color: "#8FD7CE", marginTop: 8 },
+  adminRecTitle: { fontSize: 14, fontFamily: fonts.displayBold, color: tints.deepTeal.fg },
+  adminRecBody: { fontSize: 13, fontFamily: fonts.regular, color: tints.deepTeal.fg, lineHeight: 18 },
+  adminRecSubLabel: { fontSize: 10, fontFamily: fonts.bold, color: tints.deepTeal.fg, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
+  adminRecItem: { fontSize: 13, fontFamily: fonts.medium, color: tints.deepTeal.fg, lineHeight: 20 },
+  adminRecNote: { fontSize: 13, fontFamily: fonts.regular, color: tints.deepTeal.fg, fontStyle: "italic", marginTop: 8, lineHeight: 18 },
+  adminRecDate: { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginTop: 8 },
 
   // Documents
   docCountPill: {
@@ -597,8 +587,9 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary + "40",
     padding: spacing.md,
-    marginTop: 8,
+    marginTop: spacing.sm2,
     marginBottom: spacing.md,
+    ...elevation.l1,
   },
   bookCtaTitle: { fontSize: 16, fontFamily: fonts.displayBold, color: colors.primaryDark },
   bookCtaSub: { fontSize: 13, fontFamily: fonts.regular, color: colors.primaryDark, opacity: 0.8, marginTop: 4, lineHeight: 18 },

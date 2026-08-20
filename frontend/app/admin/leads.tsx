@@ -12,12 +12,15 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { X, ChevronRight, User, Phone, MapPin, DollarSign, StickyNote } from "lucide-react-native";
+import { X, ChevronRight, Phone, MapPin, DollarSign, StickyNote, Briefcase } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, stageColor } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, stageColor, tagColor } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 const STAGES = ["all", "new", "contacted", "interested", "documentation", "submitted", "approved", "disbursed", "closed"];
 
@@ -37,6 +40,7 @@ const pillStyles = StyleSheet.create({
 export default function AdminLeads() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabBarSpacing = useTabBarSpacing();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -80,39 +84,54 @@ export default function AdminLeads() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-leads">
-      <BackBar title="CRM / Leads" onBack={() => router.back()} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="admin-leads">
+      <BackBar
+        title="CRM / Leads"
+        onBack={() => router.back()}
+      />
 
       {/* Stage filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 6, paddingVertical: 8, paddingHorizontal: spacing.md }}
-        style={{ flexGrow: 0 }}
-      >
-        {STAGES.map((s) => {
-          const active = filter === s;
-          const { bg, text } = s !== "all" ? stageColor(s) : { bg: colors.primarySoft, text: colors.primaryDark };
-          return (
-            <TouchableOpacity
-              key={s}
-              testID={`stage-filter-${s}`}
-              style={[
-                styles.filterChip,
-                active && { backgroundColor: s === "all" ? colors.primary : bg, borderColor: "transparent" },
-              ]}
-              onPress={() => setFilter(s)}
-            >
-              <Text style={[
-                styles.filterChipText,
-                active && { color: s === "all" ? "#FFF" : text, fontFamily: fonts.bold },
-              ]}>
-                {s}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      <View style={{ position: "relative" }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 6, paddingVertical: 8, paddingHorizontal: spacing.md }}
+          style={{ flexGrow: 0 }}
+        >
+          {STAGES.map((s) => {
+            const active = filter === s;
+            const { bg, text } = s !== "all" ? stageColor(s) : { bg: colors.surfaceAlt, text: colors.textMuted };
+            const isAllActive = s === "all" && active;
+            return (
+              <TouchableOpacity
+                key={s}
+                testID={`stage-filter-${s}`}
+                style={[
+                  styles.filterChip,
+                  { backgroundColor: isAllActive ? colors.primary : bg },
+                  active && { borderWidth: 1.5, borderColor: isAllActive ? colors.primary : text },
+                ]}
+                onPress={() => setFilter(s)}
+              >
+                <Text style={[
+                  styles.filterChipText,
+                  { color: isAllActive ? "#FFF" : text },
+                  active && { fontFamily: fonts.bold },
+                ]}>
+                  {s}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(240,246,246,0)", colors.surface2]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.filterFade}
+        />
+      </View>
 
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
@@ -120,26 +139,27 @@ export default function AdminLeads() {
         <FlatList
           data={items}
           keyExtractor={(x) => x.id}
-          contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
+          style={{ flex: 1, marginBottom: tabBarSpacing }}
+          contentContainerStyle={{ padding: spacing.md, paddingBottom: 4 }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyText}>No leads in "{filter}" stage</Text>
             </View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const accent = stageColor(item.stage);
+            return (
             <TouchableOpacity
               testID={`lead-${item.id}`}
-              style={styles.card}
+              style={[styles.card, { borderLeftWidth: 4, borderLeftColor: accent.text }]}
               onPress={() => openDetail(item)}
               onLongPress={() => openEdit(item)}
               activeOpacity={0.85}
             >
               {/* Header */}
               <View style={styles.cardHeader}>
-                <View style={styles.avatarSmall}>
-                  <User size={14} color={colors.primaryDark} strokeWidth={2} />
-                </View>
+                <InitialsAvatar name={item.full_name || "Unknown"} size={34} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.leadName} numberOfLines={1}>{item.full_name || "Unknown"}</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -164,11 +184,15 @@ export default function AdminLeads() {
                     <Text style={styles.metaText}>{formatINR(item.funding_required)}</Text>
                   </View>
                 )}
-                {item.consultation_type && (
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaText}>{item.consultation_type}</Text>
-                  </View>
-                )}
+                {item.consultation_type && (() => {
+                  const tag = tagColor(item.consultation_type);
+                  return (
+                    <View style={[styles.tagItem, { backgroundColor: tag.bg }]}>
+                      <Briefcase size={11} color={tag.text} strokeWidth={2} />
+                      <Text style={[styles.tagText, { color: tag.text }]}>{item.consultation_type}</Text>
+                    </View>
+                  );
+                })()}
               </View>
 
               {/* Notes preview */}
@@ -181,7 +205,8 @@ export default function AdminLeads() {
 
               <ChevronRight size={14} color={colors.textDim} strokeWidth={2} style={{ position: "absolute", right: 14, top: 20 }} />
             </TouchableOpacity>
-          )}
+            );
+          }}
         />
       )}
 
@@ -249,12 +274,19 @@ export default function AdminLeads() {
 }
 
 const styles = StyleSheet.create({
+  filterFade: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 28,
+  },
   filterChip: {
     paddingHorizontal: 12,
     height: 30,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: "transparent",
     backgroundColor: "#FFF",
     alignItems: "center",
     justifyContent: "center",
@@ -273,7 +305,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingRight: 36,
     marginBottom: 8,
-    shadowColor: "#000",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -284,14 +316,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
     marginBottom: 8,
-  },
-  avatarSmall: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
   },
   leadName: {
     fontSize: 14,
@@ -318,6 +342,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.pill,
+  },
+  tagItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  tagText: {
+    fontSize: 11,
+    fontFamily: fonts.semiBold,
   },
   metaText: {
     fontSize: 11,

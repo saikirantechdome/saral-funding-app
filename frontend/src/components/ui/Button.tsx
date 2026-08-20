@@ -26,18 +26,18 @@ interface ButtonProps {
   fullWidth?: boolean;
 }
 
-const HEIGHT: Record<Size, number> = { lg: 52, md: 44, sm: 36 };
+const HEIGHT: Record<Size, number> = { lg: 52, md: 46, sm: 38 };
 const FONT_SIZE: Record<Size, number> = { lg: 16, md: 15, sm: 13 };
 const ICON_SIZE: Record<Size, number> = { lg: 18, md: 16, sm: 14 };
-const H_PAD: Record<Size, number> = { lg: 20, md: 18, sm: 14 };
-const RADIUS: Record<Size, number> = { lg: 14, md: 12, sm: 10 };
+const H_PAD: Record<Size, number> = { lg: 22, md: 18, sm: 14 };
+const RADIUS: Record<Size, number> = { lg: 16, md: 14, sm: 12 };
 
 const VARIANTS: Record<Variant, { bg: string; text: string; border?: string; disabledBg: string; disabledText: string }> = {
-  primary: { bg: colors.primary, text: "#FFF", disabledBg: "#BCE7E2", disabledText: "rgba(255,255,255,0.6)" },
+  primary: { bg: colors.primary, text: "#FFF", disabledBg: colors.primaryLight, disabledText: "rgba(255,255,255,0.65)" },
   secondary: { bg: "#FFF", text: colors.primaryDark, border: colors.primary, disabledBg: "#FFF", disabledText: colors.textPlaceholder },
   tertiary: { bg: colors.primarySoft, text: colors.primaryDark, disabledBg: colors.primarySoft, disabledText: colors.textPlaceholder },
   ghost: { bg: "transparent", text: colors.primary, disabledBg: "transparent", disabledText: colors.textPlaceholder },
-  danger: { bg: colors.danger, text: "#FFF", disabledBg: "#FECACA", disabledText: "rgba(255,255,255,0.6)" },
+  danger: { bg: colors.danger, text: "#FFF", disabledBg: "#F58F8F", disabledText: "rgba(255,255,255,0.65)" },
   outline: { bg: "#FFF", text: colors.text, border: colors.border, disabledBg: colors.surfaceAlt, disabledText: colors.textPlaceholder },
 };
 

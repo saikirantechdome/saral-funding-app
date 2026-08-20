@@ -7,11 +7,12 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router";
 import { CheckCircle2, XCircle, Landmark, Plus, X, Pencil } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, elevation, formatINR } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import EmptyState from "@/src/components/EmptyState";
 import MultiSelectPicker from "@/src/components/MultiSelectPicker";
+import Button from "@/src/components/ui/Button";
 import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
 
 const STATE_OPTIONS = [
@@ -250,7 +251,7 @@ export default function AdminSchemes() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
-              <View style={{ gap: 10 }}>
+              <View style={{ gap: spacing.sm2 }}>
                 <Field label="Scheme Name *" placeholder="e.g. PMEGP" value={form.name} onChangeText={(v) => setForm((f) => ({ ...f, name: v }))} />
                 <Field label="Full Name" placeholder="e.g. Prime Minister's Employment Generation..." value={form.full_name} onChangeText={(v) => setForm((f) => ({ ...f, full_name: v }))} />
                 <Field label="Description *" placeholder="Short description of the scheme..." value={form.description} onChangeText={(v) => setForm((f) => ({ ...f, description: v }))} multiline />
@@ -282,15 +283,15 @@ export default function AdminSchemes() {
               </View>
             </ScrollView>
 
-            <TouchableOpacity
-              style={[styles.saveBtn, saving && { opacity: 0.6 }]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              {saving
-                ? <ActivityIndicator color="#FFF" size="small" />
-                : <Text style={styles.saveBtnText}>{editingId ? "Save Changes" : "Create Scheme"}</Text>}
-            </TouchableOpacity>
+            <View style={{ marginTop: spacing.sm }}>
+              <Button
+                testID="save-scheme"
+                label={editingId ? "Save Changes" : "Create Scheme"}
+                onPress={handleSave}
+                loading={saving}
+                size="lg"
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -312,11 +313,11 @@ function Field({ label, ...props }: { label: string; [key: string]: any }) {
 }
 
 const styles = StyleSheet.create({
-  statsBar: { paddingHorizontal: spacing.md, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: "#FFF" },
-  statsText: { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
+  statsBar: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: "#FFF" },
+  statsText: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6 },
   createBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.primarySoft, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
   createBtnText: { fontSize: 12, fontFamily: fonts.bold, color: colors.primaryDark },
-  card: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
+  card: { flexDirection: "row", alignItems: "center", gap: spacing.sm2, backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
   cardDisabled: { opacity: 0.6, backgroundColor: colors.surface2 },
   cardLeft: { flex: 1, flexDirection: "row", gap: 10, alignItems: "flex-start" },
   schemeIcon: { width: 36, height: 36, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 },
@@ -331,16 +332,14 @@ const styles = StyleSheet.create({
   editBtn: { width: 30, height: 30, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center" },
   toggleBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1 },
   toggleBtnOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  toggleBtnOff: { borderColor: colors.danger, backgroundColor: "#FEE2E2" },
+  toggleBtnOff: { borderColor: colors.danger, backgroundColor: colors.dangerSoft },
   toggleText: { fontSize: 12, fontFamily: fonts.bold },
   toggleTextOn: { color: colors.primaryDark },
   toggleTextOff: { color: colors.danger },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, paddingBottom: 36, gap: 14 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   modalTitle: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   fieldLabel: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 },
   fieldInput: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 14, paddingVertical: 10, fontSize: 13, fontFamily: fonts.regular, color: colors.text, backgroundColor: "#FFF" },
-  saveBtn: { backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: 13, alignItems: "center" },
-  saveBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
 });

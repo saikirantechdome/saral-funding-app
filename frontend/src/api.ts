@@ -58,6 +58,25 @@ async function refreshAccessToken(): Promise<string | null> {
   return _refreshPromise;
 }
 
+// FastAPI errors come back as JSON — either `{"detail": "message"}` or, for
+// 422 validation errors, `{"detail": [{"loc": [...], "msg": "...", ...}]}`.
+// Without this, callers were displaying the raw JSON body as the error text.
+function extractErrorMessage(text: string): string {
+  if (!text) return "";
+  try {
+    const data = JSON.parse(text);
+    if (typeof data?.detail === "string") return data.detail;
+    if (Array.isArray(data?.detail)) {
+      const msgs = data.detail.map((d: any) => d?.msg).filter(Boolean);
+      if (msgs.length) return msgs.join(", ");
+    }
+    if (typeof data?.message === "string") return data.message;
+  } catch {
+    // Not JSON — fall through to raw text.
+  }
+  return text;
+}
+
 // ── Core request with auto-refresh ───────────────────────────────────────────
 async function request<T>(
   path: string,
@@ -84,7 +103,7 @@ async function request<T>(
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `${init.method || "GET"} ${path} failed: ${res.status}`);
+    throw new Error(extractErrorMessage(text) || `${init.method || "GET"} ${path} failed: ${res.status}`);
   }
   return res.json() as Promise<T>;
 }

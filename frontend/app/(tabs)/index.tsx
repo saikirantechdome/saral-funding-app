@@ -8,23 +8,22 @@ import {
   RefreshControl,
   Linking,
   Image,
-  Modal,
-  Share,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
-  Bell, ChevronRight, Phone, Building2, TrendingUp, AlertCircle, Calendar, Zap, FolderOpen, Landmark,
+  Bell, ChevronRight, Phone, Building2, TrendingUp, AlertCircle, Landmark,
   Users, Target, BarChart2, FolderOpen as FolderIcon, Settings, Shield,
-  Banknote, Video, Copy, X,
+  Banknote,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, elevation } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, elevation, tints, gradients } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { DashboardSkeleton, SkeletonBox } from "@/src/components/SkeletonLoader";
 import ReadinessRing from "@/src/components/ReadinessRing";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 type Match = { scheme_id: string; name: string; score: number; funding_estimate: number; subsidy_estimate: number; reason: string };
 type DashData = { matches: Match[]; funding_estimate: number; subsidy_estimate: number; readiness_score: number };
@@ -53,26 +52,25 @@ function canAccess(role: string, module: string): boolean {
 }
 
 const STAT_DEFS = [
-  { id: "users",         label: "Total Users",   Icon: Users,      color: colors.primarySoft, iconColor: colors.primaryDark, route: "/admin/users",         key: "total_users" },
-  { id: "consultations", label: "Consultations", Icon: Phone,      color: "#FEF3C7",          iconColor: "#92400E",          route: "/admin/consultations", key: "total_consultations" },
-  { id: "leads",         label: "Leads",          Icon: Target,     color: "#FEE2E2",          iconColor: "#DC2626",          route: "/admin/leads",         key: "total_leads" },
-  { id: "schemes",       label: "Schemes",        Icon: Landmark,   color: colors.surfaceAlt,  iconColor: colors.textMuted,   route: "/admin/schemes",       key: "total_schemes" },
-  { id: "banks",         label: "Banks",          Icon: Banknote,   color: "#EFF6FF",          iconColor: "#1D4ED8",          route: "/admin/banks",         key: "total_banks" },
-  { id: "documents",     label: "Documents",      Icon: FolderIcon, color: "#EFF9F7",          iconColor: "#24655E",          route: "/(tabs)/documents",    key: "total_documents" },
-  { id: "team",          label: "Team Members",   Icon: Shield,     color: "#DDF3F0",          iconColor: "#24655E",          route: "/admin/team",          key: "total_admins" },
+  { id: "users",         label: "Total Users",   Icon: Users,      color: tints.green.bg,    iconColor: tints.green.fg,    route: "/admin/users",         key: "total_users" },
+  { id: "consultations", label: "Consultations", Icon: Phone,      color: tints.amber.bg,    iconColor: tints.amber.fg,    route: "/admin/consultations", key: "total_consultations" },
+  { id: "leads",         label: "Leads",          Icon: Target,     color: tints.red.bg,      iconColor: tints.red.fg,      route: "/admin/leads",         key: "total_leads" },
+  { id: "schemes",       label: "Schemes",        Icon: Landmark,   color: tints.neutral.bg,  iconColor: tints.neutral.fg,  route: "/admin/schemes",       key: "total_schemes" },
+  { id: "banks",         label: "Banks",          Icon: Banknote,   color: tints.blue.bg,     iconColor: tints.blue.fg,     route: "/admin/banks",         key: "total_banks" },
+  { id: "documents",     label: "Documents",      Icon: FolderIcon, color: tints.teal.bg,     iconColor: tints.teal.fg,     route: "/(tabs)/documents",    key: "total_documents" },
+  { id: "team",          label: "Team Members",   Icon: Shield,     color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg, route: "/admin/team",          key: "total_admins" },
 ] as const;
 
 const ALL_MODULES = [
-  { id: "users",         label: "Users",          sub: "Manage & view",         Icon: Users,       color: colors.primarySoft, iconColor: colors.primaryDark },
-  { id: "consultations", label: "Consultations",  sub: "Track & update",        Icon: Phone,       color: "#EDE9FE",          iconColor: "#5B21B6" },
-  { id: "leads",         label: "CRM / Leads",    sub: "Pipeline & stages",     Icon: Target,      color: "#FEF3C7",          iconColor: "#92400E" },
-  { id: "schemes",       label: "Schemes",         sub: "Enable & disable",      Icon: Landmark,    color: "#FFF7ED",          iconColor: "#C2410C" },
-  { id: "banks",         label: "Banks",            sub: "Assign & manage banks", Icon: Banknote,    color: "#EFF6FF",          iconColor: "#1D4ED8" },
-  { id: "documents",    label: "Documents",       sub: "Review & approve docs", Icon: FolderIcon,  color: "#EFF9F7",          iconColor: "#24655E" },
-  { id: "analytics",    label: "Analytics",       sub: "Charts & trends",       Icon: BarChart2,   color: "#DBEAFE",          iconColor: "#1D4ED8" },
-  { id: "notifications",label: "Notifications",   sub: "Broadcast to users",    Icon: Bell,        color: "#FEF3C7",          iconColor: "#B45309" },
-  { id: "team",          label: "Team Members",   sub: "Invite & manage roles", Icon: Shield,      color: "#DDF3F0",          iconColor: "#24655E" },
-  { id: "settings",     label: "Settings",        sub: "App configuration",     Icon: Settings,    color: "#F5F3FF",          iconColor: "#6D28D9" },
+  { id: "users",         label: "Users",          sub: "Manage & view",         Icon: Users,       color: tints.green.bg,    iconColor: tints.green.fg },
+  { id: "consultations", label: "Consultations",  sub: "Track & update",        Icon: Phone,       color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg },
+  { id: "leads",         label: "CRM / Leads",    sub: "Pipeline & stages",     Icon: Target,      color: tints.amber.bg,    iconColor: tints.amber.fg },
+  { id: "schemes",       label: "Schemes",         sub: "Enable & disable",      Icon: Landmark,    color: tints.red.bg,      iconColor: tints.red.fg },
+  { id: "banks",         label: "Banks",            sub: "Assign & manage banks", Icon: Banknote,    color: tints.blue.bg,     iconColor: tints.blue.fg },
+  { id: "documents",    label: "Documents",       sub: "Review & approve docs", Icon: FolderIcon,  color: tints.teal.bg,     iconColor: tints.teal.fg },
+  { id: "analytics",    label: "Analytics",       sub: "Charts & trends",       Icon: BarChart2,   color: tints.blue.bg,     iconColor: tints.blue.fg },
+  { id: "settings",     label: "Settings",        sub: "App configuration",     Icon: Settings,    color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg },
+  { id: "team",          label: "Team Members",   sub: "Invite & manage roles", Icon: Shield,      color: tints.neutral.bg,  iconColor: tints.neutral.fg },
 ];
 
 function StatCard({ label, value, Icon, color, iconColor, onPress, testID }: { label: string; value?: string; Icon: any; color: string; iconColor: string; onPress?: () => void; testID?: string }) {
@@ -101,7 +99,7 @@ const statStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 12,
-    shadowColor: "#000",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -117,18 +115,17 @@ export default function Dashboard() {
   const [data, setData] = useState<DashData | null>(null);
   const [user, setUser] = useState<any>(null);
   const [next, setNext] = useState<any>(null);
-  const [meetModal, setMeetModal] = useState(false);
   const [bankRec, setBankRec] = useState<BankRec | null>(null);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [hasAssignedSchemes, setHasAssignedSchemes] = useState(false);
   const [hasAssignedBanks, setHasAssignedBanks] = useState(false);
+  const [statCounts, setStatCounts] = useState({ applications: 0, documents: 0, consultations: 0, schemes: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoadedOnce = useRef(false);
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
+  const tabBarSpacing = useTabBarSpacing();
 
   const load = useCallback(async () => {
     try {
@@ -141,14 +138,22 @@ export default function Dashboard() {
         setOverview(ov);
       } else {
         // Normal user: fetch full dashboard data
-        const [m, c, banks, ready, mySchemes, myBanks] = await Promise.all([
+        const [m, c, banks, ready, mySchemes, myBanks, docs] = await Promise.all([
           apiGet<DashData>("/match/me"),
           apiGet<any[]>("/consultations/me").catch(() => []),
           apiGet<{ recommendations: BankRec[] }>("/banks/recommend/me").catch(() => ({ recommendations: [] })),
           apiGet<Readiness>("/readiness/me").catch(() => null),
           apiGet<any[]>("/my/scheme-applications").catch(() => []),
           apiGet<any[]>("/my/bank-assignments").catch(() => []),
+          apiGet<any[]>("/documents/me").catch(() => []),
         ]);
+
+        setStatCounts({
+          applications: (mySchemes || []).filter((s: any) => !["rejected", "disbursed"].includes(s.stage)).length,
+          documents: (docs || []).length,
+          consultations: (c || []).length,
+          schemes: (m?.matches || []).length,
+        });
 
         // Only keep matches for schemes/banks actually assigned to this user
         const assignedSchemeIds = new Set((mySchemes || []).map((s: any) => s.scheme_id));
@@ -214,7 +219,8 @@ export default function Dashboard() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="admin-home-tab">
         <ScrollView
-          contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
+          style={{ flex: 1, marginBottom: tabBarSpacing }}
+          contentContainerStyle={{ paddingBottom: 4 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -248,32 +254,62 @@ export default function Dashboard() {
           </View>
 
           <View style={{ paddingHorizontal: spacing.md }}>
-            {/* Role badge */}
-            <View style={{ marginBottom: 14 }}>
-              <View style={adStyles.roleBadge}>
-                <Text style={adStyles.roleBadgeText}>Role: {user.role.replace(/_/g, " ").toUpperCase()}</Text>
-              </View>
-            </View>
+            {/* Greeting */}
+            <Text style={styles.pageGreeting}>
+              Hi, {user.role.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
+            </Text>
+            <Text style={styles.pageGreetingSub}>Here's what's happening today</Text>
 
-            {/* Stats grid */}
-            <Text style={adStyles.sectionLabel}>Overview</Text>
-            <View style={adStyles.statsGrid}>
-              {STAT_DEFS.filter((s) => canAccess(user.role, s.id)).map((s) => (
-                <StatCard
-                  key={s.id}
-                  testID={`stat-${s.id}`}
-                  label={s.label}
-                  value={s.key ? String((overview as any)?.[s.key] ?? 0) : undefined}
-                  Icon={s.Icon}
-                  color={s.color}
-                  iconColor={s.iconColor}
-                  onPress={() => router.push(s.route as any)}
-                />
-              ))}
-            </View>
+            {/* Hero: headline stat, on a dark gradient like the reviewer dashboard */}
+            {(() => {
+              const visibleStats = STAT_DEFS.filter((s) => canAccess(user.role, s.id));
+              const heroStat = visibleStats.find((s) => s.id === "leads") ?? visibleStats.find((s) => s.id === "users") ?? visibleStats[0];
+              const restStats = visibleStats.filter((s) => s.id !== heroStat?.id);
 
-            {/* Modules */}
-            <Text style={[adStyles.sectionLabel, { marginTop: 20 }]}>Modules</Text>
+              return (
+                <>
+                  {heroStat && (
+                    <LinearGradient
+                      colors={gradients.heroCompact}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={adStyles.heroCard}
+                      testID="admin-home-hero"
+                    >
+                      <View style={adStyles.heroTopRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={adStyles.heroLabel}>{heroStat.label}</Text>
+                          <Text style={adStyles.heroStatVal}>{heroStat.key ? String((overview as any)?.[heroStat.key] ?? 0) : "—"}</Text>
+                        </View>
+                        <View style={adStyles.heroIconWrap}>
+                          <heroStat.Icon size={22} color="#FFFFFF" strokeWidth={2} />
+                        </View>
+                      </View>
+
+                      {restStats.length > 0 && (
+                        <View style={adStyles.heroStatsGrid}>
+                          {restStats.map((s) => (
+                            <TouchableOpacity
+                              key={s.id}
+                              testID={`stat-${s.id}`}
+                              style={adStyles.heroStatBox}
+                              onPress={() => router.push(s.route as any)}
+                              activeOpacity={0.8}
+                            >
+                              <Text style={adStyles.heroStatBoxVal}>{s.key ? String((overview as any)?.[s.key] ?? 0) : "—"}</Text>
+                              <Text style={adStyles.heroStatBoxLabel}>{s.label}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </LinearGradient>
+                  )}
+                </>
+              );
+            })()}
+
+            {/* Quick Access */}
+            <Text style={[adStyles.sectionLabel, { marginTop: 20 }]}>Quick Access</Text>
             <View style={adStyles.modulesGrid}>
               {visibleModules.map((m) => (
                 <TouchableOpacity
@@ -286,11 +322,7 @@ export default function Dashboard() {
                   <View style={[adStyles.moduleIcon, { backgroundColor: m.color }]}>
                     <m.Icon size={20} color={m.iconColor} strokeWidth={2} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={adStyles.moduleLabel}>{m.label}</Text>
-                    <Text style={adStyles.moduleSub}>{m.sub}</Text>
-                  </View>
-                  <ChevronRight size={15} color={colors.textDim} strokeWidth={2} />
+                  <Text style={adStyles.moduleLabel} numberOfLines={1}>{m.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -304,7 +336,8 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="dashboard-screen">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
+        style={{ flex: 1, marginBottom: tabBarSpacing }}
+        contentContainerStyle={{ paddingBottom: 4 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -340,26 +373,42 @@ export default function Dashboard() {
 
         <View style={{ paddingHorizontal: spacing.md }}>
 
-          {/* ── Smart Alerts (max 2) ── */}
-          {alerts.length > 0 && (
-            <View style={styles.card} testID="alerts-widget">
-              <View style={styles.rowBetween}>
-                <Text style={styles.sectionLabel}>Smart Alerts</Text>
-                <TouchableOpacity onPress={() => router.push("/notifications")}>
-                  <Text style={styles.viewAll}>View all</Text>
-                </TouchableOpacity>
-              </View>
-              {alerts.slice(0, 2).map((n: any) => (
-                <View key={n.id} style={styles.alertRow}>
-                  <View style={styles.alertPulse} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.alertTitle} numberOfLines={1}>{n.title}</Text>
-                    <Text style={styles.alertBody} numberOfLines={2}>{n.body}</Text>
-                  </View>
-                </View>
-              ))}
+          {/* ── Greeting ── */}
+          <Text style={styles.pageGreeting}>
+            Hi, {user?.full_name ? user.full_name.split(" ")[0] : "there"}
+          </Text>
+          <Text style={styles.pageGreetingSub}>Let's grow your business</Text>
+
+          {/* ── Hero: your progress / profile strength ── */}
+          <LinearGradient
+            colors={gradients.hero}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+            testID="home-hero"
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroLabel}>Your Progress</Text>
+              <Text style={styles.heroGreeting}>Profile Strength</Text>
             </View>
-          )}
+            <ReadinessRing score={score} size={72} />
+          </LinearGradient>
+
+          {/* ── Book a Free Consultation ── */}
+          <TouchableOpacity
+            testID="book-cta"
+            style={styles.bookCard}
+            onPress={() => router.push("/booking")}
+            activeOpacity={0.85}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.bookTitle}>Book a Free Consultation</Text>
+              <Text style={styles.bookSub}>Talk to our experts and get personalised guidance.</Text>
+            </View>
+            <View style={styles.bookIcon}>
+              <Phone size={18} color={colors.primary} strokeWidth={2} />
+            </View>
+          </TouchableOpacity>
 
           {/* ── Top Bank Match ── */}
           {bankRec && (
@@ -405,21 +454,6 @@ export default function Dashboard() {
             </TouchableOpacity>
           )}
 
-          {/* ── Quick Actions ── */}
-          <TouchableOpacity
-            testID="book-cta"
-            style={[styles.quickAction, { flexDirection: "row", alignItems: "center", marginBottom: 10, paddingVertical: 14 }]}
-            onPress={() => router.push("/booking")}
-            activeOpacity={0.85}
-          >
-            <Phone size={20} color={colors.primaryDark} strokeWidth={2} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.qaTitle}>Book a Consultation Call</Text>
-              <Text style={styles.qaSub}>30-min advisor call</Text>
-            </View>
-            <ChevronRight size={16} color={colors.primaryDark} strokeWidth={2} />
-          </TouchableOpacity>
-
           {/* ── WhatsApp Support ── */}
           <TouchableOpacity
             testID="whatsapp-cta"
@@ -436,144 +470,6 @@ export default function Dashboard() {
             </View>
             <ChevronRight size={16} color="#FFF" strokeWidth={2} />
           </TouchableOpacity>
-          {(hasAssignedBanks || hasAssignedSchemes) && (
-          <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
-            {hasAssignedBanks && (
-            <TouchableOpacity
-              testID="banks-cta"
-              style={[styles.quickAction, { flex: 1 }]}
-              onPress={() => router.push("/banks")}
-              activeOpacity={0.85}
-            >
-              <Building2 size={18} color={colors.primaryDark} strokeWidth={2} />
-              <Text style={styles.qaTitle}>All Banks</Text>
-              <Text style={styles.qaSub}>Compare offers</Text>
-            </TouchableOpacity>
-            )}
-            {hasAssignedSchemes && (
-            <TouchableOpacity
-              testID="schemes-cta"
-              style={[styles.quickAction, { flex: 1 }]}
-              onPress={() => router.push("/(tabs)/schemes")}
-              activeOpacity={0.85}
-            >
-              <Landmark size={18} color={colors.primaryDark} strokeWidth={2} />
-              <Text style={styles.qaTitle}>All Schemes</Text>
-              <Text style={styles.qaSub}>Browse schemes</Text>
-            </TouchableOpacity>
-            )}
-          </View>
-          )}
-
-          {/* ── Document Vault ── */}
-          <TouchableOpacity
-            style={[styles.quickAction, { flexDirection: "row", alignItems: "center", marginBottom: 10, paddingVertical: 14 }]}
-            onPress={() => router.push("/documents")}
-            activeOpacity={0.85}
-            testID="documents-cta"
-          >
-            <FolderOpen size={20} color={colors.primaryDark} strokeWidth={2} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.qaTitle}>Document Vault</Text>
-              <Text style={styles.qaSub}>Upload & manage your documents</Text>
-            </View>
-            <ChevronRight size={16} color={colors.primaryDark} strokeWidth={2} />
-          </TouchableOpacity>
-
-          {/* ── Upcoming Consultation ── */}
-          {next && (
-            <TouchableOpacity style={styles.card} testID="upcoming-card" onPress={() => setMeetModal(true)} activeOpacity={0.85}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <Calendar size={14} color={colors.primaryDark} strokeWidth={2} />
-                <Text style={styles.sectionLabel}>Upcoming Consultation</Text>
-                <ChevronRight size={13} color={colors.primaryDark} strokeWidth={2} style={{ marginLeft: "auto" }} />
-              </View>
-              <Text style={styles.consultType}>{next.consultation_type}</Text>
-              <Text style={styles.consultMeta}>{next.date}  •  {next.time_slot}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-                <View style={styles.consultStatus}>
-                  <Text style={styles.consultStatusText}>{next.status}</Text>
-                </View>
-                {next.meet_link && (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <Video size={12} color={colors.primaryDark} strokeWidth={2} />
-                    <Text style={{ fontSize: 11, fontFamily: fonts.semiBold, color: colors.primaryDark }}>Meeting Ready</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          )}
-
-          {/* Meet link modal */}
-          <Modal visible={meetModal} transparent animationType="slide" onRequestClose={() => setMeetModal(false)}>
-            <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }}>
-              <View style={{ backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 24 + insets.bottom, gap: 16 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={{ fontSize: 18, fontFamily: fonts.displayBold, color: colors.text }}>Consultation Details</Text>
-                  <TouchableOpacity onPress={() => setMeetModal(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center" }}>
-                    <X size={16} color={colors.textMuted} strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
-                <View style={{ backgroundColor: colors.surface2, borderRadius: radius.xl, padding: 16, gap: 10 }}>
-                  <Text style={{ fontSize: 15, fontFamily: fonts.semiBold, color: colors.text }}>{next?.consultation_type}</Text>
-                  <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted }}>{next?.date}  •  {next?.time_slot}</Text>
-                  <View style={{ paddingHorizontal: 10, paddingVertical: 4, backgroundColor: colors.primarySoft, borderRadius: radius.pill, alignSelf: "flex-start" }}>
-                    <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.primaryDark, textTransform: "capitalize" }}>{next?.status}</Text>
-                  </View>
-                </View>
-                {next?.meet_link ? (
-                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.primary, padding: 16, gap: 10 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <Video size={16} color={colors.primaryDark} strokeWidth={2} />
-                      <Text style={{ fontSize: 14, fontFamily: fonts.displayBold, color: colors.primaryDark }}>Your Meeting Link</Text>
-                    </View>
-                    <Text style={{ fontSize: 11, fontFamily: fonts.medium, color: colors.primaryDark, opacity: 0.8 }} numberOfLines={1}>{next?.meet_link}</Text>
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <TouchableOpacity
-                        style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.primary, backgroundColor: "#FFF" }}
-                        onPress={() => Share.share({ message: next?.meet_link, title: "Meeting Link" })}
-                        activeOpacity={0.8}
-                      >
-                        <Copy size={14} color={colors.primaryDark} strokeWidth={2.5} />
-                        <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, color: colors.primaryDark }}>Copy Link</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: radius.lg, backgroundColor: colors.primary }}
-                        onPress={() => { setMeetModal(false); Linking.openURL(next?.meet_link); }}
-                        activeOpacity={0.8}
-                      >
-                        <Video size={14} color="#FFF" strokeWidth={2.5} />
-                        <Text style={{ fontSize: 13, fontFamily: fonts.displayBold, color: "#FFF" }}>Join Meeting</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={{ backgroundColor: colors.surface2, borderRadius: radius.xl, padding: 16, alignItems: "center" }}>
-                    <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center" }}>Meeting link will be shared by your advisor before the session.</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </Modal>
-
-          {/* ── Applications prompt ── */}
-          <View style={styles.card}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <TrendingUp size={14} color={colors.primaryDark} strokeWidth={2} />
-              <Text style={styles.sectionLabel}>Your Applications</Text>
-            </View>
-            <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: colors.textDim, marginBottom: 12, lineHeight: 19 }}>
-              After your consultation call, our team will assign the right schemes and track your applications here.
-            </Text>
-            <TouchableOpacity
-              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
-              onPress={() => router.push("/(tabs)/applications")}
-              activeOpacity={0.8}
-            >
-              <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, color: colors.primary }}>View My Applications</Text>
-              <ChevronRight size={14} color={colors.primary} strokeWidth={2.5} />
-            </TouchableOpacity>
-          </View>
 
         </View>
       </ScrollView>
@@ -596,33 +492,86 @@ const adStyles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
-  roleBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+  heroCard: {
+    borderRadius: radius.xxl,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
   },
-  roleBadgeText: {
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    color: colors.primaryDark,
-    letterSpacing: 0.4,
-  },
-  modulesGrid: {
-    gap: 8,
-  },
-  moduleTile: {
+  heroTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
+  },
+  heroLabel: {
+    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    color: "rgba(255,255,255,0.72)",
+  },
+  heroStatVal: {
+    fontSize: 30,
+    fontFamily: fonts.displayBold,
+    color: "#FFFFFF",
+    letterSpacing: -0.5,
+    marginTop: 2,
+  },
+  heroIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: radius.lg,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroStatsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 16,
+  },
+  heroStatBox: {
+    flexBasis: "30%",
+    flexGrow: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 2,
+  },
+  heroStatBoxVal: {
+    fontSize: 20,
+    fontFamily: fonts.displayBold,
+    color: "#FFFFFF",
+    letterSpacing: -0.4,
+  },
+  heroStatBoxLabel: {
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    color: "rgba(255,255,255,0.65)",
+  },
+  modulesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  moduleTile: {
+    flexBasis: "30%",
+    flexGrow: 1,
+    alignItems: "center",
+    gap: 8,
     backgroundColor: "#FFF",
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 14,
-    paddingHorizontal: spacing.md,
-    shadowColor: "#000",
+    paddingVertical: 16,
+    paddingHorizontal: 6,
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -636,15 +585,10 @@ const adStyles = StyleSheet.create({
     justifyContent: "center",
   },
   moduleLabel: {
-    fontSize: 15,
-    fontFamily: fonts.displayBold,
-    color: colors.text,
-  },
-  moduleSub: {
     fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    marginTop: 1,
+    fontFamily: fonts.semiBold,
+    color: colors.text,
+    textAlign: "center",
   },
 });
 
@@ -654,8 +598,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm2,
+    paddingTop: spacing.sm2,
+    paddingBottom: spacing.md,
   },
   logoWrap: {
     flexDirection: "row",
@@ -716,16 +660,30 @@ const styles = StyleSheet.create({
   },
 
   heroCard: {
-    marginHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
     marginBottom: spacing.sm2,
-    backgroundColor: colors.primary,
-    borderRadius: 20,
+    borderRadius: radius.xxl,
     padding: spacing.md,
-    ...elevation.l1,
     shadowColor: colors.primaryDark,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
     elevation: 6,
+  },
+  heroGreeting: {
+    fontSize: 18,
+    fontFamily: fonts.displayBold,
+    color: "#FFFFFF",
+    letterSpacing: -0.3,
+  },
+  heroSub: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: "rgba(255,255,255,0.72)",
+    marginTop: 3,
+    lineHeight: 17,
   },
   heroLabel: {
     fontSize: 12,
@@ -733,7 +691,50 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.8)",
     textTransform: "uppercase",
     letterSpacing: 0.6,
-    marginBottom: 12,
+    marginBottom: 2,
+  },
+  pageGreeting: {
+    fontSize: 19,
+    fontFamily: fonts.bold,
+    color: colors.text,
+    marginTop: spacing.sm2,
+  },
+  pageGreetingSub: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    marginTop: 3,
+    marginBottom: spacing.md,
+  },
+  bookCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#FFF",
+    borderWidth: 1.5,
+    borderColor: colors.primaryLight,
+    borderRadius: radius.xl,
+    padding: spacing.sm2,
+    marginBottom: 10,
+  },
+  bookTitle: {
+    fontSize: 14,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+  },
+  bookSub: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  bookIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
   },
   heroInner: {
     flexDirection: "row",
@@ -756,20 +757,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.medium,
     color: "rgba(255,255,255,0.65)",
-  },
-  heroCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.15)",
-  },
-  heroCtaText: {
-    fontSize: 12,
-    fontFamily: fonts.medium,
-    color: "rgba(255,255,255,0.75)",
   },
 
   card: {
@@ -869,16 +856,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
 
-  quickAction: {
-    flex: 1,
-    backgroundColor: "#FFF",
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.sm2,
-    gap: 4,
-    ...elevation.l1,
-  },
   waBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -911,44 +888,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: "rgba(255,255,255,0.85)",
     marginTop: 2,
-  },
-  qaTitle: {
-    fontSize: 13,
-    fontFamily: fonts.displayBold,
-    color: colors.text,
-    marginTop: 6,
-  },
-  qaSub: {
-    fontSize: 11,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-
-  consultType: {
-    fontSize: 16,
-    fontFamily: fonts.displayBold,
-    color: colors.text,
-  },
-  consultMeta: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-  consultStatus: {
-    marginTop: 10,
-    alignSelf: "flex-start",
-    backgroundColor: colors.primarySoft,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  consultStatusText: {
-    fontSize: 11,
-    fontFamily: fonts.semiBold,
-    color: colors.primaryDark,
-    textTransform: "capitalize",
   },
 
   schemeCard: {
@@ -1051,7 +990,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   weightHigh: {
-    backgroundColor: "#FEF3C7",
+    backgroundColor: tints.amber.bg,
   },
   weightText: {
     fontSize: 10,
@@ -1059,7 +998,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   weightTextHigh: {
-    color: "#92400E",
+    color: tints.amber.fg,
   },
   aaBannerCard: {
     backgroundColor: colors.primarySoft,

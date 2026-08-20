@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { Tabs } from "expo-router";
 import { View, Text, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   LayoutDashboard, ClipboardList, Sparkles, FolderOpen, CircleUser,
   Users, CalendarDays, FileSearch,
 } from "lucide-react-native";
 
-import { colors, fonts } from "@/src/theme";
+import { colors, fonts, radius, TAB_BAR_HEIGHT } from "@/src/theme";
 import { apiGet } from "@/src/api";
 
-const TAB_ICON_SIZE = 22;
+const TAB_ICON_SIZE = 20;
 
 interface TabIconProps {
   focused: boolean;
@@ -35,14 +36,18 @@ function TabIcon({ focused, Icon }: TabIconProps) {
 // text instead of being squeezed into the icon's fixed box.
 function makeLabel(label: string) {
   return ({ focused }: { focused: boolean }) => (
-    <Text style={[styles.tabLabel, focused && styles.tabLabelActive]} numberOfLines={1}>
-      {label}
-    </Text>
+    <View style={{ alignItems: "center" }}>
+      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]} numberOfLines={1}>
+        {label}
+      </Text>
+      {focused && <View style={styles.tabUnderline} />}
+    </View>
   );
 }
 
 export default function TabsLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     apiGet<any>("/auth/me")
@@ -54,7 +59,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { bottom: Math.max(insets.bottom, 12) }],
       }}
     >
       <Tabs.Screen
@@ -107,29 +112,39 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: "#FFF",
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    position: "absolute",
+    left: 16,
+    right: 16,
+    height: TAB_BAR_HEIGHT,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 0,
+    borderRadius: radius.pill,
+    elevation: 0,
   },
   iconWrap: {
-    width: 40,
+    width: 42,
     height: 32,
-    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  iconWrapActive: {
-    backgroundColor: colors.primarySoft,
-  },
+  iconWrapActive: {},
   tabLabel: {
     fontSize: 9,
     fontFamily: fonts.medium,
     color: colors.textDim,
     letterSpacing: 0,
     textAlign: "center",
+    marginTop: 2,
   },
   tabLabelActive: {
     color: colors.primary,
     fontFamily: fonts.semiBold,
+  },
+  tabUnderline: {
+    width: 14,
+    height: 2.5,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+    marginTop: 3,
   },
 });

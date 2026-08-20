@@ -4,15 +4,25 @@ import {
   ActivityIndicator, ScrollView, Modal, TextInput, Alert, Linking, Share,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { X, User, Calendar, Clock, StickyNote, Phone, Video, Copy } from "lucide-react-native";
+import {
+  X, Calendar, Clock, StickyNote, Phone, Video, Copy, MapPin,
+  Heart, FileText, CheckCircle2, XCircle,
+} from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, stageColor } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
 import EmptyState from "@/src/components/EmptyState";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 const STATUSES = ["all", "new", "called", "follow_up", "interested", "submitted", "approved", "closed"];
+const STATUS_ICONS: Record<string, any> = {
+  new: Phone, called: Phone, follow_up: Clock, interested: Heart,
+  submitted: FileText, approved: CheckCircle2, closed: XCircle,
+};
 
 function StatusPill({ status }: { status: string }) {
   const { bg, text } = stageColor(status);
@@ -30,6 +40,7 @@ const pillStyles = StyleSheet.create({
 export default function AdminConsultations() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabBarSpacing = useTabBarSpacing();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -58,38 +69,53 @@ export default function AdminConsultations() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-consultations">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="admin-consultations">
       <BackBar title="Consultations" onBack={() => router.back()} />
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 6, paddingVertical: 8, paddingHorizontal: spacing.md }}
-        style={{ flexGrow: 0 }}
-      >
-        {STATUSES.map((s) => {
-          const active = filter === s;
-          const { bg, text: textColor } = s !== "all" ? stageColor(s) : { bg: colors.primarySoft, text: colors.primaryDark };
-          return (
-            <TouchableOpacity
-              key={s}
-              testID={`status-filter-${s}`}
-              style={[
-                styles.filterChip,
-                active && { backgroundColor: s === "all" ? colors.primary : bg, borderColor: "transparent" },
-              ]}
-              onPress={() => setFilter(s)}
-            >
-              <Text style={[
-                styles.filterChipText,
-                active && { color: s === "all" ? "#FFF" : textColor, fontFamily: fonts.bold },
-              ]}>
-                {s.replace("_", " ")}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      <View style={{ position: "relative" }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 6, paddingVertical: 8, paddingHorizontal: spacing.md }}
+          style={{ flexGrow: 0 }}
+        >
+          {STATUSES.map((s) => {
+            const active = filter === s;
+            const { bg, text: textColor } = s !== "all" ? stageColor(s) : { bg: colors.surfaceAlt, text: colors.textMuted };
+            const isAllActive = s === "all" && active;
+            const chipColor = isAllActive ? "#FFF" : textColor;
+            const Icon = STATUS_ICONS[s];
+            return (
+              <TouchableOpacity
+                key={s}
+                testID={`status-filter-${s}`}
+                style={[
+                  styles.filterChip,
+                  { backgroundColor: isAllActive ? colors.primary : bg },
+                  active && { borderWidth: 1.5, borderColor: isAllActive ? colors.primary : textColor },
+                ]}
+                onPress={() => setFilter(s)}
+              >
+                {Icon && <Icon size={12} color={chipColor} strokeWidth={2} />}
+                <Text style={[
+                  styles.filterChipText,
+                  { color: chipColor },
+                  active && { fontFamily: fonts.bold },
+                ]}>
+                  {s.replace("_", " ")}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(240,246,246,0)", colors.surface2]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.filterFade}
+        />
+      </View>
 
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
@@ -99,19 +125,20 @@ export default function AdminConsultations() {
         <FlatList
           data={items}
           keyExtractor={(x) => x.id}
-          contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
+          style={{ flex: 1, marginBottom: tabBarSpacing }}
+          contentContainerStyle={{ padding: spacing.md, paddingBottom: 4 }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const accent = stageColor(item.status);
+            return (
             <TouchableOpacity
               testID={`consult-${item.id}`}
-              style={styles.card}
+              style={[styles.card, { borderLeftWidth: 4, borderLeftColor: accent.text }]}
               onPress={() => { setEditing(item); setNotes(item.notes || ""); }}
               activeOpacity={0.85}
             >
               <View style={styles.cardHeader}>
-                <View style={styles.avatar}>
-                  <User size={14} color={colors.primaryDark} strokeWidth={2} />
-                </View>
+                <InitialsAvatar name={item.user?.full_name || "Unknown"} size={34} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.userName}>{item.user?.full_name || "—"}</Text>
                   <Text style={styles.userMobile}>+91 {item.user?.mobile || ""}</Text>
@@ -130,7 +157,10 @@ export default function AdminConsultations() {
                     <Text style={styles.metaText}>{item.time_slot}</Text>
                   </View>
                   {item.user?.state && (
-                    <Text style={styles.metaText}>{item.user.state}</Text>
+                    <View style={styles.metaItem}>
+                      <MapPin size={11} color={colors.textDim} strokeWidth={2} />
+                      <Text style={styles.metaText}>{item.user.state}</Text>
+                    </View>
                   )}
                 </View>
                 {item.notes && (
@@ -141,7 +171,8 @@ export default function AdminConsultations() {
                 )}
               </View>
             </TouchableOpacity>
-          )}
+            );
+          }}
         />
       )}
 
@@ -232,14 +263,23 @@ export default function AdminConsultations() {
 }
 
 const styles = StyleSheet.create({
+  filterFade: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 28,
+  },
   filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
     paddingHorizontal: 12,
     height: 30,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: "transparent",
     backgroundColor: "#FFF",
-    alignItems: "center",
     justifyContent: "center",
   },
   filterChipText: {
@@ -255,7 +295,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: 8,
-    shadowColor: "#000",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -266,14 +306,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
     marginBottom: 10,
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
   },
   userName: {
     fontSize: 14,
@@ -288,8 +320,8 @@ const styles = StyleSheet.create({
   },
   cardBody: {},
   consultType: {
-    fontSize: 13,
-    fontFamily: fonts.medium,
+    fontSize: 15,
+    fontFamily: fonts.displayBold,
     color: colors.text,
     marginBottom: 6,
   },

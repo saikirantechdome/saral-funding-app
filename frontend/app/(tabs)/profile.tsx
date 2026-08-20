@@ -12,16 +12,18 @@ import {
   Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Settings, Bell, Phone, ShieldCheck, LogOut, ChevronRight, Pencil, X, Check, Shield } from "lucide-react-native";
+import { Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, MapPin, Calendar, Tag, User as UserIcon, Briefcase, FileCheck, FileText } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, elevation } from "@/src/theme";
+import { colors, spacing, radius, fonts, elevation, gradients } from "@/src/theme";
 import { apiGet, apiPost, apiLogout } from "@/src/api";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 export default function Profile() {
   const router = useRouter();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarSpacing = useTabBarSpacing();
   const [me, setMe] = useState<any>(null);
   const [bp, setBp] = useState<any>(null);
   const [editing, setEditing] = useState(false);
@@ -108,19 +110,13 @@ export default function Profile() {
     }
   };
 
-  const initials = (me?.full_name || "U")
-    .split(" ")
-    .slice(0, 2)
-    .map((w: string) => w.charAt(0).toUpperCase())
-    .join("");
-
   const bootstrapAdmin = async () => {
     setBootstrapping(true);
     try {
       const res = await apiPost<{ message: string }>("/auth/bootstrap-admin", {});
       const updated = await apiGet<any>("/auth/me");
       setMe(updated);
-      Alert.alert("Success ✓", res.message, [
+      Alert.alert("Success", res.message, [
         { text: "Go to Admin", onPress: () => router.push("/admin") },
       ]);
     } catch (e: any) {
@@ -138,21 +134,29 @@ export default function Profile() {
   const isAdmin = me?.role && me.role !== "user";
   const actions = [
     ...(!isAdmin ? [{ id: "book", label: "Book Consultation", Icon: Phone, onPress: () => router.push("/booking") }] : []),
-    { id: "notif", label: "Notifications", Icon: Bell, onPress: () => router.push("/notifications") },
-    { id: "settings", label: "Settings", Icon: Settings, onPress: () => router.push("/settings") },
+    { id: "notif", label: "Notifications", Icon: Bell, onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
+    { id: "privacy", label: "Privacy Policy", Icon: FileText, onPress: () => router.push({ pathname: "/legal", params: { doc: "privacy" } }) },
+    { id: "terms", label: "Terms of Service", Icon: Shield, onPress: () => router.push({ pathname: "/legal", params: { doc: "terms" } }) },
   ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="profile-tab">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: tabBarHeight + 24 }}
+        style={{ flex: 1, marginBottom: tabBarSpacing }}
+        contentContainerStyle={{ paddingBottom: 4 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Avatar header */}
-        <View style={styles.avatarSection}>
+        <LinearGradient
+          colors={gradients.heroCompact}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.avatarSectionDark}
+          testID="profile-hero-dark"
+        >
           <View style={styles.avatarOuter}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials}</Text>
+            <View style={styles.avatarRing}>
+              <InitialsAvatar name={me?.full_name || "User"} size={72} />
             </View>
             {!editing && (
               <TouchableOpacity
@@ -172,76 +176,77 @@ export default function Profile() {
                 value={editName}
                 onChangeText={setEditName}
                 placeholder="Full name"
-                placeholderTextColor={colors.textPlaceholder}
+                placeholderTextColor="rgba(255,255,255,0.55)"
                 autoFocus
               />
               <TouchableOpacity style={styles.editIconBtn} onPress={() => setEditing(false)}>
-                <X size={16} color={colors.textMuted} strokeWidth={2} />
+                <X size={16} color="#FFFFFF" strokeWidth={2.5} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.editIconBtn, { backgroundColor: colors.primary }]}
+                style={[styles.editIconBtn, styles.editIconBtnSave]}
                 onPress={saveEdits}
                 disabled={saving}
                 testID="save-profile-btn"
               >
                 {saving
-                  ? <ActivityIndicator size="small" color="#FFF" />
-                  : <Check size={16} color="#FFF" strokeWidth={2.5} />}
+                  ? <ActivityIndicator size="small" color={colors.primaryDark} />
+                  : <Check size={16} color={colors.primaryDark} strokeWidth={2.5} />}
               </TouchableOpacity>
             </View>
           ) : (
-            <Text style={styles.name}>{me?.full_name || "—"}</Text>
+            <Text style={styles.nameDark}>{me?.full_name || "—"}</Text>
           )}
-          <Text style={styles.mobile}>{me?.mobile?.startsWith("+") ? me.mobile : `+91 ${me?.mobile}`}</Text>
-          <View style={styles.rolePill}>
-            <ShieldCheck size={11} color={colors.primaryDark} strokeWidth={2} />
-            <Text style={styles.roleText}>{me?.role === "user" ? "User" : me?.role?.replace(/_/g, " ") || "User"}</Text>
-          </View>
-        </View>
+          <Text style={styles.mobileDark}>
+            {me?.role === "user" ? "User" : me?.role?.replace(/_/g, " ") || "User"}
+            {me?.email ? ` · ${me.email}` : ` · ${me?.mobile?.startsWith("+") ? me.mobile : `+91 ${me?.mobile}`}`}
+          </Text>
+        </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.md }}>
 
-          {/* Personal info */}
-          <View style={styles.sectionWrap}>
-            <Text style={styles.sectionLabel}>Personal</Text>
-            <View style={styles.infoCard}>
-              {editing ? (
-                <>
-                  <EditRow
-                    label="District"
-                    value={editDistrict}
-                    onChangeText={setEditDistrict}
-                    placeholder={me?.district || "District"}
-                  />
-                  <EditRow
-                    label="Age"
-                    value={editAge}
-                    onChangeText={(v: string) => setEditAge(v.replace(/\D/g, "").slice(0, 2))}
-                    placeholder={me?.age?.toString() || "Age"}
-                    keyboardType="number-pad"
-                  />
-                </>
-              ) : (
-                <>
-                  <InfoRow label="State" value={me?.state} />
-                  <InfoRow label="District" value={me?.district} />
-                  <InfoRow label="Gender" value={me?.gender} />
-                  <InfoRow label="Age" value={me?.age?.toString()} />
-                  <InfoRow label="Category" value={me?.category} last />
-                </>
-              )}
+          {/* Personal info — regular users only, admins don't fill this in */}
+          {!isAdmin && (
+            <View style={styles.sectionWrap}>
+              <Text style={styles.sectionLabel}>Personal</Text>
+              <View style={styles.infoCard}>
+                {editing ? (
+                  <>
+                    <EditRow
+                      label="District"
+                      value={editDistrict}
+                      onChangeText={setEditDistrict}
+                      placeholder={me?.district || "District"}
+                    />
+                    <EditRow
+                      label="Age"
+                      value={editAge}
+                      onChangeText={(v: string) => setEditAge(v.replace(/\D/g, "").slice(0, 2))}
+                      placeholder={me?.age?.toString() || "Age"}
+                      keyboardType="number-pad"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <InfoRow Icon={MapPin} label="State" value={me?.state} />
+                    <InfoRow Icon={MapPin} label="District" value={me?.district} />
+                    <InfoRow Icon={UserIcon} label="Gender" value={me?.gender} />
+                    <InfoRow Icon={Calendar} label="Age" value={me?.age?.toString()} />
+                    <InfoRow Icon={Tag} label="Category" value={me?.category} last />
+                  </>
+                )}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Business info */}
           {bp?.industry && (
             <View style={styles.sectionWrap}>
               <Text style={styles.sectionLabel}>Business</Text>
               <View style={styles.infoCard}>
-                <InfoRow label="Stage" value={bp?.business_stage} />
-                <InfoRow label="Industry" value={bp?.industry} />
-                <InfoRow label="GST" value={bp?.gst_available ? "Registered" : "Not registered"} />
-                <InfoRow label="Udyam" value={bp?.udyam_available ? "Registered" : "Not registered"} last={!bp?.business_activity} />
+                <InfoRow Icon={Tag} label="Stage" value={bp?.business_stage} />
+                <InfoRow Icon={Briefcase} label="Industry" value={bp?.industry} />
+                <InfoRow Icon={FileCheck} label="GST" value={bp?.gst_available ? "Registered" : "Not registered"} />
+                <InfoRow Icon={Shield} label="Udyam" value={bp?.udyam_available ? "Registered" : "Not registered"} last={!bp?.business_activity} />
                 {bp?.business_activity && (
                   <View style={infoStyles.activityBlock}>
                     <Text style={infoStyles.activityLabel}>Business Activity</Text>
@@ -286,6 +291,10 @@ export default function Profile() {
             </TouchableOpacity>
           </View>
 
+          <Text style={styles.aboutFooter}>
+            Saral Funding helps Indian entrepreneurs discover and apply for government funding schemes.{"\n"}v1.0.0
+          </Text>
+
         </View>
       </ScrollView>
       {/* Toast */}
@@ -308,10 +317,17 @@ export default function Profile() {
   );
 }
 
-function InfoRow({ label, value, last = false }: { label: string; value?: string; last?: boolean }) {
+function InfoRow({ Icon, label, value, last = false }: { Icon?: any; label: string; value?: string; last?: boolean }) {
   return (
     <View style={[infoStyles.row, !last && infoStyles.rowBorder]}>
-      <Text style={infoStyles.label}>{label}</Text>
+      <View style={infoStyles.labelWrap}>
+        {Icon && (
+          <View style={infoStyles.iconChip}>
+            <Icon size={13} color={colors.primaryDark} strokeWidth={2} />
+          </View>
+        )}
+        <Text style={infoStyles.label}>{label}</Text>
+      </View>
       <Text style={infoStyles.value}>{value || "—"}</Text>
     </View>
   );
@@ -345,6 +361,19 @@ const infoStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  labelWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  iconChip: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   label: {
     fontSize: 13,
     fontFamily: fonts.regular,
@@ -377,54 +406,57 @@ const infoStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    gap: spacing.sm2,
+    paddingVertical: 10,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   editInput: {
+    flex: 1,
     fontSize: 13,
     fontFamily: fonts.semiBold,
     color: colors.text,
     textAlign: "right",
-    minWidth: 120,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.border,
     borderRadius: radius.md,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: colors.surface2,
   },
 });
 
 const styles = StyleSheet.create({
-  avatarSection: {
+  avatarSectionDark: {
     alignItems: "center",
-    paddingTop: 24,
-    paddingBottom: 20,
-    backgroundColor: "#FFF",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingTop: 32,
+    paddingBottom: 24,
+    borderBottomLeftRadius: radius.xxl,
+    borderBottomRightRadius: radius.xxl,
     marginBottom: 16,
+  },
+  avatarRing: {
+    padding: 3,
+    borderRadius: 39,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.4)",
+  },
+  nameDark: {
+    fontSize: 20,
+    fontFamily: fonts.displayBold,
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  mobileDark: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: "rgba(255,255,255,0.7)",
+    textTransform: "capitalize",
   },
   avatarOuter: {
     position: "relative",
     marginBottom: 12,
-  },
-  avatar: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: colors.primaryLight,
-  },
-  avatarText: {
-    fontSize: 28,
-    fontFamily: fonts.displayBold,
-    color: "#FFF",
   },
   editFab: {
     position: "absolute",
@@ -439,58 +471,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  name: {
-    fontSize: 20,
-    fontFamily: fonts.displayBold,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  mobile: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    marginBottom: 8,
-  },
-  rolePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.primarySoft,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  roleText: {
-    fontSize: 11,
-    fontFamily: fonts.semiBold,
-    color: colors.primaryDark,
-    textTransform: "capitalize",
-  },
   editNameRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: spacing.xs2,
     marginBottom: 4,
+    paddingHorizontal: spacing.lg,
+    width: "100%",
   },
   editNameInput: {
-    fontSize: 18,
-    fontFamily: fonts.displayBold,
-    color: colors.text,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.primary,
-    minWidth: 160,
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    textAlign: "center",
+    flex: 1,
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    color: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.4)",
+    borderRadius: radius.lg,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
   },
   editIconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.4)",
+    backgroundColor: "rgba(255,255,255,0.14)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  editIconBtnSave: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FFFFFF",
   },
   sectionWrap: {
     marginBottom: 14,
@@ -532,7 +545,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
   },
   logoutRow: {
-    borderColor: "#FEE2E2",
+    borderColor: colors.dangerSoft,
     backgroundColor: "#FFF",
   },
   actionIcon: {
@@ -547,7 +560,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryMid,
   },
   logoutIcon: {
-    backgroundColor: "#FEE2E2",
+    backgroundColor: colors.dangerSoft,
   },
   actionLabel: {
     flex: 1,
@@ -558,6 +571,14 @@ const styles = StyleSheet.create({
   actionLabelPrimary: {
     color: colors.primaryDark,
   },
+  aboutFooter: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: colors.textDim,
+    textAlign: "center",
+    lineHeight: 18,
+    marginTop: spacing.lg,
+  },
   toast: {
     position: "absolute",
     bottom: 24,
@@ -565,17 +586,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: radius.pill,
-    shadowColor: "#000",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 6,
   },
   toastInfo: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: colors.primaryDark,
   },
   toastError: {
-    backgroundColor: "#DC2626",
+    backgroundColor: colors.danger,
   },
   toastText: {
     fontSize: 13,

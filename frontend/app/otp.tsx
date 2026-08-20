@@ -214,8 +214,8 @@ const styles = StyleSheet.create({
   body: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: 24,
-    paddingBottom: 24,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   iconWrap: {
     width: 64,
@@ -224,13 +224,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   title: {
     fontSize: 26,
     fontFamily: fonts.displayBold,
     color: colors.text,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
     letterSpacing: -0.3,
   },
   subtitle: {
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textMuted,
     lineHeight: 22,
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
   mobile: {
     fontFamily: fonts.semiBold,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: OTP_GAP,
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   box: {
     width: BOX_SIZE,
@@ -283,8 +283,8 @@ const styles = StyleSheet.create({
   },
   resendRow: {
     alignItems: "center",
-    marginTop: 12,
-    marginBottom: 28,
+    marginTop: spacing.sm2,
+    marginBottom: spacing.lg,
   },
   resendBtn: {
     flexDirection: "row",

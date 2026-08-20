@@ -10,9 +10,12 @@ import {
   CheckCircle2, Clock, XCircle, Plus, Trash2, Building2,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatINR } from "@/src/theme";
 import { apiGet, apiPost, apiDelete } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
+import EmptyState from "@/src/components/EmptyState";
+import Button from "@/src/components/ui/Button";
 
 const STAGE_LABELS: Record<string, string> = {
   scheme_identified: "Scheme Identified",
@@ -25,11 +28,20 @@ const STAGE_LABELS: Record<string, string> = {
   rejected: "Rejected",
 };
 
+// Role -> colour mapping, kept consistent with admin/users.tsx and admin/team.tsx
+const ROLE_TINTS: Record<string, { bg: string; text: string }> = {
+  super_admin: { bg: tints.amber.bg, text: tints.amber.fg },
+  manager: { bg: tints.blue.bg, text: tints.blue.fg },
+  expert: { bg: tints.deepTeal.bg, text: tints.deepTeal.fg },
+  sales_executive: { bg: colors.primarySoft, text: colors.primaryDark },
+  support_executive: { bg: tints.red.bg, text: tints.red.fg },
+};
+
 function StagePill({ stage }: { stage: string }) {
   const isGood = stage === "approved" || stage === "disbursed";
   const isBad = stage === "rejected";
-  const bg = isGood ? colors.primarySoft : isBad ? "#FEE2E2" : "#FEF3C7";
-  const text = isGood ? colors.primaryDark : isBad ? "#DC2626" : "#92400E";
+  const bg = isGood ? colors.primarySoft : isBad ? tints.red.bg : tints.amber.bg;
+  const text = isGood ? colors.primaryDark : isBad ? tints.red.fg : tints.amber.fg;
   const Icon = isGood ? CheckCircle2 : isBad ? XCircle : Clock;
   return (
     <View style={[s.stagePill, { backgroundColor: bg }]}>
@@ -161,9 +173,7 @@ export default function UserDetail() {
 
         {/* User Info Card */}
         <View style={s.userCard}>
-          <View style={s.avatarLarge}>
-            <Text style={s.avatarLargeText}>{(user?.full_name || "U").charAt(0).toUpperCase()}</Text>
-          </View>
+          <InitialsAvatar name={user?.full_name || "U"} size={56} />
           <View style={{ flex: 1 }}>
             <Text style={s.userName}>{user?.full_name || "Unnamed"}</Text>
             <View style={s.metaRow}>
@@ -177,8 +187,8 @@ export default function UserDetail() {
               </View>
             )}
             {user?.role && user.role !== "user" && (
-              <View style={[s.rolePill, { marginTop: 6 }]}>
-                <Text style={s.rolePillText}>{user.role.replace(/_/g, " ")}</Text>
+              <View style={[s.rolePill, { marginTop: 6, backgroundColor: ROLE_TINTS[user.role]?.bg ?? tints.amber.bg }]}>
+                <Text style={[s.rolePillText, { color: ROLE_TINTS[user.role]?.text ?? tints.amber.fg }]}>{user.role.replace(/_/g, " ")}</Text>
               </View>
             )}
           </View>
@@ -200,7 +210,9 @@ export default function UserDetail() {
 
         {/* Assigned Schemes */}
         <View style={s.sectionHeader}>
-          <Landmark size={14} color={colors.textMuted} strokeWidth={2} />
+          <View style={[s.sectionIconChip, { backgroundColor: colors.primarySoft }]}>
+            <Landmark size={16} color={colors.primaryDark} strokeWidth={2} />
+          </View>
           <Text style={s.sectionTitle}>Assigned Schemes ({applications.length})</Text>
           <TouchableOpacity style={s.addBtn} onPress={openAssignModal} activeOpacity={0.8}>
             <Plus size={13} color={colors.primaryDark} strokeWidth={2.5} />
@@ -209,13 +221,12 @@ export default function UserDetail() {
         </View>
 
         {applications.length === 0 ? (
-          <View style={s.emptyBox}>
-            <Landmark size={28} color={colors.textDim} strokeWidth={1.5} />
-            <Text style={s.emptyText}>No schemes assigned yet</Text>
-            <TouchableOpacity style={s.assignBtn} onPress={openAssignModal}>
-              <Text style={s.assignBtnText}>+ Assign a Scheme</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            Icon={Landmark}
+            title="No schemes assigned yet"
+            ctaLabel="+ Assign a Scheme"
+            onCta={openAssignModal}
+          />
         ) : (
           applications.map((app) => (
             <TouchableOpacity
@@ -238,28 +249,27 @@ export default function UserDetail() {
                 disabled={deleting === app.id}
               >
                 {deleting === app.id
-                  ? <ActivityIndicator size="small" color="#DC2626" />
-                  : <Trash2 size={14} color="#DC2626" strokeWidth={2} />}
+                  ? <ActivityIndicator size="small" color={tints.red.fg} />
+                  : <Trash2 size={14} color={tints.red.fg} strokeWidth={2} />}
               </TouchableOpacity>
               <ChevronRight size={14} color={colors.textDim} strokeWidth={2} />
             </TouchableOpacity>
           ))
         )}
         {/* Assigned Banks */}
-        <View style={[s.sectionHeader, { marginTop: 8 }]}>
-          <Building2 size={14} color={colors.textMuted} strokeWidth={2} />
+        <View style={[s.sectionHeader, { marginTop: spacing.lg }]}>
+          <View style={[s.sectionIconChip, { backgroundColor: tints.blue.bg }]}>
+            <Building2 size={16} color={tints.blue.fg} strokeWidth={2} />
+          </View>
           <Text style={s.sectionTitle}>Assigned Banks ({bankAssignments.length})</Text>
-          <TouchableOpacity style={[s.addBtn, { backgroundColor: "#DBEAFE" }]} onPress={() => router.push("/admin/banks" as any)} activeOpacity={0.8}>
-            <Plus size={13} color="#1D4ED8" strokeWidth={2.5} />
-            <Text style={[s.addBtnText, { color: "#1D4ED8" }]}>Assign</Text>
+          <TouchableOpacity style={[s.addBtn, { backgroundColor: tints.blue.bg }]} onPress={() => router.push("/admin/banks" as any)} activeOpacity={0.8}>
+            <Plus size={13} color={tints.blue.fg} strokeWidth={2.5} />
+            <Text style={[s.addBtnText, { color: tints.blue.fg }]}>Assign</Text>
           </TouchableOpacity>
         </View>
 
         {bankAssignments.length === 0 ? (
-          <View style={s.emptyBox}>
-            <Building2 size={28} color={colors.textDim} strokeWidth={1.5} />
-            <Text style={s.emptyText}>No banks assigned yet</Text>
-          </View>
+          <EmptyState Icon={Building2} title="No banks assigned yet" />
         ) : (
           bankAssignments.map((ba) => (
             <TouchableOpacity
@@ -268,8 +278,8 @@ export default function UserDetail() {
               onPress={() => router.push(`/admin/bank/${ba.bank_id}` as any)}
               activeOpacity={0.8}
             >
-              <View style={[s.schemeIcon, { backgroundColor: "#EFF6FF" }]}>
-                <Building2 size={14} color="#1D4ED8" strokeWidth={2} />
+              <View style={[s.schemeIcon, { backgroundColor: tints.blue.bg }]}>
+                <Building2 size={14} color={tints.blue.fg} strokeWidth={2} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.schemeName}>{ba.bank_name}</Text>
@@ -281,8 +291,8 @@ export default function UserDetail() {
                 disabled={deletingBank === ba.id}
               >
                 {deletingBank === ba.id
-                  ? <ActivityIndicator size="small" color="#DC2626" />
-                  : <Trash2 size={14} color="#DC2626" strokeWidth={2} />}
+                  ? <ActivityIndicator size="small" color={tints.red.fg} />
+                  : <Trash2 size={14} color={tints.red.fg} strokeWidth={2} />}
               </TouchableOpacity>
               <ChevronRight size={14} color={colors.textDim} strokeWidth={2} />
             </TouchableOpacity>
@@ -327,15 +337,12 @@ export default function UserDetail() {
               })}
             </ScrollView>
 
-            <TouchableOpacity
-              style={[s.assignBtn, (!selectedScheme || assigning) && { opacity: 0.5 }]}
+            <Button
+              label={`Assign ${selectedScheme?.name ?? "Scheme"}`}
               onPress={handleAssign}
+              loading={assigning}
               disabled={!selectedScheme || assigning}
-            >
-              {assigning
-                ? <ActivityIndicator color="#FFF" size="small" />
-                : <Text style={s.assignBtnText}>Assign {selectedScheme?.name ?? "Scheme"}</Text>}
-            </TouchableOpacity>
+            />
           </View>
         </View>
       </Modal>
@@ -344,36 +351,31 @@ export default function UserDetail() {
 }
 
 const s = StyleSheet.create({
-  userCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 10, flexDirection: "row", gap: 12, alignItems: "flex-start" },
-  avatarLarge: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  avatarLargeText: { fontSize: 20, fontFamily: fonts.displayBold, color: colors.primaryDark },
+  userCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, flexDirection: "row", gap: spacing.sm2, alignItems: "flex-start", ...elevation.l1 },
   userName: { fontSize: 16, fontFamily: fonts.displayBold, color: colors.text, marginBottom: 4 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 3 },
   metaText: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted },
-  rolePill: { alignSelf: "flex-start", backgroundColor: "#FEF3C7", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
-  rolePillText: { fontSize: 10, fontFamily: fonts.bold, color: "#92400E", textTransform: "uppercase" },
-  sectionCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 10 },
-  sectionLabel: { fontSize: 10, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 },
+  rolePill: { alignSelf: "flex-start", backgroundColor: tints.amber.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
+  rolePillText: { fontSize: 10, fontFamily: fonts.bold, color: tints.amber.fg, textTransform: "uppercase" },
+  sectionCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
+  sectionLabel: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 4 },
   sectionValue: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text },
   sectionMeta: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 2 },
   sectionActivity: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 6, lineHeight: 17 },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10, marginTop: 4 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm2, marginTop: 4 },
+  sectionIconChip: { width: 36, height: 36, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
   sectionTitle: { flex: 1, fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
   addBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.primarySoft, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
   addBtnText: { fontSize: 12, fontFamily: fonts.bold, color: colors.primaryDark },
-  emptyBox: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: "center", gap: 8 },
-  emptyText: { fontSize: 13, fontFamily: fonts.medium, color: colors.textMuted },
-  assignBtn: { backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: 12, paddingHorizontal: 24, alignItems: "center", justifyContent: "center", marginTop: 4 },
-  assignBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
-  appCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center", gap: 10 },
+  appCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: spacing.sm2, flexDirection: "row", alignItems: "center", gap: 10, ...elevation.l1 },
   schemeIcon: { width: 36, height: 36, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
   schemeName: { fontSize: 13, fontFamily: fonts.semiBold, color: colors.text, marginBottom: 2 },
   bankName: { fontSize: 11, fontFamily: fonts.regular, color: colors.textMuted, marginBottom: 4 },
   stagePill: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
   stagePillText: { fontSize: 10, fontFamily: fonts.bold },
-  deleteBtn: { padding: 6 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  modalSheet: { backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, paddingBottom: 36, gap: 12 },
+  deleteBtn: { width: 32, height: 32, borderRadius: radius.lg, backgroundColor: tints.red.bg, alignItems: "center", justifyContent: "center" },
+  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end" },
+  modalSheet: { backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, paddingBottom: 36, gap: 12, ...elevation.l2 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   modalTitle: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   modalHint: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted },

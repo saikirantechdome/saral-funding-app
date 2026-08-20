@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Image } from "react-native";
 import { useRouter } from "expo-router";
 
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 import { storage } from "@/src/utils/storage";
 import { apiGet } from "@/src/api";
 
@@ -39,6 +39,6 @@ export default function Splash() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white, alignItems: "center", justifyContent: "center", padding: 24 },
   logoBadge: { width: 90, height: 90, marginBottom: 16 },
-  title: { fontSize: 28, fontWeight: "800", color: colors.text },
-  subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 8, textAlign: "center" },
+  title: { fontSize: 28, fontFamily: fonts.displayBold, color: colors.text, letterSpacing: -0.3 },
+  subtitle: { fontSize: 14, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 8, textAlign: "center" },
 });

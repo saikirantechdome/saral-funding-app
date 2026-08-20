@@ -5,9 +5,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { TrendingUp, MapPin, Target, Phone, Users, Calendar } from "lucide-react-native";
-import Svg, { Polyline, Circle, Line, Text as SvgText } from "react-native-svg";
+import Svg, { Polyline, Circle, Line, Text as SvgText, G } from "react-native-svg";
 
-import { colors, spacing, radius, fonts, stageColor } from "@/src/theme";
+import { colors, spacing, radius, fonts, stageColor, tints } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 
@@ -132,6 +132,72 @@ function TrendChart({ data, color = colors.primary, height = 80 }: {
   );
 }
 
+/** Donut chart — one ring segment per entry, proportional to value. */
+function DonutChart({ segments, size = 132, strokeWidth = 20 }: {
+  segments: { label: string; value: number; color: string }[];
+  size?: number;
+  strokeWidth?: number;
+}) {
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  const r = (size - strokeWidth) / 2;
+  const c = 2 * Math.PI * r;
+  let cumulative = 0;
+
+  return (
+    <View style={{ width: size, height: size }}>
+      <Svg width={size} height={size}>
+        <G rotation={-90} origin={`${size / 2}, ${size / 2}`}>
+          <Circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={colors.surfaceAlt} strokeWidth={strokeWidth} />
+          {total > 0 && segments.filter((s) => s.value > 0).map((seg, i) => {
+            const segLen = (seg.value / total) * c;
+            const dashOffset = -cumulative;
+            cumulative += segLen;
+            return (
+              <Circle
+                key={i}
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth={strokeWidth}
+                strokeDasharray={`${segLen} ${c - segLen}`}
+                strokeDashoffset={dashOffset}
+                strokeLinecap="butt"
+              />
+            );
+          })}
+        </G>
+      </Svg>
+      <View style={StyleSheet.absoluteFillObject}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontSize: 22, fontFamily: fonts.displayBold, color: colors.text }}>{total}</Text>
+          <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: colors.textDim }}>Total Leads</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function DonutLegend({ segments }: { segments: { label: string; value: number; color: string }[] }) {
+  const total = segments.reduce((s, x) => s + x.value, 0) || 1;
+  return (
+    <View style={{ flex: 1, gap: 8 }}>
+      {segments.filter((s) => s.value > 0).map((seg) => (
+        <View key={seg.label} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: seg.color }} />
+          <Text style={{ flex: 1, fontSize: 12, fontFamily: fonts.medium, color: colors.text, textTransform: "capitalize" }} numberOfLines={1}>
+            {seg.label}
+          </Text>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: colors.textMuted }}>
+            {seg.value} ({Math.round((seg.value / total) * 100)}%)
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function AdminAnalytics() {
@@ -153,7 +219,7 @@ export default function AdminAnalytics() {
 
   const maxPop = Math.max(1, ...(data.popular_schemes || []).map((p: any) => p.matches));
   const maxState = Math.max(1, ...(data.state_distribution || []).map((s: any) => s.count));
-  const stateColors = ["#37988C", "#2D7C72", "#5AC4B7", "#8FD7CE", "#BCE7E2"];
+  const stateColors = [colors.primaryDark, tints.deepTeal.fg, colors.primary, tints.teal.fg, colors.primaryLight];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-analytics">
@@ -172,7 +238,7 @@ export default function AdminAnalytics() {
         {(data.consultation_trend || []).length > 0 && (
           <View style={styles.section}>
             <SectionHeader Icon={Calendar} title="Consultations Booked (14 days)" />
-            <TrendChart data={data.consultation_trend} color="#6D28D9" height={80} />
+            <TrendChart data={data.consultation_trend} color={tints.deepTeal.fg} height={80} />
           </View>
         )}
 
@@ -197,6 +263,27 @@ export default function AdminAnalytics() {
             (data.state_distribution || []).map((s: any, i: number) => (
               <BarRow key={s.state} label={s.state} value={s.count} max={maxState} color={stateColors[i % stateColors.length]} />
             ))
+          )}
+        </View>
+
+        {/* Leads by status — donut */}
+        <View style={styles.section}>
+          <SectionHeader Icon={Target} title="Leads by Status" />
+          {Object.keys(data.lead_pipeline || {}).length === 0 ? (
+            <Text style={styles.empty}>No leads yet</Text>
+          ) : (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
+              <DonutChart
+                segments={Object.entries(data.lead_pipeline || {}).map(([k, v]) => ({
+                  label: k, value: Number(v), color: stageColor(k).text,
+                }))}
+              />
+              <DonutLegend
+                segments={Object.entries(data.lead_pipeline || {}).map(([k, v]) => ({
+                  label: k, value: Number(v), color: stageColor(k).text,
+                }))}
+              />
+            </View>
           )}
         </View>
 
@@ -237,7 +324,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: 12,
-    shadowColor: "#000",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,

@@ -7,10 +7,11 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router";
 import { Banknote, ChevronRight, Building2, Plus, X } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, tints, spacing, radius, fonts, elevation, formatINR } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import EmptyState from "@/src/components/EmptyState";
+import Button from "@/src/components/ui/Button";
 
 const BANK_TYPES = ["Public", "Private", "Development", "Small Finance Bank", "NBFC", "Fintech NBFC"];
 
@@ -87,7 +88,7 @@ export default function AdminBanks() {
         onBack={() => router.back()}
         right={isSuperAdmin ? (
           <TouchableOpacity style={styles.createBtn} onPress={() => setShowCreate(true)} activeOpacity={0.8}>
-            <Plus size={16} color="#1D4ED8" strokeWidth={2.5} />
+            <Plus size={16} color={tints.blue.fg} strokeWidth={2.5} />
             <Text style={styles.createBtnText}>Create</Text>
           </TouchableOpacity>
         ) : undefined}
@@ -114,7 +115,7 @@ export default function AdminBanks() {
               activeOpacity={0.8}
             >
               <View style={styles.iconWrap}>
-                <Building2 size={18} color="#1D4ED8" strokeWidth={2} />
+                <Building2 size={18} color={tints.blue.fg} strokeWidth={2} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.bankName}>{item.name}</Text>
@@ -143,7 +144,7 @@ export default function AdminBanks() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 480 }}>
-              <View style={{ gap: 10 }}>
+              <View style={{ gap: spacing.sm2 }}>
                 <Field label="Bank Name *" placeholder="e.g. State Bank of India" value={form.name} onChangeText={(v) => setForm((f) => ({ ...f, name: v }))} />
                 <Field label="Short Name" placeholder="e.g. SBI" value={form.short_name} onChangeText={(v) => setForm((f) => ({ ...f, short_name: v }))} />
 
@@ -151,7 +152,7 @@ export default function AdminBanks() {
                 <View>
                   <Text style={styles.fieldLabel}>Bank Type</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
-                    <View style={{ flexDirection: "row", gap: 8, paddingVertical: 4 }}>
+                    <View style={{ flexDirection: "row", gap: spacing.sm, paddingVertical: 4 }}>
                       {BANK_TYPES.map((t) => (
                         <TouchableOpacity
                           key={t}
@@ -165,7 +166,7 @@ export default function AdminBanks() {
                   </ScrollView>
                 </View>
 
-                <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flexDirection: "row", gap: spacing.sm }}>
                   <View style={{ flex: 1 }}>
                     <Field label="Interest Min %" placeholder="e.g. 8.5" value={form.interest_min} onChangeText={(v) => setForm((f) => ({ ...f, interest_min: v }))} keyboardType="numeric" />
                   </View>
@@ -184,15 +185,15 @@ export default function AdminBanks() {
               </View>
             </ScrollView>
 
-            <TouchableOpacity
-              style={[styles.saveBtn, saving && { opacity: 0.6 }]}
-              onPress={handleCreate}
-              disabled={saving}
-            >
-              {saving
-                ? <ActivityIndicator color="#FFF" size="small" />
-                : <Text style={styles.saveBtnText}>Create Bank</Text>}
-            </TouchableOpacity>
+            <View style={{ marginTop: spacing.sm }}>
+              <Button
+                testID="save-bank"
+                label="Create Bank"
+                onPress={handleCreate}
+                loading={saving}
+                size="lg"
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -214,26 +215,24 @@ function Field({ label, ...props }: { label: string; [key: string]: any }) {
 }
 
 const styles = StyleSheet.create({
-  statsBar: { paddingHorizontal: spacing.md, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: "#FFF" },
-  statsText: { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
-  createBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#DBEAFE", paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
-  createBtnText: { fontSize: 12, fontFamily: fonts.bold, color: "#1D4ED8" },
-  card: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
-  iconWrap: { width: 44, height: 44, borderRadius: radius.xl, backgroundColor: "#EFF6FF", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  statsBar: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: "#FFF" },
+  statsText: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6 },
+  createBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: tints.blue.bg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
+  createBtnText: { fontSize: 12, fontFamily: fonts.bold, color: tints.blue.fg },
+  card: { flexDirection: "row", alignItems: "center", gap: spacing.sm2, backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
+  iconWrap: { width: 44, height: 44, borderRadius: radius.xl, backgroundColor: tints.blue.bg, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   bankName: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text, marginBottom: 3 },
   bankMeta: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginBottom: 6 },
-  typePill: { alignSelf: "flex-start", backgroundColor: "#DBEAFE", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
-  typePillText: { fontSize: 10, fontFamily: fonts.bold, color: "#1D4ED8" },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  typePill: { alignSelf: "flex-start", backgroundColor: tints.blue.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
+  typePillText: { fontSize: 10, fontFamily: fonts.bold, color: tints.blue.fg },
+  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, paddingBottom: 36, gap: 14 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   modalTitle: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   fieldLabel: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 },
   fieldInput: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 14, paddingVertical: 10, fontSize: 13, fontFamily: fonts.regular, color: colors.text, backgroundColor: "#FFF" },
   typeChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface2 },
-  typeChipSelected: { borderColor: "#1D4ED8", backgroundColor: "#DBEAFE" },
+  typeChipSelected: { borderColor: tints.blue.fg, backgroundColor: tints.blue.bg },
   typeChipText: { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
-  typeChipTextSelected: { color: "#1D4ED8", fontFamily: fonts.bold },
-  saveBtn: { backgroundColor: "#1D4ED8", borderRadius: radius.xl, paddingVertical: 13, alignItems: "center" },
-  saveBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
+  typeChipTextSelected: { color: tints.blue.fg, fontFamily: fonts.bold },
 });

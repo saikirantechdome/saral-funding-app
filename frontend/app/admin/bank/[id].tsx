@@ -7,9 +7,11 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Users, CheckCircle2, UserPlus, X, ChevronRight, Building2 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, tints, spacing, radius, fonts, elevation, formatINR } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import Button from "@/src/components/ui/Button";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
 
 export default function BankDetail() {
   const router = useRouter();
@@ -114,7 +116,7 @@ export default function BankDetail() {
           <View style={s.infoCard}>
             <View style={s.bankHeader}>
               <View style={s.bankIconWrap}>
-                <Building2 size={22} color="#1D4ED8" strokeWidth={2} />
+                <Building2 size={22} color={tints.blue.fg} strokeWidth={2} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.bankFullName}>{bank.name}</Text>
@@ -142,10 +144,15 @@ export default function BankDetail() {
         ) : null}
 
         {/* Assign Button */}
-        <TouchableOpacity style={s.assignBtn} onPress={openAssignModal} activeOpacity={0.85}>
-          <UserPlus size={16} color="#FFF" strokeWidth={2.5} />
-          <Text style={s.assignBtnText}>Assign Bank to Users</Text>
-        </TouchableOpacity>
+        <View style={{ marginBottom: spacing.lg }}>
+          <Button
+            label="Assign Bank to Users"
+            onPress={openAssignModal}
+            Icon={UserPlus}
+            iconPosition="left"
+            size="lg"
+          />
+        </View>
 
         {/* Assigned Users */}
         <View style={s.sectionHeader}>
@@ -168,9 +175,7 @@ export default function BankDetail() {
               onPress={() => router.push(`/admin/user/${item.user_id}` as any)}
               activeOpacity={0.8}
             >
-              <View style={s.avatar}>
-                <Text style={s.avatarText}>{(item.user?.full_name || "U").charAt(0).toUpperCase()}</Text>
-              </View>
+              <InitialsAvatar name={item.user?.full_name || "User"} size={36} />
               <View style={{ flex: 1 }}>
                 <Text style={s.userName}>{item.user?.full_name || "Unnamed"}</Text>
                 <Text style={s.userMobile}>{item.user?.mobile ? `+91 ${item.user.mobile}` : "—"}</Text>
@@ -194,13 +199,13 @@ export default function BankDetail() {
 
             {assignResult ? (
               <View style={{ gap: 12, padding: 8 }}>
-                <CheckCircle2 size={40} color={colors.primary} strokeWidth={1.5} style={{ alignSelf: "center" }} />
+                <View style={s.successIconWrap}>
+                  <CheckCircle2 size={30} color={colors.primary} strokeWidth={1.5} />
+                </View>
                 <Text style={[s.modalTitle, { textAlign: "center" }]}>Done!</Text>
-                <Text style={s.resultRow}>✅ Newly assigned: <Text style={s.resultVal}>{assignResult.assigned}</Text></Text>
-                <Text style={s.resultRow}>⏭ Already had bank: <Text style={s.resultVal}>{assignResult.skipped}</Text></Text>
-                <TouchableOpacity style={s.assignBtn} onPress={() => setShowAssignModal(false)}>
-                  <Text style={s.assignBtnText}>Close</Text>
-                </TouchableOpacity>
+                <Text style={s.resultRow}>Newly assigned: <Text style={s.resultVal}>{assignResult.assigned}</Text></Text>
+                <Text style={s.resultRow}>Already had bank: <Text style={s.resultVal}>{assignResult.skipped}</Text></Text>
+                <Button label="Close" onPress={() => setShowAssignModal(false)} size="lg" />
               </View>
             ) : (
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 480 }}>
@@ -208,7 +213,9 @@ export default function BankDetail() {
                   <View style={{ gap: 12, paddingVertical: 8 }}>
                     <Text style={s.modeHint}>Choose assignment type:</Text>
                     <TouchableOpacity style={s.modeBtn} onPress={() => setAssignMode("all")}>
-                      <Users size={18} color={colors.primaryDark} strokeWidth={2} />
+                      <View style={s.modeIconWrap}>
+                        <Users size={18} color={tints.blue.fg} strokeWidth={2} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={s.modeBtnTitle}>Assign to All Users</Text>
                         <Text style={s.modeBtnDesc}>Bank becomes visible to all registered users</Text>
@@ -216,7 +223,9 @@ export default function BankDetail() {
                       <ChevronRight size={16} color={colors.textDim} strokeWidth={2} />
                     </TouchableOpacity>
                     <TouchableOpacity style={s.modeBtn} onPress={() => setAssignMode("selected")}>
-                      <CheckCircle2 size={18} color={colors.primaryDark} strokeWidth={2} />
+                      <View style={s.modeIconWrap}>
+                        <CheckCircle2 size={18} color={tints.blue.fg} strokeWidth={2} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={s.modeBtnTitle}>Assign to Selected Users</Text>
                         <Text style={s.modeBtnDesc}>Pick specific users to assign this bank to</Text>
@@ -257,6 +266,7 @@ export default function BankDetail() {
                                 <View style={[s.checkbox, isSelected && s.checkboxSelected]}>
                                   {isSelected && <CheckCircle2 size={12} color="#FFF" strokeWidth={3} />}
                                 </View>
+                                <InitialsAvatar name={u.full_name || "User"} size={28} />
                                 <View style={{ flex: 1 }}>
                                   <Text style={s.userRowName}>{u.full_name || "Unnamed"}</Text>
                                   <Text style={s.userRowMobile}>+91 {u.mobile}</Text>
@@ -278,17 +288,13 @@ export default function BankDetail() {
                       multiline
                     />
 
-                    <TouchableOpacity
-                      style={[s.assignBtn, (assigning || (assignMode === "selected" && selectedIds.size === 0)) && { opacity: 0.5 }]}
+                    <Button
+                      label={assignMode === "all" ? "Assign to All Users" : `Assign to ${selectedIds.size} User${selectedIds.size !== 1 ? "s" : ""}`}
                       onPress={handleAssign}
+                      loading={assigning}
                       disabled={assigning || (assignMode === "selected" && selectedIds.size === 0)}
-                    >
-                      {assigning
-                        ? <ActivityIndicator color="#FFF" size="small" />
-                        : <Text style={s.assignBtnText}>
-                            {assignMode === "all" ? "Assign to All Users" : `Assign to ${selectedIds.size} User${selectedIds.size !== 1 ? "s" : ""}`}
-                          </Text>}
-                    </TouchableOpacity>
+                      size="lg"
+                    />
                   </View>
                 )}
               </ScrollView>
@@ -301,44 +307,42 @@ export default function BankDetail() {
 }
 
 const s = StyleSheet.create({
-  infoCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 12 },
-  bankHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
-  bankIconWrap: { width: 48, height: 48, borderRadius: radius.xl, backgroundColor: "#EFF6FF", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  infoCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
+  bankHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm2, marginBottom: 10 },
+  bankIconWrap: { width: 48, height: 48, borderRadius: radius.xl, backgroundColor: tints.blue.bg, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   bankFullName: { fontSize: 16, fontFamily: fonts.displayBold, color: colors.text, marginBottom: 4 },
-  typePill: { alignSelf: "flex-start", backgroundColor: "#DBEAFE", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
-  typePillText: { fontSize: 10, fontFamily: fonts.bold, color: "#1D4ED8" },
+  typePill: { alignSelf: "flex-start", backgroundColor: tints.blue.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
+  typePillText: { fontSize: 10, fontFamily: fonts.bold, color: tints.blue.fg },
   bankDesc: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, lineHeight: 18, marginBottom: 12 },
-  statsRow: { flexDirection: "row", gap: 8 },
-  statBox: { flex: 1, backgroundColor: "#EFF6FF", borderRadius: radius.lg, padding: 10, alignItems: "center" },
-  statVal: { fontSize: 12, fontFamily: fonts.displayBold, color: "#1D4ED8", textAlign: "center" },
+  statsRow: { flexDirection: "row", gap: spacing.sm2 },
+  statBox: { flex: 1, backgroundColor: tints.blue.bg, borderRadius: radius.lg, padding: 10, alignItems: "center" },
+  statVal: { fontSize: 12, fontFamily: fonts.displayBold, color: tints.blue.fg, textAlign: "center" },
   statLabel: { fontSize: 10, fontFamily: fonts.medium, color: colors.textMuted, marginTop: 2, textAlign: "center" },
-  assignBtn: { backgroundColor: "#1D4ED8", borderRadius: radius.xl, paddingVertical: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 },
-  assignBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
   sectionTitle: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
-  emptyBox: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: "center", gap: 6 },
+  emptyBox: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: "center", gap: 6, ...elevation.l1 },
   emptyText: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text },
   emptyHint: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center" },
-  userCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center", gap: 10 },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#DBEAFE", alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#1D4ED8" },
+  userCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: spacing.sm2, flexDirection: "row", alignItems: "center", gap: spacing.sm2, ...elevation.l1 },
   userName: { fontSize: 13, fontFamily: fonts.semiBold, color: colors.text },
   userMobile: { fontSize: 11, fontFamily: fonts.regular, color: colors.textMuted },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, paddingBottom: 36, gap: 14 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   modalTitle: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   modeHint: { fontSize: 13, fontFamily: fonts.medium, color: colors.textMuted },
   modeBtn: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.surface2, borderRadius: radius.xl, padding: 14, borderWidth: 1, borderColor: colors.border },
+  modeIconWrap: { width: 40, height: 40, borderRadius: radius.lg, backgroundColor: tints.blue.bg, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   modeBtnTitle: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text },
   modeBtnDesc: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 2 },
+  successIconWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: tints.blue.bg, alignItems: "center", justifyContent: "center", alignSelf: "center" },
   searchInput: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 14, paddingVertical: 10, fontSize: 13, fontFamily: fonts.regular, color: colors.text, backgroundColor: "#FFF" },
   userRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderRadius: radius.lg, marginBottom: 4 },
-  userRowSelected: { backgroundColor: "#DBEAFE" },
+  userRowSelected: { backgroundColor: tints.blue.bg },
   checkbox: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-  checkboxSelected: { backgroundColor: "#1D4ED8", borderColor: "#1D4ED8" },
+  checkboxSelected: { backgroundColor: tints.blue.fg, borderColor: tints.blue.fg },
   userRowName: { fontSize: 13, fontFamily: fonts.semiBold, color: colors.text },
   userRowMobile: { fontSize: 11, fontFamily: fonts.regular, color: colors.textMuted },
   resultRow: { fontSize: 14, fontFamily: fonts.regular, color: colors.text },
-  resultVal: { fontFamily: fonts.bold, color: "#1D4ED8" },
+  resultVal: { fontFamily: fonts.bold, color: tints.blue.fg },
 });

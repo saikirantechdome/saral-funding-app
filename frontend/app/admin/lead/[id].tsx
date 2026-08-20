@@ -12,10 +12,12 @@ import {
   Plus, Trash2, ChevronRight, Bell, Send,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, stageColor } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, stageColor, tints, elevation, tagColor } from "@/src/theme";
 import { apiGet, apiPost, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
+import Button from "@/src/components/ui/Button";
 
 const RECOMMENDED_BANKS = [
   "State Bank of India",
@@ -54,7 +56,7 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
 }
 const row = StyleSheet.create({
   wrap: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
-  icon: { width: 28, height: 28, borderRadius: radius.md, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center", marginTop: 2 },
+  icon: { width: 28, height: 28, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", marginTop: 2 },
   label: { fontSize: 10, fontFamily: fonts.medium, color: colors.textDim, textTransform: "uppercase", letterSpacing: 0.4 },
   value: { fontSize: 14, fontFamily: fonts.medium, color: colors.text, marginTop: 1 },
 });
@@ -68,16 +70,16 @@ function SectionCard({ title, children }: { title: string; children: React.React
   );
 }
 const card = StyleSheet.create({
-  wrap: { backgroundColor: "#FFF", borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 12 },
+  wrap: { backgroundColor: "#FFF", borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
   title: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 },
 });
 
 function TimelineEvent({ item }: { item: any }) {
   const actionLabel: Record<string, { label: string; color: string }> = {
-    stage_changed: { label: "Stage Changed", color: "#1D4ED8" },
-    note_added: { label: "Note Added", color: "#92400E" },
-    assigned: { label: "Assigned", color: "#5B21B6" },
-    follow_up_set: { label: "Follow-up Set", color: "#1E534C" },
+    stage_changed: { label: "Stage Changed", color: tints.blue.fg },
+    note_added: { label: "Note Added", color: tints.amber.fg },
+    assigned: { label: "Assigned", color: tints.green.fg },
+    follow_up_set: { label: "Follow-up Set", color: tints.deepTeal.fg },
     created: { label: "Lead Created", color: colors.primaryDark },
     updated: { label: "Updated", color: colors.textMuted },
   };
@@ -362,45 +364,43 @@ export default function LeadDetail() {
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* Header card */}
-        <View style={[card.wrap, { flexDirection: "row", alignItems: "flex-start", gap: 12 }]}>
-          <View style={styles.avatar}>
-            <User size={20} color={colors.primaryDark} strokeWidth={2} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.leadName}>{user.full_name || data.full_name || "Unknown"}</Text>
-            <Text style={styles.leadMobile}>+91 {user.mobile || data.mobile || "—"}</Text>
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-              <StagePill stage={data.stage} />
-              {data.consultation_type && (
-                <View style={styles.typeTag}>
-                  <Tag size={10} color={colors.textDim} strokeWidth={2} />
-                  <Text style={styles.typeText}>{data.consultation_type}</Text>
-                </View>
-              )}
+        <View style={card.wrap}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm2 }}>
+            <InitialsAvatar name={user.full_name || data.full_name || "Unknown"} size={48} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.leadName}>{user.full_name || data.full_name || "Unknown"}</Text>
+              <Text style={styles.leadMobile}>+91 {user.mobile || data.mobile || "—"}</Text>
             </View>
+            <Button label="Edit" onPress={() => setEditing(true)} variant="tertiary" size="sm" fullWidth={false} />
           </View>
-          <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(true)}>
-            <Text style={styles.editBtnText}>Edit</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: spacing.sm2, flexWrap: "wrap" }}>
+            <StagePill stage={data.stage} />
+            {data.consultation_type && (
+              <View style={[styles.typeTag, { backgroundColor: tagColor(data.consultation_type).bg }]}>
+                <Tag size={10} color={tagColor(data.consultation_type).text} strokeWidth={2} />
+                <Text style={[styles.typeText, { color: tagColor(data.consultation_type).text }]}>{data.consultation_type}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* User Profile */}
         <SectionCard title="User Profile">
-          <InfoRow icon={<MapPin size={13} color={colors.textDim} />} label="State" value={user.state || "—"} />
-          <InfoRow icon={<User size={13} color={colors.textDim} />} label="Category" value={user.category || "—"} />
-          <InfoRow icon={<Phone size={13} color={colors.textDim} />} label="Mobile" value={user.mobile || "—"} />
-          <InfoRow icon={<DollarSign size={13} color={colors.textDim} />} label="Funding Required" value={data.funding_required ? formatINR(data.funding_required) : "—"} />
+          <InfoRow icon={<MapPin size={13} color={colors.primaryDark} />} label="State" value={user.state || "—"} />
+          <InfoRow icon={<User size={13} color={colors.primaryDark} />} label="Category" value={user.category || "—"} />
+          <InfoRow icon={<Phone size={13} color={colors.primaryDark} />} label="Mobile" value={user.mobile || "—"} />
+          <InfoRow icon={<DollarSign size={13} color={colors.primaryDark} />} label="Funding Required" value={data.funding_required ? formatINR(data.funding_required) : "—"} />
         </SectionCard>
 
         {/* Business Profile */}
         {(bp.industry || bp.business_stage) && (
           <SectionCard title="Business Profile">
-            <InfoRow icon={<Building2 size={13} color={colors.textDim} />} label="Industry" value={bp.industry || "—"} />
-            <InfoRow icon={<FileText size={13} color={colors.textDim} />} label="Business Activity" value={bp.business_activity || ""} />
-            <InfoRow icon={<Tag size={13} color={colors.textDim} />} label="Stage" value={bp.business_stage || "—"} />
-            <InfoRow icon={<DollarSign size={13} color={colors.textDim} />} label="Annual Turnover" value={bp.annual_turnover ? formatINR(bp.annual_turnover) : "—"} />
-            <InfoRow icon={<CheckCircle2 size={13} color={colors.textDim} />} label="GST" value={bp.gst_available ? "Registered" : "Not Registered"} />
-            <InfoRow icon={<CheckCircle2 size={13} color={colors.textDim} />} label="Udyam" value={bp.udyam_available ? "Registered" : "Not Registered"} />
+            <InfoRow icon={<Building2 size={13} color={colors.primaryDark} />} label="Industry" value={bp.industry || "—"} />
+            <InfoRow icon={<FileText size={13} color={colors.primaryDark} />} label="Business Activity" value={bp.business_activity || ""} />
+            <InfoRow icon={<Tag size={13} color={colors.primaryDark} />} label="Stage" value={bp.business_stage || "—"} />
+            <InfoRow icon={<DollarSign size={13} color={colors.primaryDark} />} label="Annual Turnover" value={bp.annual_turnover ? formatINR(bp.annual_turnover) : "—"} />
+            <InfoRow icon={<CheckCircle2 size={13} color={colors.primaryDark} />} label="GST" value={bp.gst_available ? "Registered" : "Not Registered"} />
+            <InfoRow icon={<CheckCircle2 size={13} color={colors.primaryDark} />} label="Udyam" value={bp.udyam_available ? "Registered" : "Not Registered"} />
           </SectionCard>
         )}
 
@@ -411,11 +411,13 @@ export default function LeadDetail() {
             <Text style={styles.emptyNote}>No documents uploaded by this user yet.</Text>
           ) : (
             userDocs.map((doc: any) => {
-              const statusBg = doc.status === "verified" ? colors.primarySoft : doc.status === "rejected" ? "#FEE2E2" : "#FEF3C7";
-              const statusColor = doc.status === "verified" ? colors.primaryDark : doc.status === "rejected" ? "#DC2626" : "#92400E";
+              const statusBg = doc.status === "verified" ? colors.primarySoft : doc.status === "rejected" ? colors.dangerSoft : tints.amber.bg;
+              const statusColor = doc.status === "verified" ? colors.primaryDark : doc.status === "rejected" ? colors.danger : tints.amber.fg;
               return (
                 <View key={doc.id} style={styles.docRow}>
-                  <FileText size={14} color={colors.textDim} strokeWidth={2} />
+                  <View style={styles.docIconChip}>
+                    <FileText size={14} color={colors.primaryDark} strokeWidth={2} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.docName}>{doc.doc_type}</Text>
                     <Text style={styles.docDate}>
@@ -452,13 +454,13 @@ export default function LeadDetail() {
                           }
                         </TouchableOpacity>
                         <TouchableOpacity
-                          style={[styles.docActionBtn, { backgroundColor: "#FEE2E2" }]}
+                          style={[styles.docActionBtn, { backgroundColor: colors.dangerSoft }]}
                           onPress={() => handleDocStatus(doc.id, "rejected")}
                           disabled={!!docActionLoading}
                         >
                           {docActionLoading === doc.id + "rejected"
-                            ? <ActivityIndicator size="small" color="#DC2626" />
-                            : <Text style={[styles.docActionText, { color: "#DC2626" }]}>Reject</Text>
+                            ? <ActivityIndicator size="small" color={colors.danger} />
+                            : <Text style={[styles.docActionText, { color: colors.danger }]}>Reject</Text>
                           }
                         </TouchableOpacity>
                       </>
@@ -485,8 +487,8 @@ export default function LeadDetail() {
                       <Text style={styles.appBankName}>{app.bank_name}</Text>
                     </View>
                   ) : null}
-                  <View style={[styles.appStagePill, app.stage === "approved" || app.stage === "disbursed" ? { backgroundColor: "#DDF3F0" } : app.stage === "rejected" ? { backgroundColor: "#fee2e2" } : { backgroundColor: "#eff6ff" }]}>
-                    <Text style={[styles.appStageText, { color: app.stage === "approved" || app.stage === "disbursed" ? "#2D7C72" : app.stage === "rejected" ? "#dc2626" : colors.primary }]}>
+                  <View style={[styles.appStagePill, app.stage === "approved" || app.stage === "disbursed" ? { backgroundColor: colors.stageWon } : app.stage === "rejected" ? { backgroundColor: colors.dangerSoft } : { backgroundColor: tints.blue.bg }]}>
+                    <Text style={[styles.appStageText, { color: app.stage === "approved" || app.stage === "disbursed" ? colors.success : app.stage === "rejected" ? colors.danger : colors.primary }]}>
                       {app.stage_label || app.stage}
                     </Text>
                   </View>
@@ -499,19 +501,18 @@ export default function LeadDetail() {
                     <Text style={[styles.docActionText, { color: colors.primaryDark }]}>Stage</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.docActionBtn, { backgroundColor: "#fee2e2" }]}
+                    style={[styles.docActionBtn, { backgroundColor: colors.dangerSoft }]}
                     onPress={() => deleteSchemeApp(app.id, app.scheme_name)}
                   >
-                    <Trash2 size={12} color="#dc2626" strokeWidth={2} />
+                    <Trash2 size={12} color={colors.danger} strokeWidth={2} />
                   </TouchableOpacity>
                 </View>
               </View>
             ))
           )}
-          <TouchableOpacity style={styles.assignBtn} onPress={() => setAssignModal(true)}>
-            <Plus size={14} color="#fff" strokeWidth={2.5} />
-            <Text style={styles.assignBtnText}>Assign Scheme</Text>
-          </TouchableOpacity>
+          <View style={{ marginTop: spacing.sm2 }}>
+            <Button label="Assign Scheme" Icon={Plus} iconPosition="left" onPress={() => setAssignModal(true)} size="sm" />
+          </View>
         </SectionCard>
 
         {/* Bank Assignments */}
@@ -521,8 +522,8 @@ export default function LeadDetail() {
           ) : (
             bankAssignments.map((ba: any) => (
               <View key={ba.id} style={styles.appRow}>
-                <View style={{ width: 28, height: 28, borderRadius: radius.md, backgroundColor: "#EFF6FF", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Building2 size={14} color="#1D4ED8" strokeWidth={2} />
+                <View style={{ width: 28, height: 28, borderRadius: radius.md, backgroundColor: tints.blue.bg, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Building2 size={14} color={tints.blue.fg} strokeWidth={2} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.appSchemeName}>{ba.bank_name}</Text>
@@ -530,8 +531,8 @@ export default function LeadDetail() {
                     <Text style={styles.appBankName}>{ba.bank_short_name}</Text>
                   ) : null}
                 </View>
-                <View style={[styles.appStagePill, { backgroundColor: "#DBEAFE" }]}>
-                  <Text style={[styles.appStageText, { color: "#1D4ED8" }]}>Assigned</Text>
+                <View style={[styles.appStagePill, { backgroundColor: tints.blue.bg }]}>
+                  <Text style={[styles.appStageText, { color: tints.blue.fg }]}>Assigned</Text>
                 </View>
               </View>
             ))
@@ -590,20 +591,14 @@ export default function LeadDetail() {
             multiline
             numberOfLines={3}
           />
-          <TouchableOpacity
-            style={[styles.notifSendBtn, sendingNotif && { opacity: 0.6 }]}
+          <Button
+            label="Send Notification"
+            Icon={Send}
+            iconPosition="left"
             onPress={sendNotification}
+            loading={sendingNotif}
             disabled={sendingNotif}
-            activeOpacity={0.85}
-          >
-            {sendingNotif
-              ? <ActivityIndicator color="#FFF" size="small" />
-              : <>
-                  <Send size={14} color="#FFF" strokeWidth={2.5} />
-                  <Text style={styles.notifSendText}>Send Notification</Text>
-                </>
-            }
-          </TouchableOpacity>
+          />
         </SectionCard>
 
         {/* Consultation History */}
@@ -693,12 +688,7 @@ export default function LeadDetail() {
               })}
             </View>
 
-            <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={saveNotes} disabled={saving}>
-              {saving
-                ? <ActivityIndicator color="#FFF" size="small" />
-                : <Text style={styles.saveBtnText}>Save Changes</Text>
-              }
-            </TouchableOpacity>
+            <Button label="Save Changes" onPress={saveNotes} loading={saving} disabled={saving} size="lg" />
           </View>
         </View>
       </Modal>
@@ -764,16 +754,13 @@ export default function LeadDetail() {
               multiline
             />
 
-            <TouchableOpacity
-              style={[styles.saveBtn, (!assignScheme || assigning) && { opacity: 0.5 }]}
+            <Button
+              label="Assign Scheme"
               onPress={assignSchemeToUser}
+              loading={assigning}
               disabled={!assignScheme || assigning}
-            >
-              {assigning
-                ? <ActivityIndicator color="#FFF" size="small" />
-                : <Text style={styles.saveBtnText}>Assign Scheme</Text>
-              }
-            </TouchableOpacity>
+              size="lg"
+            />
           </View>
         </View>
       </Modal>
@@ -806,14 +793,14 @@ export default function LeadDetail() {
                   <TouchableOpacity
                     key={st}
                     style={[styles.stageChip, {
-                      borderColor: isSelected ? colors.primary : isRej ? "#dc2626" : colors.border,
-                      backgroundColor: isSelected ? colors.primarySoft : isRej ? "#fee2e2" : colors.surface2,
+                      borderColor: isSelected ? colors.primary : isRej ? colors.danger : colors.border,
+                      backgroundColor: isSelected ? colors.primarySoft : isRej ? colors.dangerSoft : colors.surface2,
                     }]}
                     onPress={() => setSelectedStage(st)}
                     disabled={updatingStage}
                   >
                     <Text style={[styles.stageChipText, {
-                      color: isSelected ? colors.primaryDark : isRej ? "#dc2626" : colors.text,
+                      color: isSelected ? colors.primaryDark : isRej ? colors.danger : colors.text,
                     }]}>{labels[st]}</Text>
                   </TouchableOpacity>
                 );
@@ -830,17 +817,15 @@ export default function LeadDetail() {
               multiline
             />
 
-            <TouchableOpacity
-              style={[styles.assignBtn, { marginTop: 12, opacity: (!selectedStage || updatingStage) ? 0.5 : 1 }]}
-              disabled={!selectedStage || updatingStage}
-              onPress={() => updateAppStage(stageModal.id, selectedStage)}
-              activeOpacity={0.85}
-            >
-              {updatingStage
-                ? <ActivityIndicator color="#FFF" size="small" />
-                : <Text style={styles.assignBtnText}>Save Stage</Text>
-              }
-            </TouchableOpacity>
+            <View style={{ marginTop: spacing.sm2 }}>
+              <Button
+                label="Save Stage"
+                onPress={() => updateAppStage(stageModal.id, selectedStage)}
+                loading={updatingStage}
+                disabled={!selectedStage || updatingStage}
+                size="lg"
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -850,11 +835,6 @@ export default function LeadDetail() {
 }
 
 const styles = StyleSheet.create({
-  avatar: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center", justifyContent: "center",
-  },
   leadName: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   leadMobile: { fontSize: 13, fontFamily: fonts.regular, color: colors.textDim, marginTop: 2 },
   typeTag: {
@@ -862,11 +842,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill,
   },
   typeText: { fontSize: 11, fontFamily: fonts.medium, color: colors.textMuted },
-  editBtn: {
-    backgroundColor: colors.primarySoft, borderRadius: radius.pill,
-    paddingHorizontal: 14, paddingVertical: 7,
-  },
-  editBtnText: { fontSize: 12, fontFamily: fonts.bold, color: colors.primaryDark },
 
   schemeRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 10,
@@ -899,6 +874,10 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 8,
     paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border, flexWrap: "wrap",
   },
+  docIconChip: {
+    width: 32, height: 32, borderRadius: radius.md,
+    backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
   docName: { fontSize: 13, fontFamily: fonts.medium, color: colors.text },
   docDate: { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginTop: 1 },
   docStatusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
@@ -911,10 +890,10 @@ const styles = StyleSheet.create({
   // Recommendations
   existingRecBanner: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#DDF3F0", borderRadius: radius.lg,
+    backgroundColor: tints.deepTeal.bg, borderRadius: radius.lg,
     paddingHorizontal: 10, paddingVertical: 6, marginBottom: 12, alignSelf: "flex-start",
   },
-  existingRecText: { fontSize: 11, fontFamily: fonts.medium, color: "#1E534C" },
+  existingRecText: { fontSize: 11, fontFamily: fonts.medium, color: tints.deepTeal.fg },
   recSubLabel: {
     fontSize: 10, fontFamily: fonts.bold, color: colors.textMuted,
     textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6,
@@ -943,6 +922,7 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: "#FFF", borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl,
     padding: spacing.lg, paddingBottom: 40, maxHeight: "90%",
+    ...elevation.l2,
   },
   sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
   sheetTitle: { fontSize: 18, fontFamily: fonts.displayBold, color: colors.text },
@@ -962,11 +942,6 @@ const styles = StyleSheet.create({
   stagesGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
   stageChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5 },
   stageChipText: { fontSize: 12, fontFamily: fonts.semiBold, textTransform: "capitalize" },
-  saveBtn: {
-    backgroundColor: colors.primary, borderRadius: radius.xl,
-    paddingVertical: 14, alignItems: "center",
-  },
-  saveBtnText: { fontSize: 15, fontFamily: fonts.displayBold, color: "#FFF" },
 
   // Scheme applications
   appRow: {
@@ -975,14 +950,8 @@ const styles = StyleSheet.create({
   },
   appSchemeName: { fontSize: 13, fontFamily: fonts.medium, color: colors.text },
   appBankName:   { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim },
-  appStagePill:  { alignSelf: "flex-start", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, marginTop: 4 },
+  appStagePill:  { alignSelf: "flex-start", borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 3, marginTop: 4 },
   appStageText:  { fontSize: 11, fontFamily: fonts.semiBold },
-  assignBtn: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: colors.primary, borderRadius: radius.xl,
-    paddingVertical: 10, justifyContent: "center", marginTop: 12,
-  },
-  assignBtnText: { fontSize: 13, fontFamily: fonts.displayBold, color: "#FFF" },
 
   // Send Notification
   notifHint: { fontSize: 11, fontFamily: fonts.medium, color: colors.textDim, marginBottom: 8 },
@@ -997,11 +966,6 @@ const styles = StyleSheet.create({
     padding: 12, fontSize: 14, fontFamily: fonts.regular,
     color: colors.text, backgroundColor: colors.surface2, marginBottom: 10,
   },
-  notifSendBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
-    backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: 12,
-  },
-  notifSendText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
 
   // Modal list items
   listItem: {

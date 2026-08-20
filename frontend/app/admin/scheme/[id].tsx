@@ -7,9 +7,11 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Users, CheckCircle2, Clock, UserPlus, X, ChevronRight } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, tints, spacing, radius, fonts, elevation, formatINR } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import Button from "@/src/components/ui/Button";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
 
 const STAGE_LABELS: Record<string, string> = {
   scheme_identified: "Scheme Identified",
@@ -25,8 +27,8 @@ const STAGE_LABELS: Record<string, string> = {
 function StagePill({ stage }: { stage: string }) {
   const isApproved = stage === "approved" || stage === "disbursed";
   const isRejected = stage === "rejected";
-  const bg = isApproved ? colors.primarySoft : isRejected ? "#FEE2E2" : "#FEF3C7";
-  const text = isApproved ? colors.primaryDark : isRejected ? "#DC2626" : "#92400E";
+  const bg = isApproved ? colors.primarySoft : isRejected ? tints.red.bg : tints.amber.bg;
+  const text = isApproved ? colors.primaryDark : isRejected ? tints.red.fg : tints.amber.fg;
   return (
     <View style={[s.stagePill, { backgroundColor: bg }]}>
       <Text style={[s.stagePillText, { color: text }]}>{STAGE_LABELS[stage] ?? stage}</Text>
@@ -155,10 +157,15 @@ export default function SchemeDetail() {
         ) : null}
 
         {/* Assign Button */}
-        <TouchableOpacity style={s.assignBtn} onPress={openAssignModal} activeOpacity={0.85}>
-          <UserPlus size={16} color="#FFF" strokeWidth={2.5} />
-          <Text style={s.assignBtnText}>Assign Scheme to Users</Text>
-        </TouchableOpacity>
+        <View style={{ marginBottom: spacing.lg }}>
+          <Button
+            label="Assign Scheme to Users"
+            onPress={openAssignModal}
+            Icon={UserPlus}
+            iconPosition="left"
+            size="lg"
+          />
+        </View>
 
         {/* Assigned Users */}
         <View style={s.sectionHeader}>
@@ -181,9 +188,7 @@ export default function SchemeDetail() {
               onPress={() => router.push(`/admin/user/${item.user_id}`)}
               activeOpacity={0.8}
             >
-              <View style={s.avatar}>
-                <Text style={s.avatarText}>{(item.user?.full_name || "U").charAt(0).toUpperCase()}</Text>
-              </View>
+              <InitialsAvatar name={item.user?.full_name || "User"} size={36} />
               <View style={{ flex: 1 }}>
                 <Text style={s.userName}>{item.user?.full_name || "Unnamed"}</Text>
                 <Text style={s.userMobile}>{item.user?.mobile ? `+91 ${item.user.mobile}` : "—"}</Text>
@@ -210,13 +215,13 @@ export default function SchemeDetail() {
 
             {assignResult ? (
               <View style={{ gap: 12, padding: 8 }}>
-                <CheckCircle2 size={40} color={colors.primary} strokeWidth={1.5} style={{ alignSelf: "center" }} />
+                <View style={s.successIconWrap}>
+                  <CheckCircle2 size={30} color={colors.primary} strokeWidth={1.5} />
+                </View>
                 <Text style={[s.modalTitle, { textAlign: "center" }]}>Done!</Text>
-                <Text style={s.resultRow}>✅ Newly assigned: <Text style={s.resultVal}>{assignResult.assigned}</Text></Text>
-                <Text style={s.resultRow}>⏭ Already had scheme: <Text style={s.resultVal}>{assignResult.skipped}</Text></Text>
-                <TouchableOpacity style={s.assignBtn} onPress={() => setShowAssignModal(false)}>
-                  <Text style={s.assignBtnText}>Close</Text>
-                </TouchableOpacity>
+                <Text style={s.resultRow}>Newly assigned: <Text style={s.resultVal}>{assignResult.assigned}</Text></Text>
+                <Text style={s.resultRow}>Already had scheme: <Text style={s.resultVal}>{assignResult.skipped}</Text></Text>
+                <Button label="Close" onPress={() => setShowAssignModal(false)} size="lg" />
               </View>
             ) : (
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 480 }}>
@@ -225,7 +230,9 @@ export default function SchemeDetail() {
                   <View style={{ gap: 12, paddingVertical: 8 }}>
                     <Text style={s.modeHint}>Choose assignment type:</Text>
                     <TouchableOpacity style={s.modeBtn} onPress={() => setAssignMode("all")}>
-                      <Users size={18} color={colors.primaryDark} strokeWidth={2} />
+                      <View style={s.modeIconWrap}>
+                        <Users size={18} color={colors.primaryDark} strokeWidth={2} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={s.modeBtnTitle}>Assign to All Users</Text>
                         <Text style={s.modeBtnDesc}>Scheme becomes visible to all registered users</Text>
@@ -233,7 +240,9 @@ export default function SchemeDetail() {
                       <ChevronRight size={16} color={colors.textDim} strokeWidth={2} />
                     </TouchableOpacity>
                     <TouchableOpacity style={s.modeBtn} onPress={() => setAssignMode("selected")}>
-                      <CheckCircle2 size={18} color={colors.primaryDark} strokeWidth={2} />
+                      <View style={s.modeIconWrap}>
+                        <CheckCircle2 size={18} color={colors.primaryDark} strokeWidth={2} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={s.modeBtnTitle}>Assign to Selected Users</Text>
                         <Text style={s.modeBtnDesc}>Pick specific users who can access this scheme</Text>
@@ -274,6 +283,7 @@ export default function SchemeDetail() {
                                 <View style={[s.checkbox, isSelected && s.checkboxSelected]}>
                                   {isSelected && <CheckCircle2 size={12} color="#FFF" strokeWidth={3} />}
                                 </View>
+                                <InitialsAvatar name={u.full_name || "User"} size={28} />
                                 <View style={{ flex: 1 }}>
                                   <Text style={s.userRowName}>{u.full_name || "Unnamed"}</Text>
                                   <Text style={s.userRowMobile}>+91 {u.mobile}</Text>
@@ -295,17 +305,13 @@ export default function SchemeDetail() {
                       multiline
                     />
 
-                    <TouchableOpacity
-                      style={[s.assignBtn, (assigning || (assignMode === "selected" && selectedIds.size === 0)) && { opacity: 0.5 }]}
+                    <Button
+                      label={assignMode === "all" ? "Assign to All Users" : `Assign to ${selectedIds.size} User${selectedIds.size !== 1 ? "s" : ""}`}
                       onPress={handleAssign}
+                      loading={assigning}
                       disabled={assigning || (assignMode === "selected" && selectedIds.size === 0)}
-                    >
-                      {assigning
-                        ? <ActivityIndicator color="#FFF" size="small" />
-                        : <Text style={s.assignBtnText}>
-                            {assignMode === "all" ? "Assign to All Users" : `Assign to ${selectedIds.size} User${selectedIds.size !== 1 ? "s" : ""}`}
-                          </Text>}
-                    </TouchableOpacity>
+                      size="lg"
+                    />
                   </View>
                 )}
               </ScrollView>
@@ -318,35 +324,33 @@ export default function SchemeDetail() {
 }
 
 const s = StyleSheet.create({
-  infoCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: 12 },
+  infoCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
   schemeFullName: { fontSize: 16, fontFamily: fonts.displayBold, color: colors.text, marginBottom: 4 },
   schemeDesc: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, lineHeight: 18, marginBottom: 12 },
-  statsRow: { flexDirection: "row", gap: 12 },
+  statsRow: { flexDirection: "row", gap: spacing.sm2 },
   statBox: { flex: 1, backgroundColor: colors.surface2, borderRadius: radius.lg, padding: 10, alignItems: "center" },
   statVal: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.primaryDark },
   statLabel: { fontSize: 10, fontFamily: fonts.medium, color: colors.textMuted, marginTop: 2 },
-  assignBtn: { backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 },
-  assignBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
   sectionTitle: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
-  emptyBox: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: "center", gap: 6 },
+  emptyBox: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: "center", gap: 6, ...elevation.l1 },
   emptyText: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text },
   emptyHint: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center" },
-  userCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center", gap: 10 },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.primaryDark },
+  userCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: spacing.sm2, flexDirection: "row", alignItems: "center", gap: spacing.sm2, ...elevation.l1 },
   userName: { fontSize: 13, fontFamily: fonts.semiBold, color: colors.text },
   userMobile: { fontSize: 11, fontFamily: fonts.regular, color: colors.textMuted },
   stagePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
   stagePillText: { fontSize: 10, fontFamily: fonts.bold, textTransform: "capitalize" },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end" },
   modalSheet: { backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, paddingBottom: 36, gap: 14 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   modalTitle: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   modeHint: { fontSize: 13, fontFamily: fonts.medium, color: colors.textMuted },
   modeBtn: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.surface2, borderRadius: radius.xl, padding: 14, borderWidth: 1, borderColor: colors.border },
+  modeIconWrap: { width: 40, height: 40, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   modeBtnTitle: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text },
   modeBtnDesc: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 2 },
+  successIconWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", alignSelf: "center" },
   searchInput: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 14, paddingVertical: 10, fontSize: 13, fontFamily: fonts.regular, color: colors.text, backgroundColor: "#FFF" },
   userRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderRadius: radius.lg, marginBottom: 4 },
   userRowSelected: { backgroundColor: colors.primarySoft },

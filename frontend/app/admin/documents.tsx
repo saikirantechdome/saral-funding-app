@@ -13,6 +13,7 @@ import {
   Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   CheckCircle2,
@@ -25,17 +26,24 @@ import {
   XCircle,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints } from "@/src/theme";
 import { apiGet, apiPost, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 
 const FILTERS = ["all", "pending", "verified", "rejected"] as const;
 type Filter = typeof FILTERS[number];
 
+// Reject reasons come from free-text/legacy values with inconsistent casing
+// ("REJECT", "details missing", etc.) — normalize display casing so badges
+// look consistent regardless of how the source string was stored.
+function toSentenceCase(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 function statusCfg(status: string) {
   if (status === "verified") return { bg: colors.primarySoft, text: colors.primaryDark, Icon: CheckCircle2 };
-  if (status === "rejected")  return { bg: "#FEE2E2",         text: "#DC2626",           Icon: XCircle };
-  return                             { bg: "#FEF3C7",         text: "#92400E",           Icon: Clock };
+  if (status === "rejected")  return { bg: tints.red.bg,       text: tints.red.fg,       Icon: XCircle };
+  return                             { bg: tints.amber.bg,     text: tints.amber.fg,     Icon: Clock };
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -186,8 +194,8 @@ export default function AdminDocuments() {
         {/* Reject reason */}
         {item.status === "rejected" && item.reject_reason && (
           <View style={s.reasonBox}>
-            <AlertCircle size={11} color="#DC2626" strokeWidth={2} />
-            <Text style={s.reasonText}>{item.reject_reason}</Text>
+            <AlertCircle size={11} color={tints.red.fg} strokeWidth={2} />
+            <Text style={s.reasonText}>{toSentenceCase(item.reject_reason)}</Text>
           </View>
         )}
 
@@ -223,7 +231,7 @@ export default function AdminDocuments() {
                 onPress={() => openRejectModal(item)}
                 disabled={isActioning}
               >
-                <X size={13} color="#DC2626" strokeWidth={2.5} />
+                <X size={13} color={tints.red.fg} strokeWidth={2.5} />
                 <Text style={s.rejectBtnText}>Reject</Text>
               </TouchableOpacity>
             </>
@@ -238,19 +246,28 @@ export default function AdminDocuments() {
       <BackBar title={`Documents (${total})`} onBack={() => router.back()} />
 
       {/* Filter tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterBar} contentContainerStyle={s.filterBarContent}>
-        {FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[s.filterChip, filter === f && s.filterChipActive]}
-            onPress={() => changeFilter(f)}
-          >
-            <Text style={[s.filterChipText, filter === f && s.filterChipTextActive]}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={{ position: "relative" }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterBar} contentContainerStyle={s.filterBarContent}>
+          {FILTERS.map((f) => (
+            <TouchableOpacity
+              key={f}
+              style={[s.filterChip, filter === f && s.filterChipActive]}
+              onPress={() => changeFilter(f)}
+            >
+              <Text style={[s.filterChipText, filter === f && s.filterChipTextActive]}>
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(255,255,255,0)", "#FFFFFF"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={s.filterFade}
+        />
+      </View>
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -326,6 +343,7 @@ const s = StyleSheet.create({
   badgeText: { fontSize: 11, fontFamily: fonts.bold, textTransform: "capitalize" },
   filterBar: { maxHeight: 52, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: "#FFF" },
   filterBarContent: { paddingHorizontal: spacing.md, paddingVertical: 10, gap: 8 },
+  filterFade: { position: "absolute", right: 0, top: 0, bottom: 1, width: 28 },
   filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface2 },
   filterChipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   filterChipText: { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
@@ -357,13 +375,13 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 6,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: tints.red.bg,
     borderRadius: radius.lg,
     padding: 10,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: tints.red.fg,
   },
-  reasonText: { fontSize: 12, fontFamily: fonts.medium, color: "#DC2626", flex: 1, lineHeight: 17 },
+  reasonText: { fontSize: 12, fontFamily: fonts.medium, color: tints.red.fg, flex: 1, lineHeight: 17 },
   actions: { flexDirection: "row", gap: 8, marginTop: 4 },
   viewBtn: {
     flexDirection: "row",
@@ -395,12 +413,12 @@ const s = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: radius.lg,
     borderWidth: 1.5,
-    borderColor: "#FECACA",
-    backgroundColor: "#FFF5F5",
+    borderColor: tints.red.fg,
+    backgroundColor: tints.red.bg,
   },
-  rejectBtnText: { fontSize: 12, fontFamily: fonts.bold, color: "#DC2626" },
+  rejectBtnText: { fontSize: 12, fontFamily: fonts.bold, color: tints.red.fg },
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end" },
   modalSheet: {
     backgroundColor: "#FFF",
     borderTopLeftRadius: 24,
@@ -440,7 +458,7 @@ const s = StyleSheet.create({
     flex: 1,
     paddingVertical: 13,
     borderRadius: radius.xl,
-    backgroundColor: "#DC2626",
+    backgroundColor: colors.danger,
     alignItems: "center",
   },
   confirmRejectBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },

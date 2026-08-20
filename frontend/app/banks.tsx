@@ -11,10 +11,12 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useFocusEffect, useRouter } from "expo-router";
 import { Building2, Shield, CheckCircle2, XCircle, GitCompare, ArrowRight, Clock } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatINR } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SchemesSkeleton } from "@/src/components/SkeletonLoader";
+import EmptyState from "@/src/components/EmptyState";
+import Button from "@/src/components/ui/Button";
 
 function bankApplyWhatsAppUrl(bankName: string) {
   const text = `Hey team, I want to apply for the ${bankName} loan. Could you please help me with the next steps?`;
@@ -29,7 +31,7 @@ type Rec = {
 };
 
 function ScoreRing({ score }: { score: number }) {
-  const color = score >= 80 ? colors.primary : score >= 60 ? "#F59E0B" : "#9CA3AF";
+  const color = score >= 80 ? colors.primary : score >= 60 ? colors.warning : colors.textDim;
   return (
     <View style={[ringStyles.wrap, { borderColor: color }]}>
       <Text style={[ringStyles.score, { color }]}>{score}</Text>
@@ -106,13 +108,11 @@ export default function BanksScreen() {
       </View>
 
       {recs.length === 0 && (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 10, marginTop: -60 }}>
-          <Building2 size={40} color={colors.textDim} strokeWidth={1.5} />
-          <Text style={{ fontSize: 16, fontFamily: fonts.displayBold, color: colors.text }}>No banks assigned</Text>
-          <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center", paddingHorizontal: 32 }}>
-            Your advisor will assign relevant banks after your consultation.
-          </Text>
-        </View>
+        <EmptyState
+          Icon={Building2}
+          title="No banks assigned"
+          subtitle="Your advisor will assign relevant banks after your consultation."
+        />
       )}
 
       <FlatList
@@ -132,8 +132,8 @@ export default function BanksScreen() {
                 activeOpacity={0.85}
               >
                 <View style={styles.cardTop}>
-                  <View style={[styles.bankIcon, isPublic && styles.bankIconPublic]}>
-                    <Building2 size={18} color={isPublic ? colors.primaryDark : "#1D4ED8"} strokeWidth={2} />
+                  <View style={[styles.bankIcon, isPublic ? styles.bankIconPublic : styles.bankIconPrivate]}>
+                    <Building2 size={18} color={isPublic ? colors.primaryDark : tints.blue.fg} strokeWidth={2} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={styles.nameRow}>
@@ -207,15 +207,15 @@ export default function BanksScreen() {
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  testID={`bank-apply-${item.bank_id}`}
-                  style={styles.applyBtn}
-                  onPress={() => Linking.openURL(bankApplyWhatsAppUrl(item.name))}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.applyBtnText}>Apply Now</Text>
-                  <ArrowRight size={13} color="#FFF" strokeWidth={2.5} />
-                </TouchableOpacity>
+                <View style={styles.applyBtnWrap}>
+                  <Button
+                    testID={`bank-apply-${item.bank_id}`}
+                    label="Apply Now"
+                    onPress={() => Linking.openURL(bankApplyWhatsAppUrl(item.name))}
+                    size="sm"
+                    Icon={ArrowRight}
+                  />
+                </View>
               </View>
             </View>
           );
@@ -224,15 +224,14 @@ export default function BanksScreen() {
 
       {selected.length >= 2 && (
         <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
-          <TouchableOpacity
+          <Button
             testID="compare-go"
-            style={styles.compareFooterBtn}
+            label={`Compare ${selected.length} banks`}
             onPress={() => router.push({ pathname: "/banks-compare", params: { ids: selected.join(",") } })}
-            activeOpacity={0.85}
-          >
-            <GitCompare size={16} color="#FFF" strokeWidth={2} />
-            <Text style={styles.compareFooterText}>Compare {selected.length} banks</Text>
-          </TouchableOpacity>
+            size="lg"
+            Icon={GitCompare}
+            iconPosition="left"
+          />
         </View>
       )}
     </SafeAreaView>
@@ -260,16 +259,12 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#FFF",
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
   cardSelected: {
     borderColor: colors.primary,
@@ -292,6 +287,9 @@ const styles = StyleSheet.create({
   bankIconPublic: {
     backgroundColor: colors.primarySoft,
   },
+  bankIconPrivate: {
+    backgroundColor: tints.blue.bg,
+  },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -309,10 +307,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   typePillPublic: { backgroundColor: colors.primarySoft },
-  typePillPrivate: { backgroundColor: "#DBEAFE" },
+  typePillPrivate: { backgroundColor: tints.blue.bg },
   typePillText: { fontSize: 10, fontFamily: fonts.bold },
   typePillTextPublic: { color: colors.primaryDark },
-  typePillTextPrivate: { color: "#1D4ED8" },
+  typePillTextPrivate: { color: tints.blue.fg },
   interestRate: {
     fontSize: 13,
     fontFamily: fonts.semiBold,
@@ -408,25 +406,8 @@ const styles = StyleSheet.create({
   compareBtnTextActive: {
     color: colors.primaryDark,
   },
-  applyBtn: {
+  applyBtnWrap: {
     flex: 2,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: radius.xl,
-    backgroundColor: colors.primary,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  applyBtnText: {
-    fontSize: 13,
-    fontFamily: fonts.displayBold,
-    color: "#FFF",
   },
   footer: {
     position: "absolute",
@@ -437,19 +418,5 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderTopWidth: 1,
     borderTopColor: colors.border,
-  },
-  compareFooterBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.primary,
-    borderRadius: radius.xl,
-    paddingVertical: 14,
-  },
-  compareFooterText: {
-    fontSize: 15,
-    fontFamily: fonts.displayBold,
-    color: "#FFF",
   },
 });

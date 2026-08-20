@@ -30,7 +30,7 @@ import {
   ExternalLink,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints } from "@/src/theme";
 import { apiGet, apiDelete, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import Picker from "@/src/components/Picker";
@@ -49,8 +49,8 @@ type PickedFile = {
 function statusStyle(status: string) {
   if (status === "verified")
     return { bg: colors.primarySoft, text: colors.primaryDark };
-  if (status === "rejected") return { bg: "#FEE2E2", text: "#DC2626" };
-  return { bg: "#FEF3C7", text: "#92400E" };
+  if (status === "rejected") return { bg: tints.red.bg, text: tints.red.fg };
+  return { bg: tints.amber.bg, text: tints.amber.fg };
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -355,7 +355,7 @@ export default function DocumentsScreen() {
                     {deleting === doc.id ? (
                       <ActivityIndicator color={colors.textDim} size="small" />
                     ) : (
-                      <X size={14} color="#DC2626" strokeWidth={2.5} />
+                      <X size={14} color={tints.red.fg} strokeWidth={2.5} />
                     )}
                   </TouchableOpacity>
                 )}
@@ -546,7 +546,7 @@ const s = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#FEE2E2",
+    backgroundColor: tints.red.bg,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,

@@ -4,16 +4,15 @@ import {
   TouchableOpacity, RefreshControl, ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
-  CheckCircle2, Circle, Clock, XCircle,
-  ChevronRight, FileText, Building2,
+  XCircle, ChevronRight, FileText, Building2,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 const STAGES = [
   "call_done",
@@ -37,9 +36,9 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const STAGE_COLORS: Record<string, string> = {
-  approved:  "#2D7C72",
-  disbursed: "#24655E",
-  rejected:  "#dc2626",
+  approved:  tints.teal.fg,
+  disbursed: tints.deepTeal.fg,
+  rejected:  tints.red.fg,
 };
 
 type SchemeApp = {
@@ -55,7 +54,7 @@ type SchemeApp = {
 
 export default function MyApplications() {
   const router = useRouter();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarSpacing = useTabBarSpacing();
   const [apps, setApps] = useState<SchemeApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -93,7 +92,8 @@ export default function MyApplications() {
       <BackBar title="My Applications" onBack={() => router.back()} />
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={[s.content, { paddingBottom: tabBarHeight + 24 }]}
+        style={{ flex: 1, marginBottom: tabBarSpacing }}
+        contentContainerStyle={s.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
@@ -141,7 +141,7 @@ function AppCard({ app, expanded, onToggle }: {
       {/* Header */}
       <TouchableOpacity style={s.cardHeader} onPress={onToggle} activeOpacity={0.8}>
         <View style={[s.schemeIcon, isDisbursed && s.schemeIconGreen, isRejected && s.schemeIconRed]}>
-          <FileText size={18} color={isRejected ? "#dc2626" : isDisbursed ? "#24655E" : colors.primary} strokeWidth={2} />
+          <FileText size={18} color={isRejected ? tints.red.fg : isDisbursed ? tints.deepTeal.fg : colors.primary} strokeWidth={2} />
         </View>
         <View style={s.cardHeaderText}>
           <Text style={s.schemeName} numberOfLines={1}>{app.scheme_name}</Text>
@@ -161,72 +161,47 @@ function AppCard({ app, expanded, onToggle }: {
         />
       </TouchableOpacity>
 
-      {/* Progress tracker */}
+      {/* Progress tracker — compact bar + current-stage caption, not a cramped 7-across row */}
       {!isRejected && (
-        <View style={s.progressRow}>
-          {STAGES.map((st, i) => {
-            const done = i <= activeStageIdx;
-            const active = i === activeStageIdx;
-            return (
-              <View key={st} style={s.progressStep}>
-                <View style={[
-                  s.progressDot,
-                  done && s.progressDotDone,
-                  active && s.progressDotActive,
-                ]}>
-                  {done && !active
-                    ? <CheckCircle2 size={14} color="#fff" strokeWidth={2.5} />
-                    : active
-                    ? <Clock size={12} color="#fff" strokeWidth={2.5} />
-                    : <Circle size={14} color={colors.border} strokeWidth={2} />
-                  }
-                </View>
-                {i < STAGES.length - 1 && (
-                  <View style={[s.progressLine, done && i < activeStageIdx && s.progressLineDone]} />
-                )}
-              </View>
-            );
-          })}
+        <View style={s.progressWrap}>
+          <View style={s.progressBarTrack}>
+            <View style={[s.progressBarFill, { width: `${((activeStageIdx + 1) / STAGES.length) * 100}%` }]} />
+          </View>
+          <Text style={s.progressCaption}>
+            Stage {activeStageIdx + 1} of {STAGES.length} · <Text style={s.progressCaptionActive}>{STAGE_LABELS[app.stage] ?? app.stage_label}</Text>
+          </Text>
         </View>
       )}
 
       {isRejected && (
         <View style={s.rejectedBanner}>
-          <XCircle size={14} color="#dc2626" strokeWidth={2} />
+          <XCircle size={14} color={tints.red.fg} strokeWidth={2} />
           <Text style={s.rejectedText}>Application not proceeded. Contact our team for details.</Text>
         </View>
       )}
 
-      {/* Stage labels row */}
-      {!isRejected && (
-        <View style={s.stageLabelRow}>
-          {STAGES.map((st, i) => (
-            <Text key={st} style={[
-              s.stageLabelText,
-              i === activeStageIdx && s.stageLabelActive,
-            ]} numberOfLines={2}>
-              {STAGE_LABELS[st]}
-            </Text>
-          ))}
-        </View>
-      )}
-
-      {/* History (expanded) */}
+      {/* History (expanded) — connected vertical timeline */}
       {expanded && app.stage_history.length > 0 && (
         <View style={s.history}>
           <Text style={s.historyTitle}>Activity</Text>
-          {[...app.stage_history].reverse().map((h, i) => (
-            <View key={i} style={s.historyRow}>
-              <View style={s.historyDot} />
-              <View style={s.historyContent}>
-                <Text style={s.historyStage}>{STAGE_LABELS[h.stage] ?? h.stage}</Text>
-                {h.note ? <Text style={s.historyNote}>{h.note}</Text> : null}
-                <Text style={s.historyMeta}>
-                  {h.updated_by} · {new Date(h.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                </Text>
+          {[...app.stage_history].reverse().map((h, i, arr) => {
+            const isFirst = i === 0;
+            return (
+              <View key={i} style={s.historyRow}>
+                <View style={s.historyDotCol}>
+                  <View style={[s.historyDot, isFirst && s.historyDotActive]} />
+                  {i < arr.length - 1 && <View style={s.historyLine} />}
+                </View>
+                <View style={s.historyContent}>
+                  <Text style={s.historyStage}>{STAGE_LABELS[h.stage] ?? h.stage}</Text>
+                  {h.note ? <Text style={s.historyNote}>{h.note}</Text> : null}
+                  <Text style={s.historyMeta}>
+                    {h.updated_by} · {new Date(h.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       )}
     </View>
@@ -235,8 +210,8 @@ function AppCard({ app, expanded, onToggle }: {
 
 function StagePill({ stage, label }: { stage: string; label: string }) {
   const bg = stage === "approved" || stage === "disbursed"
-    ? "#DDF3F0" : stage === "rejected"
-    ? "#fee2e2" : "#eff6ff";
+    ? tints.deepTeal.bg : stage === "rejected"
+    ? tints.red.bg : tints.blue.bg;
   const fg = STAGE_COLORS[stage] ?? colors.primary;
   return (
     <View style={[s.pill, { backgroundColor: bg }]}>
@@ -259,16 +234,16 @@ function EmptyState() {
 
 const s = StyleSheet.create({
   root:            { flex: 1, backgroundColor: colors.surface2 },
-  content:         { padding: spacing.md, gap: spacing.md, paddingBottom: 40 },
+  content:         { padding: spacing.md, gap: spacing.md, paddingBottom: 4 },
 
   card:            { backgroundColor: "#fff", borderRadius: radius.lg, padding: spacing.md,
-                     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
+                     shadowColor: colors.text, shadowOffset: { width: 0, height: 2 },
                      shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   cardHeader:      { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.md },
-  schemeIcon:      { width: 40, height: 40, borderRadius: radius.md, backgroundColor: "#eff6ff",
+  schemeIcon:      { width: 40, height: 40, borderRadius: radius.md, backgroundColor: tints.blue.bg,
                      alignItems: "center", justifyContent: "center" },
-  schemeIconGreen: { backgroundColor: "#DDF3F0" },
-  schemeIconRed:   { backgroundColor: "#fee2e2" },
+  schemeIconGreen: { backgroundColor: tints.deepTeal.bg },
+  schemeIconRed:   { backgroundColor: tints.red.bg },
   cardHeaderText:  { flex: 1, gap: 4 },
   schemeName:      { fontSize: 15, fontFamily: fonts.semiBold, color: colors.text },
   bankRow:         { flexDirection: "row", alignItems: "center", gap: 4 },
@@ -276,31 +251,26 @@ const s = StyleSheet.create({
   pill:            { alignSelf: "flex-start", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, marginTop: 2 },
   pillText:        { fontSize: 11, fontFamily: fonts.semiBold },
 
-  progressRow:     { flexDirection: "row", alignItems: "center", marginBottom: 6, paddingHorizontal: 2 },
-  progressStep:    { flex: 1, flexDirection: "row", alignItems: "center" },
-  progressDot:     { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.surface2,
-                     alignItems: "center", justifyContent: "center", zIndex: 1 },
-  progressDotDone: { backgroundColor: colors.primary },
-  progressDotActive:{ backgroundColor: colors.primaryDark },
-  progressLine:    { flex: 1, height: 2, backgroundColor: colors.border, marginHorizontal: -1 },
-  progressLineDone:{ backgroundColor: colors.primary },
+  progressWrap:    { marginBottom: 4, gap: 6 },
+  progressBarTrack:{ height: 6, borderRadius: 3, backgroundColor: colors.surface2, overflow: "hidden" },
+  progressBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
+  progressCaption: { fontSize: 12, fontFamily: fonts.medium, color: colors.textDim },
+  progressCaptionActive: { fontFamily: fonts.semiBold, color: colors.primaryDark },
 
-  stageLabelRow:   { flexDirection: "row", marginBottom: 4 },
-  stageLabelText:  { flex: 1, fontSize: 9, fontFamily: fonts.regular, color: colors.textDim,
-                     textAlign: "center" },
-  stageLabelActive:{ fontFamily: fonts.semiBold, color: colors.primaryDark },
-
-  rejectedBanner:  { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#fee2e2",
+  rejectedBanner:  { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: tints.red.bg,
                      borderRadius: radius.md, padding: spacing.sm, marginBottom: 4 },
-  rejectedText:    { flex: 1, fontSize: 12, fontFamily: fonts.regular, color: "#dc2626" },
+  rejectedText:    { flex: 1, fontSize: 12, fontFamily: fonts.regular, color: tints.red.fg },
 
   history:         { borderTopWidth: 1, borderTopColor: colors.border, marginTop: spacing.sm,
-                     paddingTop: spacing.sm, gap: 10 },
+                     paddingTop: spacing.sm, gap: 2 },
   historyTitle:    { fontSize: 12, fontFamily: fonts.semiBold, color: colors.textDim,
-                     marginBottom: 4 },
-  historyRow:      { flexDirection: "row", gap: 10 },
-  historyDot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginTop: 5 },
-  historyContent:  { flex: 1, gap: 2 },
+                     marginBottom: 6 },
+  historyRow:      { flexDirection: "row", gap: 10, alignItems: "stretch" },
+  historyDotCol:   { width: 8, alignItems: "center" },
+  historyDot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border, marginTop: 5, flexShrink: 0 },
+  historyDotActive:{ backgroundColor: colors.primary },
+  historyLine:     { width: 2, flex: 1, backgroundColor: colors.border, marginTop: 2, marginBottom: -4 },
+  historyContent:  { flex: 1, gap: 2, paddingBottom: 14 },
   historyStage:    { fontSize: 13, fontFamily: fonts.semiBold, color: colors.text },
   historyNote:     { fontSize: 12, fontFamily: fonts.regular, color: colors.textDim },
   historyMeta:     { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim },

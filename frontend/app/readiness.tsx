@@ -12,7 +12,7 @@ import {
   Percent, DollarSign, Award, AlertCircle, ArrowRight,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, tints, elevation } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import ReadinessRing from "@/src/components/ReadinessRing";
@@ -67,10 +67,10 @@ function FactorBar({ item, index }: { item: BreakdownItem; index: number }) {
   );
 }
 const bar = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.border },
-  left: { flexDirection: "row", alignItems: "center", gap: 8, width: 170 },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm2, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.border },
+  left: { flexDirection: "row", alignItems: "center", gap: spacing.sm, width: 170 },
   label: { fontSize: 13, fontFamily: fonts.medium, color: colors.text, flex: 1 },
-  right: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
+  right: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   track: { flex: 1, height: 7, backgroundColor: colors.surfaceAlt, borderRadius: 4, overflow: "hidden" },
   fill: { height: "100%", borderRadius: 4 },
   pts: { fontSize: 11, fontFamily: fonts.bold, width: 32, textAlign: "right" },
@@ -118,10 +118,11 @@ function ActionCard({ item, index }: { item: Action; index: number }) {
 const ac = StyleSheet.create({
   card: {
     backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1,
-    borderColor: colors.border, padding: spacing.md, marginBottom: 10,
+    borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
-  cardHigh: { borderColor: colors.primarySoft, backgroundColor: "#FAFFF8" },
-  header: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 8 },
+  cardHigh: { borderColor: colors.primarySoft, backgroundColor: colors.primaryMid },
+  header: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm2, marginBottom: spacing.sm },
   numBadge: {
     width: 24, height: 24, borderRadius: 12, backgroundColor: colors.surfaceAlt,
     alignItems: "center", justifyContent: "center",
@@ -131,17 +132,17 @@ const ac = StyleSheet.create({
   numHigh: { color: colors.primaryDark },
   title: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text, lineHeight: 19 },
   weightBadge: {
-    backgroundColor: colors.surfaceAlt, paddingHorizontal: 8,
+    backgroundColor: colors.surfaceAlt, paddingHorizontal: spacing.sm,
     paddingVertical: 3, borderRadius: radius.pill,
   },
-  weightBadgeHigh: { backgroundColor: "#DDF3F0" },
+  weightBadgeHigh: { backgroundColor: tints.deepTeal.bg },
   weight: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted },
   weightHigh: { color: colors.primaryDark },
-  detail: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, lineHeight: 18, marginBottom: 8 },
+  detail: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, lineHeight: 18, marginBottom: spacing.sm },
   ctaBtn: {
-    flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start",
-    backgroundColor: colors.primarySoft, paddingHorizontal: 12,
-    paddingVertical: 6, borderRadius: radius.pill,
+    flexDirection: "row", alignItems: "center", gap: spacing.xs, alignSelf: "flex-start",
+    backgroundColor: colors.primarySoft, paddingHorizontal: spacing.sm2,
+    paddingVertical: spacing.xs2, borderRadius: radius.pill,
   },
   ctaText: { fontSize: 12, fontFamily: fonts.bold, color: colors.primaryDark },
 });
@@ -163,11 +164,12 @@ function StatPill({ icon, label, value, sub, color: c = colors.primary }: {
 }
 const sp = StyleSheet.create({
   wrap: {
-    flex: 1, flexDirection: "row", alignItems: "center", gap: 10,
+    flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm2,
     backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1,
-    borderColor: colors.border, padding: 12,
+    borderColor: colors.border, padding: spacing.sm2,
+    ...elevation.l1,
   },
-  icon: { width: 36, height: 36, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  icon: { width: 36, height: 36, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
   label: { fontSize: 10, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.4 },
   value: { fontSize: 17, fontFamily: fonts.displayBold, marginTop: 1 },
   sub: { fontSize: 10, fontFamily: fonts.regular, color: colors.textDim, marginTop: 1 },
@@ -195,7 +197,7 @@ export default function ReadinessScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]}>
         <BackBar title="Funding Readiness" onBack={() => router.back()} />
-        <ScrollView contentContainerStyle={{ padding: spacing.md, gap: 12 }}>
+        <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.sm2 }}>
           {[180, 120, 300, 200].map((h, i) => (
             <SkeletonBox key={i} width="100%" height={h} borderRadius={radius.xxl} />
           ))}
@@ -247,11 +249,11 @@ export default function ReadinessScreen() {
             color={colors.primaryDark}
           />
           <StatPill
-            icon={<Percent size={16} color="#7C3AED" strokeWidth={2} />}
+            icon={<Percent size={16} color={tints.green.fg} strokeWidth={2} />}
             label="Approval Odds"
             value={`${data.approval_probability}%`}
             sub="based on profile"
-            color="#7C3AED"
+            color={tints.green.fg}
           />
         </View>
 
@@ -307,46 +309,50 @@ export default function ReadinessScreen() {
 const styles = StyleSheet.create({
   heroCard: {
     backgroundColor: "#FFF", borderRadius: radius.xxl,
-    borderWidth: 1.5, padding: spacing.md, marginBottom: 12,
+    borderWidth: 1.5, padding: spacing.md, marginBottom: spacing.sm2,
+    ...elevation.l2,
   },
-  heroRow: { flexDirection: "row", alignItems: "flex-start", gap: 16 },
+  heroRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
   labelBadge: {
-    marginTop: 8, paddingHorizontal: 12, paddingVertical: 4,
+    marginTop: spacing.sm, paddingHorizontal: spacing.sm2, paddingVertical: spacing.xs,
     borderRadius: radius.pill, borderWidth: 1,
   },
   labelText: { fontSize: 12, fontFamily: fonts.bold },
-  heroRight: { flex: 1, paddingTop: 4 },
+  heroRight: { flex: 1, paddingTop: spacing.xs },
   heroTitle: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5 },
   heroScore: { fontSize: 52, fontFamily: fonts.displayBold, lineHeight: 60, letterSpacing: -2 },
   heroMax: { fontSize: 20, color: colors.textDim, fontFamily: fonts.regular },
-  heroDesc: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, lineHeight: 18, marginTop: 6 },
+  heroDesc: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, lineHeight: 18, marginTop: spacing.xs2 },
 
-  pillRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
+  pillRow: { flexDirection: "row", gap: spacing.sm2, marginBottom: spacing.sm2 },
 
   section: {
     backgroundColor: "#FFF", borderRadius: radius.xxl, borderWidth: 1,
-    borderColor: colors.border, padding: spacing.md, marginBottom: 12,
+    borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm2, marginBottom: spacing.sm2 },
   sectionIcon: {
-    width: 28, height: 28, borderRadius: radius.md,
+    width: 36, height: 36, borderRadius: radius.lg,
     backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center",
   },
   sectionTitle: { fontSize: 14, fontFamily: fonts.bold, color: colors.text },
 
-  sectionHeader2: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
+  sectionHeader2: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm2 },
   sectionTitle2: { fontSize: 14, fontFamily: fonts.bold, color: colors.text },
 
   perfectCard: {
     alignItems: "center", backgroundColor: "#FFF", borderRadius: radius.xxl,
-    borderWidth: 1, borderColor: colors.primarySoft, padding: spacing.lg, marginBottom: 12, gap: 8,
+    borderWidth: 1, borderColor: colors.primarySoft, padding: spacing.lg, marginBottom: spacing.sm2, gap: spacing.sm,
+    ...elevation.l1,
   },
   perfectTitle: { fontSize: 18, fontFamily: fonts.displayBold, color: colors.text },
   perfectSub: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center", lineHeight: 18 },
 
   bookBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: 15, marginTop: 4,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
+    backgroundColor: colors.primary, borderRadius: radius.xl, paddingVertical: spacing.md, marginTop: spacing.xs,
+    ...elevation.l2,
   },
   bookBtnText: { fontSize: 15, fontFamily: fonts.displayBold, color: "#FFF" },
 });

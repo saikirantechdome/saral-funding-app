@@ -15,10 +15,11 @@ import { useRouter } from "expo-router";
 import Animated, { FadeIn, SlideInUp } from "react-native-reanimated";
 import { CheckCircle2, Calendar, Clock, Phone, ChevronRight, Video, Copy } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, elevation } from "@/src/theme";
 import { apiPost } from "@/src/api";
 import { CONSULT_TYPES, TIME_SLOTS } from "@/src/constants";
 import { BackBar } from "@/src/components/StepBar";
+import Button from "@/src/components/ui/Button";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -96,40 +97,47 @@ function ConfirmationView({ done, onBack }: { done: any; onBack: () => void }) {
         {done.meet_link && (
           <Animated.View entering={SlideInUp.delay(450).duration(400)} style={confirmStyles.meetCard}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <Video size={16} color={colors.primaryDark} strokeWidth={2} />
+              <View style={confirmStyles.meetIconWrap}>
+                <Video size={16} color={colors.primaryDark} strokeWidth={2} />
+              </View>
               <Text style={confirmStyles.meetTitle}>Your Meeting Link</Text>
             </View>
             <Text style={confirmStyles.meetLink} numberOfLines={1}>{done.meet_link}</Text>
             <View style={confirmStyles.meetActions}>
-              <TouchableOpacity
-                style={confirmStyles.meetBtn}
-                onPress={() => Share.share({ message: done.meet_link, title: "Meeting Link" })}
-                activeOpacity={0.8}
-              >
-                <Copy size={14} color={colors.primaryDark} strokeWidth={2.5} />
-                <Text style={confirmStyles.meetBtnText}>Copy Link</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[confirmStyles.meetBtn, confirmStyles.meetBtnJoin]}
-                onPress={() => Linking.openURL(done.meet_link)}
-                activeOpacity={0.8}
-              >
-                <Video size={14} color="#FFF" strokeWidth={2.5} />
-                <Text style={[confirmStyles.meetBtnText, { color: "#FFF" }]}>Join Meeting</Text>
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Copy Link"
+                  onPress={() => Share.share({ message: done.meet_link, title: "Meeting Link" })}
+                  variant="secondary"
+                  size="sm"
+                  Icon={Copy}
+                  iconPosition="left"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Join Meeting"
+                  onPress={() => Linking.openURL(done.meet_link)}
+                  variant="primary"
+                  size="sm"
+                  Icon={Video}
+                  iconPosition="left"
+                />
+              </View>
             </View>
           </Animated.View>
         )}
 
-        <TouchableOpacity
-          testID="back-to-home"
-          style={confirmStyles.cta}
-          onPress={onBack}
-          activeOpacity={0.85}
-        >
-          <Text style={confirmStyles.ctaText}>Back to Dashboard</Text>
-          <ChevronRight size={18} color="#FFF" strokeWidth={2.5} />
-        </TouchableOpacity>
+        <View style={{ width: "100%" }}>
+          <Button
+            testID="back-to-home"
+            label="Back to Dashboard"
+            onPress={onBack}
+            Icon={ChevronRight}
+            iconPosition="right"
+            size="lg"
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -173,6 +181,7 @@ const confirmStyles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.xl,
+    ...elevation.l1,
   },
   detailRow: {
     flexDirection: "row",
@@ -206,32 +215,15 @@ const confirmStyles = StyleSheet.create({
     width: "100%", backgroundColor: colors.primarySoft,
     borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.primary,
     padding: spacing.md, marginBottom: spacing.lg,
+    ...elevation.l1,
+  },
+  meetIconWrap: {
+    width: 32, height: 32, borderRadius: radius.lg,
+    backgroundColor: "#FFF", alignItems: "center", justifyContent: "center",
   },
   meetTitle: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.primaryDark },
   meetLink: { fontSize: 11, fontFamily: fonts.medium, color: colors.primaryDark, marginBottom: 12, opacity: 0.8 },
   meetActions: { flexDirection: "row", gap: 8 },
-  meetBtn: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 6, paddingVertical: 9, borderRadius: radius.lg,
-    borderWidth: 1, borderColor: colors.primary, backgroundColor: "#FFF",
-  },
-  meetBtnJoin: { backgroundColor: colors.primary, borderColor: colors.primary },
-  meetBtnText: { fontSize: 13, fontFamily: fonts.semiBold, color: colors.primaryDark },
-  cta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.primary,
-    borderRadius: radius.xl,
-    paddingVertical: 15,
-    width: "100%",
-  },
-  ctaText: {
-    fontSize: 16,
-    fontFamily: fonts.displayBold,
-    color: "#FFF",
-  },
 });
 
 export default function Booking() {
@@ -294,7 +286,7 @@ export default function Booking() {
         </View>
 
         {/* Date picker */}
-        <Text style={[styles.fieldLabel, { marginTop: 20 }]}>Select Date</Text>
+        <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]}>Select Date</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -319,7 +311,7 @@ export default function Booking() {
         </ScrollView>
 
         {/* Time slot */}
-        <Text style={[styles.fieldLabel, { marginTop: 20 }]}>Select Time Slot</Text>
+        <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]}>Select Time Slot</Text>
         <View style={styles.slotGrid}>
           {TIME_SLOTS.map((s) => (
             <TouchableOpacity
@@ -342,15 +334,14 @@ export default function Booking() {
             {type} on {date} at {slot}
           </Text>
         )}
-        <TouchableOpacity
+        <Button
           testID="confirm-booking"
-          disabled={!canBook || loading}
-          style={[styles.cta, !canBook && styles.ctaDisabled]}
+          label="Confirm Booking"
           onPress={onConfirm}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.ctaText}>{loading ? "Booking…" : "Confirm Booking"}</Text>
-        </TouchableOpacity>
+          disabled={!canBook}
+          loading={loading}
+          size="lg"
+        />
       </View>
     </SafeAreaView>
   );
@@ -502,26 +493,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     color: colors.textMuted,
     textAlign: "center",
-  },
-  cta: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.xl,
-    paddingVertical: 15,
-    alignItems: "center",
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  ctaDisabled: {
-    backgroundColor: "#BCE7E2",
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  ctaText: {
-    fontSize: 16,
-    fontFamily: fonts.displayBold,
-    color: "#FFF",
   },
 });

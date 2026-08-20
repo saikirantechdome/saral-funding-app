@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router";
 import { CheckCircle2 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { colors, spacing, radius, fonts, elevation } from "@/src/theme";
 import { LANGUAGES, setLang, loadLang, getLang } from "@/src/i18n";
 import Button from "@/src/components/ui/Button";
 
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.xl,
@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
     minHeight: 90,
     justifyContent: "flex-end",
     position: "relative",
+    ...elevation.l1,
   },
   cardActive: {
     backgroundColor: colors.primarySoft,

@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { useSharedValue, withSpring, useAnimatedStyle, withRepeat, withSequence } from "react-native-reanimated";
 import { useEffect } from "react";
 
-import { colors, fonts, radius } from "@/src/theme";
+import { colors, fonts, radius, tints } from "@/src/theme";
 import HappyExpression from "./expressions/happy";
 import ThinkingExpression from "./expressions/thinking";
 import ExplainingExpression from "./expressions/explaining";
@@ -20,19 +20,19 @@ const EXPRESSIONS: Record<SaathiExpression, React.ComponentType<{ size?: number 
 };
 
 const BUBBLE_COLORS: Record<SaathiExpression, string> = {
-  happy: "#DDF3F0",
-  thinking: "#EDE9FE",
-  explaining: "#DBEAFE",
-  celebrating: "#FEF9C3",
-  reviewing_documents: "#F3F4F6",
+  happy: tints.teal.bg,
+  thinking: tints.deepTeal.bg,
+  explaining: tints.blue.bg,
+  celebrating: tints.amber.bg,
+  reviewing_documents: tints.neutral.bg,
 };
 
 const BUBBLE_BORDER: Record<SaathiExpression, string> = {
-  happy: "#BCE7E2",
-  thinking: "#C4B5FD",
-  explaining: "#BFDBFE",
-  celebrating: "#FDE68A",
-  reviewing_documents: "#E5E7EB",
+  happy: colors.primaryLight,
+  thinking: colors.borderDark,
+  explaining: colors.primaryLight,
+  celebrating: "#E8D48A",
+  reviewing_documents: colors.borderDark,
 };
 
 interface SaathiProps {

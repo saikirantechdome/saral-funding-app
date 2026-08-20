@@ -158,10 +158,20 @@ export default function Legal() {
     <SafeAreaView style={styles.container} edges={["top", "bottom"]} testID="legal-screen">
       <BackBar title={isPrivacy ? "Privacy Policy" : "Terms of Service"} onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.updated}>Last updated: {LAST_UPDATED}</Text>
+        <View style={styles.updatedPill}>
+          <Text style={styles.updated}>Last updated: {LAST_UPDATED}</Text>
+        </View>
         {sections.map((s, i) => (
-          <View key={i} style={styles.section}>
-            <Text style={styles.heading}>{s.heading}</Text>
+          <View
+            key={i}
+            style={[styles.section, i !== sections.length - 1 && styles.sectionDivider]}
+          >
+            <View style={styles.headingRow}>
+              <View style={styles.numBadge}>
+                <Text style={styles.numText}>{i + 1}</Text>
+              </View>
+              <Text style={styles.heading}>{s.heading}</Text>
+            </View>
             <Text style={styles.body}>{s.body}</Text>
           </View>
         ))}
@@ -173,23 +183,56 @@ export default function Legal() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFF" },
   content: { padding: spacing.md, paddingBottom: 60 },
+  updatedPill: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm2,
+    paddingVertical: spacing.xs2,
+    marginBottom: spacing.lg,
+  },
   updated: {
     fontSize: 12,
-    fontFamily: fonts.medium,
-    color: colors.textDim,
-    marginBottom: spacing.md,
+    fontFamily: fonts.semiBold,
+    color: colors.textMuted,
   },
   section: { marginBottom: spacing.lg },
+  sectionDivider: {
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm2,
+    marginBottom: spacing.sm,
+  },
+  numBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  numText: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    color: colors.primaryDark,
+  },
   heading: {
-    fontSize: 15,
+    flex: 1,
+    fontSize: 16,
     fontFamily: fonts.displayBold,
     color: colors.text,
-    marginBottom: 6,
+    lineHeight: 22,
   },
   body: {
     fontSize: 14,
     fontFamily: fonts.regular,
     color: colors.textMuted,
-    lineHeight: 21,
+    lineHeight: 22,
+    paddingLeft: 26 + spacing.sm2,
   },
 });

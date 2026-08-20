@@ -24,12 +24,13 @@ import {
   MessageSquare, Target,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, elevation } from "@/src/theme";
 import { apiGet, apiPost, apiDelete } from "@/src/api";
 import { getLang } from "@/src/i18n";
 import { useRouter } from "expo-router";
 import Saathi from "@/src/components/Saathi";
 import AdminConsultations from "../admin/consultations";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 type Msg = { role: "user" | "assistant"; content: string; structured?: any; ts?: number; followUps?: string[] };
 
@@ -64,6 +65,7 @@ const typStyles = StyleSheet.create({
 
 function AdvisorChat() {
   const router = useRouter();
+  const tabBarSpacing = useTabBarSpacing();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -162,6 +164,7 @@ function AdvisorChat() {
           ref={listRef}
           data={messages}
           keyExtractor={(_, i) => String(i)}
+          style={{ flex: 1 }}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 16 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
@@ -225,7 +228,7 @@ function AdvisorChat() {
         {sending && <TypingIndicator />}
 
         {/* Input bar */}
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { paddingBottom: tabBarSpacing }]}>
           <TextInput
             testID="advisor-input"
             style={styles.input}
@@ -305,7 +308,7 @@ const ab = StyleSheet.create({
     backgroundColor: "#FFF", borderRadius: radius.xl,
     paddingHorizontal: 12, paddingVertical: 7,
     borderWidth: 1, borderColor: colors.border,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
+    ...elevation.l1,
   },
   btnText: { fontSize: 12, fontFamily: fonts.semiBold, color: colors.primaryDark },
 });
@@ -439,14 +442,10 @@ const sc = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.xxl,
     padding: 14,
-    marginVertical: 6,
+    marginVertical: spacing.xs2,
     maxWidth: "96%",
     alignSelf: "flex-start",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    ...elevation.l1,
   },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
   cardHeaderIcon: {
@@ -507,13 +506,13 @@ const styles = StyleSheet.create({
     width: 34, height: 34, borderRadius: radius.lg, borderWidth: 1,
     borderColor: colors.border, alignItems: "center", justifyContent: "center",
   },
-  userMsgWrap: { alignItems: "flex-end", marginVertical: 4 },
+  userMsgWrap: { alignItems: "flex-end", marginVertical: spacing.xs },
   userBubble: {
     backgroundColor: colors.primary, borderRadius: radius.xl, borderBottomRightRadius: 6,
     paddingHorizontal: 14, paddingVertical: 10, maxWidth: "82%",
   },
   userBubbleText: { fontSize: 14, fontFamily: fonts.regular, color: "#FFF", lineHeight: 20 },
-  aiBubbleWrap: { alignItems: "flex-start", marginVertical: 4, maxWidth: "88%" },
+  aiBubbleWrap: { alignItems: "flex-start", marginVertical: spacing.xs, maxWidth: "88%" },
   aiBubble: {
     backgroundColor: colors.surface2, borderRadius: radius.xl, borderBottomLeftRadius: 6,
     paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: colors.border,
@@ -525,7 +524,8 @@ const styles = StyleSheet.create({
   suggestion: {
     flexDirection: "row", alignItems: "center", gap: 8,
     backgroundColor: colors.surface2, borderRadius: radius.xl, padding: 12,
-    marginBottom: 8, borderWidth: 1, borderColor: colors.border,
+    marginBottom: spacing.sm2, borderWidth: 1, borderColor: colors.border,
+    ...elevation.l1,
   },
   suggestionText: { flex: 1, fontSize: 13, fontFamily: fonts.regular, color: colors.text, lineHeight: 18 },
 
