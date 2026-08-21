@@ -301,7 +301,7 @@ function EmptyState() {
 const s = StyleSheet.create({
   root:            { flex: 1, backgroundColor: colors.surface2 },
   countLabel:      { fontSize: 12, fontFamily: fonts.medium, color: colors.textDim, paddingHorizontal: spacing.md, paddingBottom: 6 },
-  content:         { padding: spacing.md, gap: spacing.md, paddingBottom: 4 },
+  content:         { padding: spacing.md, gap: spacing.sm2, paddingBottom: 4 },
 
   filterBar:       { maxHeight: 44 },
   filterBarContent:{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 8 },
@@ -311,10 +311,10 @@ const s = StyleSheet.create({
   filterChipTextActive: { color: colors.primaryDark, fontFamily: fonts.bold },
   noMatchText:     { fontSize: 13, fontFamily: fonts.regular, color: colors.textDim, textAlign: "center", paddingTop: 40 },
 
-  card:            { backgroundColor: "#fff", borderRadius: radius.lg, padding: spacing.md,
+  card:            { backgroundColor: "#fff", borderRadius: radius.lg, padding: spacing.sm2,
                      shadowColor: colors.text, shadowOffset: { width: 0, height: 2 },
                      shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-  cardHeader:      { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.md },
+  cardHeader:      { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.sm2 },
   schemeIcon:      { width: 40, height: 40, borderRadius: radius.md, backgroundColor: tints.blue.bg,
                      alignItems: "center", justifyContent: "center",
                      shadowColor: colors.text, shadowOffset: { width: 0, height: 2 },

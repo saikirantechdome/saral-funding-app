@@ -131,7 +131,7 @@ export default function Otp() {
         >
           {/* Icon */}
           <View style={styles.iconWrap}>
-            <ShieldCheck size={32} color={colors.primaryDark} strokeWidth={1.5} />
+            <ShieldCheck size={36} color="#FFFFFF" strokeWidth={2} />
           </View>
 
           <Text style={styles.title}>Verify your number</Text>
@@ -218,13 +218,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primarySoft,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.lg,
+    alignSelf: "center",
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
   title: {
     fontSize: 26,
@@ -232,6 +238,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.sm,
     letterSpacing: -0.3,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 14,
@@ -239,6 +246,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 22,
     marginBottom: spacing.xl,
+    textAlign: "center",
   },
   mobile: {
     fontFamily: fonts.semiBold,

@@ -11,11 +11,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts } from "@/src/theme";
 import { apiPost } from "@/src/api";
 import Button from "@/src/components/ui/Button";
+import RemoteIcon from "@/src/components/RemoteIcon";
 
 const TRUST_ITEMS = [
   { icon: <ShieldCheck size={13} color={colors.primaryDark} strokeWidth={2} />, label: "Secure & private" },
@@ -67,11 +69,35 @@ export default function Login() {
             </View>
           </View>
 
-          {/* Hero */}
+          {/* Hero illustration */}
+          <View style={styles.illustrationWrap}>
+            <LinearGradient
+              colors={["#D9EFEA", "#EFF6F4", "#FFFFFF"]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={styles.glowBackdrop}
+            />
+            <View style={styles.bubbleTop} />
+            <View style={styles.bubbleBottom} />
+            <View style={styles.accentSparkle}>
+              <RemoteIcon slug="sparkles" style="3d-fluency" size={30} fallback={Sparkles} fallbackColor={colors.primary} />
+            </View>
+            <RemoteIcon
+              slug="padlock"
+              style="3d-fluency"
+              size={130}
+              fallback={ShieldCheck}
+              fallbackColor={colors.primary}
+            />
+            <View style={styles.accentCheck}>
+              <RemoteIcon slug="checkmark" style="3d-fluency" size={26} fallback={CheckCircle2} fallbackColor={colors.primary} />
+            </View>
+          </View>
+
           <View style={styles.heroSection}>
-            <Text style={styles.heroTitle}>Find funding{"\n"}you qualify for</Text>
+            <Text style={styles.heroTitle}>Welcome back!</Text>
             <Text style={styles.heroSub}>
-              Enter your mobile number to discover government schemes, subsidies, and bank loans tailored to your business.
+              Login to continue your journey towards business growth.
             </Text>
           </View>
 
@@ -164,23 +190,81 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
+  // Hero illustration
+  illustrationWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: 190,
+    marginBottom: spacing.sm2,
+    position: "relative",
+  },
+  glowBackdrop: {
+    position: "absolute",
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    top: 0,
+    left: "50%",
+    transform: [{ translateX: -95 }],
+  },
+  bubbleTop: {
+    position: "absolute",
+    top: 6,
+    right: "20%",
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    opacity: 0.9,
+  },
+  bubbleBottom: {
+    position: "absolute",
+    bottom: 14,
+    left: "14%",
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#FFFFFF",
+    opacity: 0.8,
+  },
+  accentSparkle: {
+    position: "absolute",
+    top: 14,
+    left: "16%",
+  },
+  accentCheck: {
+    position: "absolute",
+    bottom: 18,
+    right: "18%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 3,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+
   // Hero
   heroSection: {
     marginBottom: spacing.lg,
   },
   heroTitle: {
-    fontSize: 32,
+    fontSize: 30,
     fontFamily: fonts.displayBold,
     color: colors.text,
-    lineHeight: 40,
+    lineHeight: 38,
     letterSpacing: -0.5,
     marginBottom: spacing.sm2,
+    textAlign: "center",
   },
   heroSub: {
     fontSize: 14,
     fontFamily: fonts.regular,
     color: colors.textMuted,
     lineHeight: 21,
+    textAlign: "center",
   },
 
   // Trust
