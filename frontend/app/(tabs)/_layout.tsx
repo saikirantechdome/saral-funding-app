@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   LayoutDashboard, ClipboardList, Sparkles, FolderOpen, CircleUser,
-  Users, CalendarDays, FileSearch,
+  Users, CalendarDays, FileSearch, MessageCircle,
 } from "lucide-react-native";
 
 import { colors, fonts, radius, TAB_BAR_HEIGHT } from "@/src/theme";
@@ -97,6 +97,14 @@ export default function TabsLayout() {
         options={{
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={isAdmin ? FileSearch : FolderOpen} />,
           tabBarLabel: makeLabel(isAdmin ? "Docs" : "Documents"),
+        }}
+      />
+      <Tabs.Screen
+        name="support"
+        options={{
+          href: isAdmin ? null : undefined,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={MessageCircle} />,
+          tabBarLabel: makeLabel("Chat"),
         }}
       />
       <Tabs.Screen

@@ -2,21 +2,28 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { LucideIcon } from "lucide-react-native";
 
 import { colors, fonts, radius, spacing } from "@/src/theme";
+import RemoteIcon from "@/src/components/RemoteIcon";
 
 interface EmptyStateProps {
   Icon?: LucideIcon;
+  /** Icons8 "color" CDN slug — shows a colorful icon in place of Icon, falling back to Icon if the image fails to load. */
+  iconSlug?: string;
   title: string;
   subtitle?: string;
   ctaLabel?: string;
   onCta?: () => void;
 }
 
-export default function EmptyState({ Icon, title, subtitle, ctaLabel, onCta }: EmptyStateProps) {
+export default function EmptyState({ Icon, iconSlug, title, subtitle, ctaLabel, onCta }: EmptyStateProps) {
   return (
     <View style={styles.wrap}>
       {Icon && (
         <View style={styles.iconWrap}>
-          <Icon size={32} color={colors.textDim} strokeWidth={1.5} />
+          {iconSlug ? (
+            <RemoteIcon slug={iconSlug} size={36} fallback={Icon} fallbackColor={colors.textDim} />
+          ) : (
+            <Icon size={32} color={colors.textDim} strokeWidth={1.5} />
+          )}
         </View>
       )}
       <Text style={styles.title}>{title}</Text>

@@ -14,19 +14,20 @@ import { Bell, Target, Building2, Zap, CheckCheck, CheckCircle2, Info } from "lu
 import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
-import EmptyState from "@/src/components/EmptyState";
+import Saathi from "@/src/components/Saathi";
+import RemoteIcon from "@/src/components/RemoteIcon";
 
 function notifIcon(type: string) {
-  const cfg: Record<string, { icon: any; bg: string; color: string }> = {
-    high_match: { icon: Target, bg: colors.primarySoft, color: colors.primaryDark },
-    state_scheme: { icon: Building2, bg: tints.blue.bg, color: tints.blue.fg },
-    readiness: { icon: Zap, bg: tints.amber.bg, color: tints.amber.fg },
-    consultation_reminder: { icon: Bell, bg: tints.deepTeal.bg, color: tints.deepTeal.fg },
-    platform: { icon: Bell, bg: tints.teal.bg, color: tints.teal.fg },
-    reminder: { icon: Bell, bg: tints.deepTeal.bg, color: tints.deepTeal.fg },
-    recommendation: { icon: CheckCircle2, bg: tints.blue.bg, color: tints.blue.fg },
+  const cfg: Record<string, { icon: any; slug: string; bg: string; color: string }> = {
+    high_match: { icon: Target, slug: "target", bg: colors.primarySoft, color: colors.primaryDark },
+    state_scheme: { icon: Building2, slug: "bank-building", bg: tints.blue.bg, color: tints.blue.fg },
+    readiness: { icon: Zap, slug: "idea", bg: tints.amber.bg, color: tints.amber.fg },
+    consultation_reminder: { icon: Bell, slug: "calendar", bg: tints.deepTeal.bg, color: tints.deepTeal.fg },
+    platform: { icon: Bell, slug: "megaphone", bg: tints.teal.bg, color: tints.teal.fg },
+    reminder: { icon: Bell, slug: "clock", bg: tints.deepTeal.bg, color: tints.deepTeal.fg },
+    recommendation: { icon: CheckCircle2, slug: "medal", bg: tints.blue.bg, color: tints.blue.fg },
   };
-  return cfg[type] ?? { icon: Info, bg: colors.surfaceAlt, color: colors.textMuted };
+  return cfg[type] ?? { icon: Info, slug: "info-squared", bg: colors.surfaceAlt, color: colors.textMuted };
 }
 
 function formatTs(iso: string): string {
@@ -79,11 +80,13 @@ export default function Notifications() {
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />
       ) : items.length === 0 ? (
-        <EmptyState
-          Icon={Bell}
-          title="No notifications yet"
-          subtitle="We'll notify you about scheme matches, readiness tips, and consultation reminders."
-        />
+        <View style={styles.empty}>
+          <Saathi expression="happy" size={110} />
+          <Text style={styles.emptyTitle}>No notifications yet</Text>
+          <Text style={styles.emptySubtitle}>
+            We'll notify you about scheme matches, readiness tips, and consultation reminders.
+          </Text>
+        </View>
       ) : (
         <FlatList
           data={items}
@@ -91,7 +94,7 @@ export default function Notifications() {
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
-            const { icon: IconComponent, bg, color } = notifIcon(item.type);
+            const { icon: IconComponent, slug, bg, color } = notifIcon(item.type);
             return (
               <TouchableOpacity
                 testID={`notif-${item.id}`}
@@ -100,7 +103,7 @@ export default function Notifications() {
                 activeOpacity={0.8}
               >
                 <View style={[styles.iconWrap, { backgroundColor: bg }]}>
-                  <IconComponent size={16} color={color} strokeWidth={2} />
+                  <RemoteIcon slug={slug} size={22} fallback={IconComponent} fallbackColor={color} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.titleRow}>
@@ -120,6 +123,26 @@ export default function Notifications() {
 }
 
 const styles = StyleSheet.create({
+  empty: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 80,
+    paddingHorizontal: 32,
+    gap: spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontFamily: fonts.semiBold,
+    color: colors.text,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textDim,
+    textAlign: "center",
+    lineHeight: 22,
+  },
   subheader: {
     flexDirection: "row",
     justifyContent: "space-between",

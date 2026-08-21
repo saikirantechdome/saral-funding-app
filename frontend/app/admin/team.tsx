@@ -177,7 +177,7 @@ export default function AdminTeam() {
         ) : (
           team.map((member) => (
             <View key={member.id} style={s.memberCard}>
-              <InitialsAvatar name={member.full_name || "Unnamed"} size={44} />
+              <InitialsAvatar name={member.full_name || "Unnamed"} size={44} variant="staff" />
               <View style={{ flex: 1 }}>
                 <View style={s.nameRow}>
                   <Text style={s.memberName} numberOfLines={1}>{member.full_name || "Unnamed"}</Text>

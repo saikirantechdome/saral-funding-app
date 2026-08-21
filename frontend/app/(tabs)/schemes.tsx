@@ -17,6 +17,8 @@ import { apiGet } from "@/src/api";
 import { SCHEME_CATEGORIES } from "@/src/constants";
 import { SchemesSkeleton } from "@/src/components/SkeletonLoader";
 import EmptyState from "@/src/components/EmptyState";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { schemeStyle } from "@/src/utils/schemeType";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 export default function Schemes() {
@@ -134,6 +136,7 @@ export default function Schemes() {
       ) : items.length === 0 ? (
         <EmptyState
           Icon={Landmark}
+          iconSlug="briefcase"
           title="No schemes assigned"
           subtitle={debouncedQ || cat !== "All" ? "Try clearing your filters" : "Your advisor will assign schemes after your consultation."}
           ctaLabel={debouncedQ || cat !== "All" ? "Clear filters" : undefined}
@@ -157,6 +160,7 @@ function SchemeCard({ item, onPress }: { item: any; onPress: () => void }) {
   const statesLabel = (item.states || []).includes("All India")
     ? "All India"
     : (item.states || [])[0] || "All India";
+  const accent = schemeStyle(item.name);
 
   return (
     <TouchableOpacity
@@ -166,6 +170,9 @@ function SchemeCard({ item, onPress }: { item: any; onPress: () => void }) {
       activeOpacity={0.85}
     >
       <View style={styles.cardTop}>
+        <View style={[styles.schemeIconChip, { backgroundColor: accent.bg }]}>
+          <RemoteIcon slug={accent.slug} size={18} fallback={Landmark} fallbackColor={accent.fg} />
+        </View>
         <Text style={styles.schemeName} numberOfLines={1}>{item.name}</Text>
         <View style={styles.statePill}>
           <Text style={styles.statePillText}>{statesLabel}</Text>
@@ -281,6 +288,14 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 8,
+  },
+  schemeIconChip: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
   schemeName: {
     flex: 1,

@@ -2,29 +2,44 @@ import { useMemo } from "react";
 import { View } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { createAvatar } from "@dicebear/core";
-import * as avataaars from "@dicebear/avataaars";
+import * as micah from "@dicebear/micah";
+import * as personas from "@dicebear/personas";
 
-// On-brand background tints the illustrated bust sits on — cycled
-// deterministically by seed, same idea as the app's stageColor families.
-const BG_COLORS = ["E7F3F1", "DCEEE8", "FDF6E1", "FEECEC", "F0F6F6"];
+// A wide, vibrant pastel spread for regular users — deliberately broader
+// than the site's narrow brand palette (same exception already applied to
+// CRM stage colors) since these exist purely to make each person's avatar
+// feel distinct and lively, not to carry brand meaning.
+const USER_BG_COLORS = [
+  "E7F3F1", "DCEEE8", "FDF6E1", "FEECEC",
+  "F0EFFC", "EAF4FB", "FDF0E3", "EFF3EA",
+];
+
+// A tighter, brand-anchored teal+gold spread for admin/staff — deliberately
+// narrower and more "official" than the customer palette above, so a staff
+// member's avatar reads as part of the Saral Funding team at a glance.
+const STAFF_BG_COLORS = ["E7F3F1", "DCEEE8", "F0F6F6", "FDF6E1"];
 
 interface Props {
   name: string;
   size?: number;
   testID?: string;
+  /** "staff" for admin/super_admin/team members, "user" (default) for everyone else. */
+  variant?: "user" | "staff";
 }
 
-// Deterministic, offline illustrated-person avatar (DiceBear "avataaars") —
-// a real-looking face/hair/clothing per name instead of flat text initials
-// or an abstract pattern. Same name always renders the same character.
-export default function InitialsAvatar({ name, size = 34, testID }: Props) {
+// Deterministic, offline illustrated-person avatar — a colorful, stylized
+// face/hair/clothing per name instead of flat text initials or an abstract
+// pattern. Same name always renders the same character. Regular users get
+// DiceBear "micah" (lively, varied); admin/staff get "personas" (a visually
+// distinct, more formal style) so the two are never confused at a glance.
+export default function InitialsAvatar({ name, size = 34, testID, variant = "user" }: Props) {
   const svg = useMemo(() => {
-    const avatar = createAvatar(avataaars, {
-      seed: name || "user",
-      backgroundColor: BG_COLORS,
-    });
+    const seed = name || "user";
+    const avatar = variant === "staff"
+      ? createAvatar(personas, { seed, backgroundColor: STAFF_BG_COLORS })
+      : createAvatar(micah, { seed, backgroundColor: USER_BG_COLORS });
     return avatar.toString().replace(/<metadata[\s\S]*?<\/metadata>/, "");
-  }, [name]);
+  }, [name, variant]);
 
   return (
     <View
@@ -34,6 +49,10 @@ export default function InitialsAvatar({ name, size = 34, testID }: Props) {
         height: size,
         borderRadius: size / 2,
         overflow: "hidden",
+        // Fallback swatch so a failed/slow SVG render (bad seed, cache hiccup)
+        // never shows as a see-through hole against a dark header background —
+        // the avatar's own opaque background rect paints over this once it loads.
+        backgroundColor: variant === "staff" ? "#DCEEE8" : "#E7F3F1",
       }}
     >
       <SvgXml xml={svg} width={size} height={size} />

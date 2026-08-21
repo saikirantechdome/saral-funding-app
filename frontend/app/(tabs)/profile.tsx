@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, MapPin, Calendar, Tag, User as UserIcon, Briefcase, FileCheck, FileText } from "lucide-react-native";
+import { Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, MapPin, Calendar, Tag, User as UserIcon, Briefcase, FileCheck, FileText, MessageCircle } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, elevation, gradients, formatMobile } from "@/src/theme";
 import { apiGet, apiPost, apiLogout } from "@/src/api";
@@ -134,6 +134,7 @@ export default function Profile() {
   const isAdmin = me?.role && me.role !== "user";
   const actions = [
     ...(!isAdmin ? [{ id: "book", label: "Book Consultation", Icon: Phone, onPress: () => router.push("/booking") }] : []),
+    { id: "support", label: isAdmin ? "Support Inbox" : "Support Chat", Icon: MessageCircle, onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
     { id: "notif", label: "Notifications", Icon: Bell, onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
     { id: "privacy", label: "Privacy Policy", Icon: FileText, onPress: () => router.push({ pathname: "/legal", params: { doc: "privacy" } }) },
     { id: "terms", label: "Terms of Service", Icon: Shield, onPress: () => router.push({ pathname: "/legal", params: { doc: "terms" } }) },
@@ -156,7 +157,7 @@ export default function Profile() {
         >
           <View style={styles.avatarOuter}>
             <View style={styles.avatarRing}>
-              <InitialsAvatar name={me?.full_name || "User"} size={72} />
+              <InitialsAvatar name={me?.full_name || "User"} size={72} variant={isAdmin ? "staff" : "user"} />
             </View>
             {!editing && (
               <TouchableOpacity
@@ -263,17 +264,17 @@ export default function Profile() {
               <TouchableOpacity
                 key={a.id}
                 testID={`goto-${a.id}`}
-                style={[styles.actionRow, a.primary && styles.actionRowPrimary]}
+                style={styles.actionRow}
                 onPress={a.onPress}
                 activeOpacity={0.8}
               >
-                <View style={[styles.actionIcon, a.primary && styles.actionIconPrimary]}>
-                  <a.Icon size={16} color={a.primary ? colors.primaryDark : colors.textMuted} strokeWidth={2} />
+                <View style={styles.actionIcon}>
+                  <a.Icon size={16} color={colors.textMuted} strokeWidth={2} />
                 </View>
-                <Text style={[styles.actionLabel, a.primary && styles.actionLabelPrimary]}>
+                <Text style={styles.actionLabel}>
                   {a.label}
                 </Text>
-                <ChevronRight size={16} color={a.primary ? colors.primaryDark : colors.textDim} strokeWidth={2} />
+                <ChevronRight size={16} color={colors.textDim} strokeWidth={2} />
               </TouchableOpacity>
             ))}
 
@@ -540,10 +541,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     ...elevation.l1,
   },
-  actionRowPrimary: {
-    borderColor: colors.primarySoft,
-    backgroundColor: colors.primarySoft,
-  },
   logoutRow: {
     borderColor: colors.dangerSoft,
     backgroundColor: "#FFF",
@@ -556,9 +553,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  actionIconPrimary: {
-    backgroundColor: colors.primaryMid,
-  },
   logoutIcon: {
     backgroundColor: colors.dangerSoft,
   },
@@ -567,9 +561,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.semiBold,
     color: colors.text,
-  },
-  actionLabelPrimary: {
-    color: colors.primaryDark,
   },
   aboutFooter: {
     fontSize: 12,

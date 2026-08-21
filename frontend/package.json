@@ -12,8 +12,9 @@
     "lint": "expo lint"
   },
   "dependencies": {
-    "@dicebear/avataaars": "9.4.3",
     "@dicebear/core": "9.4.3",
+    "@dicebear/micah": "9.4.3",
+    "@dicebear/personas": "9.4.3",
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/poppins": "^0.4.1",

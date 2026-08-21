@@ -12,6 +12,9 @@ import {
 import { colors, spacing, radius, fonts, tints } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import Saathi from "@/src/components/Saathi";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { schemeIconSlug } from "@/src/utils/schemeType";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 const STAGES = [
@@ -41,6 +44,17 @@ const STAGE_COLORS: Record<string, string> = {
   rejected:  tints.red.fg,
 };
 
+// Client-side filter tabs — bucket each app's `stage` into one of these
+// groups without any extra API call.
+const FILTER_TABS = ["All", "In Progress", "Approved", "Rejected"] as const;
+type FilterTab = typeof FILTER_TABS[number];
+
+function appBucket(stage: string): Exclude<FilterTab, "All"> {
+  if (stage === "rejected") return "Rejected";
+  if (stage === "approved" || stage === "disbursed") return "Approved";
+  return "In Progress";
+}
+
 type SchemeApp = {
   id: string;
   scheme_name: string;
@@ -59,6 +73,7 @@ export default function MyApplications() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterTab>("All");
   const scrollRef = useRef<ScrollView>(null);
   const cardTops = useRef<Record<string, number>>({});
 
@@ -78,6 +93,8 @@ export default function MyApplications() {
 
   const onRefresh = () => { setRefreshing(true); load(); };
 
+  const filteredApps = filter === "All" ? apps : apps.filter((a) => appBucket(a.stage) === filter);
+
   if (loading) {
     return (
       <SafeAreaView style={s.root} edges={["top"]}>
@@ -90,17 +107,41 @@ export default function MyApplications() {
   return (
     <SafeAreaView style={s.root} edges={["top"]}>
       <BackBar title="My Applications" onBack={() => router.back()} />
+      {apps.length > 0 && (
+        <Text style={s.countLabel}>{apps.length} application{apps.length !== 1 ? "s" : ""}</Text>
+      )}
+      {apps.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={s.filterBar}
+          contentContainerStyle={s.filterBarContent}
+        >
+          {FILTER_TABS.map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[s.filterChip, filter === tab && s.filterChipActive]}
+              onPress={() => setFilter(tab)}
+              activeOpacity={0.8}
+            >
+              <Text style={[s.filterChipText, filter === tab && s.filterChipTextActive]}>{tab}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
       <ScrollView
         ref={scrollRef}
-        style={{ flex: 1, marginBottom: tabBarSpacing }}
-        contentContainerStyle={s.content}
+        style={{ flex: 1 }}
+        contentContainerStyle={[s.content, { paddingBottom: tabBarSpacing }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
         {apps.length === 0 ? (
           <EmptyState />
+        ) : filteredApps.length === 0 ? (
+          <Text style={s.noMatchText}>No applications match this filter</Text>
         ) : (
-          apps.map((app) => (
+          filteredApps.map((app) => (
             <View key={app.id} onLayout={(e) => { cardTops.current[app.id] = e.nativeEvent.layout.y; }}>
               <AppCard
                 app={app}
@@ -135,13 +176,20 @@ function AppCard({ app, expanded, onToggle }: {
   const isRejected = app.stage === "rejected";
   const isDisbursed = app.stage === "disbursed";
   const activeStageIdx = STAGES.indexOf(app.stage);
+  const accentColor = STAGE_COLORS[app.stage] ?? colors.primary;
+  const progressPct = Math.round(((activeStageIdx + 1) / STAGES.length) * 100);
 
   return (
-    <View style={s.card}>
+    <View style={[s.card, { borderLeftWidth: 4, borderLeftColor: accentColor }]}>
       {/* Header */}
       <TouchableOpacity style={s.cardHeader} onPress={onToggle} activeOpacity={0.8}>
         <View style={[s.schemeIcon, isDisbursed && s.schemeIconGreen, isRejected && s.schemeIconRed]}>
-          <FileText size={18} color={isRejected ? tints.red.fg : isDisbursed ? tints.deepTeal.fg : colors.primary} strokeWidth={2} />
+          <RemoteIcon
+            slug={schemeIconSlug(app.scheme_name)}
+            size={22}
+            fallback={FileText}
+            fallbackColor={isRejected ? tints.red.fg : isDisbursed ? tints.deepTeal.fg : colors.primary}
+          />
         </View>
         <View style={s.cardHeaderText}>
           <Text style={s.schemeName} numberOfLines={1}>{app.scheme_name}</Text>
@@ -164,8 +212,11 @@ function AppCard({ app, expanded, onToggle }: {
       {/* Progress tracker — compact bar + current-stage caption, not a cramped 7-across row */}
       {!isRejected && (
         <View style={s.progressWrap}>
-          <View style={s.progressBarTrack}>
-            <View style={[s.progressBarFill, { width: `${((activeStageIdx + 1) / STAGES.length) * 100}%` }]} />
+          <View style={s.progressBarRow}>
+            <View style={s.progressBarTrack}>
+              <View style={[s.progressBarFill, { width: `${progressPct}%` }]} />
+            </View>
+            <Text style={s.progressPercent}>{progressPct}%</Text>
           </View>
           <Text style={s.progressCaption}>
             Stage {activeStageIdx + 1} of {STAGES.length} · <Text style={s.progressCaptionActive}>{STAGE_LABELS[app.stage] ?? app.stage_label}</Text>
@@ -204,6 +255,18 @@ function AppCard({ app, expanded, onToggle }: {
           })}
         </View>
       )}
+
+      <View style={s.viewDetailsRow}>
+        <TouchableOpacity style={s.viewDetailsBtn} onPress={onToggle} activeOpacity={0.8}>
+          <Text style={s.viewDetailsText}>{expanded ? "Hide Details" : "View Details"}</Text>
+          <ChevronRight
+            size={13}
+            color={colors.primaryDark}
+            strokeWidth={2.5}
+            style={{ transform: [{ rotate: expanded ? "90deg" : "0deg" }] }}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -223,7 +286,7 @@ function StagePill({ stage, label }: { stage: string; label: string }) {
 function EmptyState() {
   return (
     <View style={s.empty}>
-      <FileText size={48} color={colors.border} strokeWidth={1.5} />
+      <Saathi expression="explaining" size={110} />
       <Text style={s.emptyTitle}>No applications yet</Text>
       <Text style={s.emptyBody}>
         After your consultation call, our team will assign the schemes you qualify for and track them here.
@@ -234,14 +297,25 @@ function EmptyState() {
 
 const s = StyleSheet.create({
   root:            { flex: 1, backgroundColor: colors.surface2 },
+  countLabel:      { fontSize: 12, fontFamily: fonts.medium, color: colors.textDim, paddingHorizontal: spacing.md, paddingBottom: 6 },
   content:         { padding: spacing.md, gap: spacing.md, paddingBottom: 4 },
+
+  filterBar:       { maxHeight: 44 },
+  filterBarContent:{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 8 },
+  filterChip:      { paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, backgroundColor: "#fff" },
+  filterChipActive:{ borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  filterChipText:  { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
+  filterChipTextActive: { color: colors.primaryDark, fontFamily: fonts.bold },
+  noMatchText:     { fontSize: 13, fontFamily: fonts.regular, color: colors.textDim, textAlign: "center", paddingTop: 40 },
 
   card:            { backgroundColor: "#fff", borderRadius: radius.lg, padding: spacing.md,
                      shadowColor: colors.text, shadowOffset: { width: 0, height: 2 },
                      shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   cardHeader:      { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.md },
   schemeIcon:      { width: 40, height: 40, borderRadius: radius.md, backgroundColor: tints.blue.bg,
-                     alignItems: "center", justifyContent: "center" },
+                     alignItems: "center", justifyContent: "center",
+                     shadowColor: colors.text, shadowOffset: { width: 0, height: 2 },
+                     shadowOpacity: 0.10, shadowRadius: 4, elevation: 2 },
   schemeIconGreen: { backgroundColor: tints.deepTeal.bg },
   schemeIconRed:   { backgroundColor: tints.red.bg },
   cardHeaderText:  { flex: 1, gap: 4 },
@@ -252,8 +326,10 @@ const s = StyleSheet.create({
   pillText:        { fontSize: 11, fontFamily: fonts.semiBold },
 
   progressWrap:    { marginBottom: 4, gap: 6 },
-  progressBarTrack:{ height: 6, borderRadius: 3, backgroundColor: colors.surface2, overflow: "hidden" },
+  progressBarRow:  { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  progressBarTrack:{ flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.surface2, overflow: "hidden" },
   progressBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
+  progressPercent: { width: 34, textAlign: "right", fontSize: 12, fontFamily: fonts.bold, color: colors.primaryDark },
   progressCaption: { fontSize: 12, fontFamily: fonts.medium, color: colors.textDim },
   progressCaptionActive: { fontFamily: fonts.semiBold, color: colors.primaryDark },
 
@@ -274,6 +350,11 @@ const s = StyleSheet.create({
   historyStage:    { fontSize: 13, fontFamily: fonts.semiBold, color: colors.text },
   historyNote:     { fontSize: 12, fontFamily: fonts.regular, color: colors.textDim },
   historyMeta:     { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim },
+
+  viewDetailsRow:  { flexDirection: "row", justifyContent: "flex-end", marginTop: spacing.sm },
+  viewDetailsBtn:  { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6,
+                     borderRadius: radius.pill, backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primary },
+  viewDetailsText: { fontSize: 12, fontFamily: fonts.semiBold, color: colors.primaryDark },
 
   empty:           { alignItems: "center", paddingTop: 80, gap: spacing.md, paddingHorizontal: 32 },
   emptyTitle:      { fontSize: 18, fontFamily: fonts.semiBold, color: colors.text },

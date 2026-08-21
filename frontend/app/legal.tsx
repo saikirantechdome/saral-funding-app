@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -175,6 +175,14 @@ export default function Legal() {
             <Text style={styles.body}>{s.body}</Text>
           </View>
         ))}
+
+        <TouchableOpacity
+          style={styles.attribution}
+          onPress={() => Linking.openURL("https://icons8.com")}
+          testID="icons8-attribution"
+        >
+          <Text style={styles.attributionText}>Some icons by Icons8</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -234,5 +242,15 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 22,
     paddingLeft: 26 + spacing.sm2,
+  },
+  attribution: {
+    alignSelf: "center",
+    marginTop: spacing.sm,
+  },
+  attributionText: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    color: colors.textDim,
+    textDecorationLine: "underline",
   },
 });

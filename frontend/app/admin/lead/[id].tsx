@@ -9,7 +9,7 @@ import {
   User, Phone, MapPin, Building2, DollarSign, StickyNote,
   Calendar, Clock, ArrowRight, CheckCircle2, AlertCircle,
   FileText, ChevronDown, X, Tag, Upload, Star, ExternalLink,
-  Plus, Trash2, ChevronRight, Bell, Send,
+  Plus, Trash2, ChevronRight, Bell, Send, MessageCircle,
 } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, formatINR, stageColor, tints, elevation, tagColor, formatMobile } from "@/src/theme";
@@ -18,6 +18,8 @@ import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import Button from "@/src/components/ui/Button";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { docTypeStyle } from "@/src/utils/docType";
 
 const RECOMMENDED_BANKS = [
   "State Bank of India",
@@ -371,6 +373,14 @@ export default function LeadDetail() {
               <Text style={styles.leadName}>{user.full_name || data.full_name || "Unknown"}</Text>
               <Text style={styles.leadMobile}>{formatMobile(user.mobile || data.mobile)}</Text>
             </View>
+            <TouchableOpacity
+              testID="message-user-btn"
+              style={styles.messageBtn}
+              onPress={() => router.push(`/admin/support/${user.id || data.user_id}` as any)}
+              activeOpacity={0.8}
+            >
+              <MessageCircle size={16} color={colors.primaryDark} strokeWidth={2} />
+            </TouchableOpacity>
             <Button label="Edit" onPress={() => setEditing(true)} variant="tertiary" size="sm" fullWidth={false} />
           </View>
           <View style={{ flexDirection: "row", gap: 8, marginTop: spacing.sm2, flexWrap: "wrap" }}>
@@ -413,10 +423,11 @@ export default function LeadDetail() {
             userDocs.map((doc: any) => {
               const statusBg = doc.status === "verified" ? colors.primarySoft : doc.status === "rejected" ? colors.dangerSoft : tints.amber.bg;
               const statusColor = doc.status === "verified" ? colors.primaryDark : doc.status === "rejected" ? colors.danger : tints.amber.fg;
+              const accent = docTypeStyle(doc.doc_type);
               return (
                 <View key={doc.id} style={styles.docRow}>
-                  <View style={styles.docIconChip}>
-                    <FileText size={14} color={colors.primaryDark} strokeWidth={2} />
+                  <View style={[styles.docIconChip, { backgroundColor: accent.bg }]}>
+                    <RemoteIcon slug={accent.slug} size={18} fallback={FileText} fallbackColor={accent.fg} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.docName}>{doc.doc_type}</Text>
@@ -837,6 +848,7 @@ export default function LeadDetail() {
 const styles = StyleSheet.create({
   leadName: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   leadMobile: { fontSize: 13, fontFamily: fonts.regular, color: colors.textDim, marginTop: 2 },
+  messageBtn: { width: 36, height: 36, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
   typeTag: {
     flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: colors.surfaceAlt, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill,

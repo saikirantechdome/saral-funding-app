@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator,
-  Modal, ScrollView, TextInput, Alert,
+  Modal, ScrollView, TextInput, Alert, type TextInputProps,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -13,6 +13,8 @@ import { BackBar } from "@/src/components/StepBar";
 import EmptyState from "@/src/components/EmptyState";
 import MultiSelectPicker from "@/src/components/MultiSelectPicker";
 import Button from "@/src/components/ui/Button";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { schemeStyle } from "@/src/utils/schemeType";
 import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
 
 const STATE_OPTIONS = [
@@ -177,14 +179,16 @@ export default function AdminSchemes() {
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : items.length === 0 ? (
-        <EmptyState Icon={Landmark} title="No schemes found" subtitle="Schemes will appear here after seeding." />
+        <EmptyState Icon={Landmark} iconSlug="briefcase" title="No schemes found" subtitle="Schemes will appear here after seeding." />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(x) => x.id}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const accent = schemeStyle(item.name);
+            return (
             <TouchableOpacity
               style={[styles.card, item.disabled && styles.cardDisabled]}
               testID={`admin-scheme-${item.id}`}
@@ -192,8 +196,8 @@ export default function AdminSchemes() {
               activeOpacity={0.8}
             >
               <View style={styles.cardLeft}>
-                <View style={[styles.schemeIcon, item.disabled && styles.schemeIconDisabled]}>
-                  <Landmark size={16} color={item.disabled ? colors.textDim : colors.primaryDark} strokeWidth={2} />
+                <View style={[styles.schemeIcon, !item.disabled && { backgroundColor: accent.bg }, item.disabled && styles.schemeIconDisabled]}>
+                  <RemoteIcon slug={accent.slug} size={20} fallback={Landmark} fallbackColor={item.disabled ? colors.textDim : accent.fg} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.schemeName, item.disabled && styles.schemeNameDisabled]} numberOfLines={1}>
@@ -235,7 +239,8 @@ export default function AdminSchemes() {
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
-          )}
+            );
+          }}
         />
       )}
 
@@ -299,7 +304,7 @@ export default function AdminSchemes() {
   );
 }
 
-function Field({ label, ...props }: { label: string; [key: string]: any }) {
+function Field({ label, ...props }: { label: string } & TextInputProps) {
   return (
     <View>
       <Text style={styles.fieldLabel}>{label}</Text>

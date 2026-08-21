@@ -7,7 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   User, MapPin, Phone, Landmark, ChevronRight,
-  CheckCircle2, Clock, XCircle, Plus, Trash2, Building2,
+  CheckCircle2, Clock, XCircle, Plus, Trash2, Building2, MessageCircle,
 } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, tints, elevation, formatINR, formatMobile } from "@/src/theme";
@@ -192,6 +192,14 @@ export default function UserDetail() {
               </View>
             )}
           </View>
+          <TouchableOpacity
+            testID="message-user-btn"
+            style={s.messageBtn}
+            onPress={() => router.push(`/admin/support/${id}` as any)}
+            activeOpacity={0.8}
+          >
+            <MessageCircle size={16} color={colors.primaryDark} strokeWidth={2} />
+          </TouchableOpacity>
         </View>
 
         {/* Business Info */}
@@ -356,6 +364,7 @@ const s = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 3 },
   metaText: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted },
   rolePill: { alignSelf: "flex-start", backgroundColor: tints.amber.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
+  messageBtn: { width: 36, height: 36, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
   rolePillText: { fontSize: 10, fontFamily: fonts.bold, color: tints.amber.fg, textTransform: "uppercase" },
   sectionCard: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
   sectionLabel: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 4 },

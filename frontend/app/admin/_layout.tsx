@@ -12,11 +12,11 @@ export type AdminRole = "super_admin" | "manager" | "expert" | "sales_executive"
 
 /** Which modules each role can access. super_admin always gets everything. */
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
-  super_admin: ["users", "consultations", "leads", "settings"],
-  manager: ["users", "consultations", "leads"],
-  expert: ["consultations"],
-  sales_executive: ["leads"],
-  support_executive: ["consultations", "leads"],
+  super_admin: ["users", "consultations", "leads", "settings", "support"],
+  manager: ["users", "consultations", "leads", "support"],
+  expert: ["consultations", "support"],
+  sales_executive: ["leads", "support"],
+  support_executive: ["consultations", "leads", "support"],
 };
 
 export function canAccess(role: string, module: string): boolean {

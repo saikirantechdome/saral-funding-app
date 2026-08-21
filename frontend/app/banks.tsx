@@ -17,6 +17,8 @@ import { BackBar } from "@/src/components/StepBar";
 import { SchemesSkeleton } from "@/src/components/SkeletonLoader";
 import EmptyState from "@/src/components/EmptyState";
 import Button from "@/src/components/ui/Button";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { bankTypeStyle } from "@/src/utils/bankType";
 
 function bankApplyWhatsAppUrl(bankName: string) {
   const text = `Hey team, I want to apply for the ${bankName} loan. Could you please help me with the next steps?`;
@@ -110,6 +112,7 @@ export default function BanksScreen() {
       {recs.length === 0 && (
         <EmptyState
           Icon={Building2}
+          iconSlug="bank"
           title="No banks assigned"
           subtitle="Your advisor will assign relevant banks after your consultation."
         />
@@ -123,6 +126,7 @@ export default function BanksScreen() {
         renderItem={({ item }) => {
           const isSel = selected.includes(item.bank_id);
           const isPublic = item.type === "Public";
+          const accent = bankTypeStyle(item.type);
           return (
             <View style={[styles.card, isSel && styles.cardSelected]}>
               {/* Card header */}
@@ -132,8 +136,8 @@ export default function BanksScreen() {
                 activeOpacity={0.85}
               >
                 <View style={styles.cardTop}>
-                  <View style={[styles.bankIcon, isPublic ? styles.bankIconPublic : styles.bankIconPrivate]}>
-                    <Building2 size={18} color={isPublic ? colors.primaryDark : tints.blue.fg} strokeWidth={2} />
+                  <View style={[styles.bankIcon, { backgroundColor: accent.bg }]}>
+                    <RemoteIcon slug={accent.slug} size={20} fallback={Building2} fallbackColor={accent.fg} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={styles.nameRow}>

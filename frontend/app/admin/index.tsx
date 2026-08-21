@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   Users, Phone, Target, Landmark, FolderOpen,
-  TrendingUp, MessageSquare, ChevronRight, Percent, Eye, Settings, Shield, Bell, BarChart2,
+  TrendingUp, MessageSquare, MessageCircle, ChevronRight, Percent, Eye, Settings, Shield, Bell, BarChart2,
 } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, tints } from "@/src/theme";
@@ -32,6 +32,7 @@ const ALL_MODULES = [
   { id: "leads",         label: "CRM / Leads",    sub: "Pipeline & stages",     Icon: Target,    color: tints.amber.bg, iconColor: tints.amber.fg },
   { id: "schemes",       label: "Schemes",         sub: "Enable & disable",      Icon: Landmark,  color: tints.red.bg, iconColor: tints.red.fg },
   { id: "documents",    label: "Documents",       sub: "Review & approve docs", Icon: FolderOpen, color: tints.teal.bg, iconColor: tints.teal.fg },
+  { id: "support",      label: "Support Chat",    sub: "User conversations",    Icon: MessageCircle, color: colors.primarySoft, iconColor: colors.primaryDark },
   { id: "analytics",    label: "Analytics",       sub: "Charts & trends",       Icon: BarChart2, color: tints.blue.bg, iconColor: tints.blue.fg },
   { id: "notifications",label: "Notifications",   sub: "Broadcast to all users",Icon: Bell,      color: tints.amber.bg, iconColor: tints.amber.fg },
   { id: "team",          label: "Team Members",   sub: "Invite & manage roles", Icon: Shield,    color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg },

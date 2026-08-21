@@ -12,12 +12,13 @@ import { apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import Input from "@/src/components/ui/Input";
 import Button from "@/src/components/ui/Button";
+import RemoteIcon from "@/src/components/RemoteIcon";
 
 const NOTIFICATION_TYPES = [
-  { id: "platform", label: "Platform Update", Icon: Info, color: colors.surfaceAlt, textColor: colors.textMuted },
-  { id: "high_match", label: "Scheme Match", Icon: Star, color: colors.primarySoft, textColor: colors.primaryDark },
-  { id: "consultation_reminder", label: "Reminder", Icon: Bell, color: tints.deepTeal.bg, textColor: tints.deepTeal.fg },
-  { id: "recommendation", label: "Recommendation", Icon: CheckCircle2, color: tints.blue.bg, textColor: tints.blue.fg },
+  { id: "platform", label: "Platform Update", Icon: Info, slug: "megaphone", color: tints.blue.bg, textColor: tints.blue.fg },
+  { id: "high_match", label: "Scheme Match", Icon: Star, slug: "target", color: tints.amber.bg, textColor: tints.amber.fg },
+  { id: "consultation_reminder", label: "Reminder", Icon: Bell, slug: "calendar", color: tints.red.bg, textColor: tints.red.fg },
+  { id: "recommendation", label: "Recommendation", Icon: CheckCircle2, slug: "medal", color: tints.green.bg, textColor: tints.green.fg },
 ];
 
 export default function AdminNotifications() {
@@ -27,6 +28,7 @@ export default function AdminNotifications() {
   const [type, setType] = useState("platform");
   const [sending, setSending] = useState(false);
   const [sentCount, setSentCount] = useState<number | null>(null);
+  const activeType = NOTIFICATION_TYPES.find((t) => t.id === type);
 
   const send = async () => {
     if (!title.trim() || !body.trim()) return;
@@ -55,7 +57,7 @@ export default function AdminNotifications() {
           {sentCount !== null && (
             <View style={styles.successCard}>
               <View style={styles.successIconChip}>
-                <CheckCircle2 size={20} color={colors.primaryDark} strokeWidth={2} />
+                <RemoteIcon slug="checkmark" size={22} fallback={CheckCircle2} fallbackColor={colors.primaryDark} />
               </View>
               <View>
                 <Text style={styles.successTitle}>Notification Sent</Text>
@@ -77,7 +79,7 @@ export default function AdminNotifications() {
                   onPress={() => setType(t.id)}
                   activeOpacity={0.8}
                 >
-                  <t.Icon size={16} color={active ? t.textColor : colors.textDim} strokeWidth={2} />
+                  <RemoteIcon slug={t.slug} size={18} fallback={t.Icon} fallbackColor={active ? t.textColor : colors.textDim} />
                   <Text style={[styles.typeLabel, active && { color: t.textColor, fontFamily: fonts.semiBold }]}>
                     {t.label}
                   </Text>
@@ -109,16 +111,12 @@ export default function AdminNotifications() {
           />
 
           {/* Preview */}
-          {(title || body) && (
+          {(title || body) && activeType && (
             <View style={styles.previewCard}>
               <Text style={styles.previewLabel}>Preview</Text>
               <View style={styles.preview}>
-                <View style={styles.previewIcon}>
-                  {(() => {
-                    const t = NOTIFICATION_TYPES.find((t) => t.id === type);
-                    if (!t) return null;
-                    return <t.Icon size={14} color={t.textColor} strokeWidth={2} />;
-                  })()}
+                <View style={[styles.previewIcon, { backgroundColor: activeType.color }]}>
+                  <RemoteIcon slug={activeType.slug} size={18} fallback={activeType.Icon} fallbackColor={activeType.textColor} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.previewTitle} numberOfLines={1}>{title || "Notification title"}</Text>

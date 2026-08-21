@@ -34,12 +34,16 @@ import {
   FileSearch,
   User as UserIcon,
   XCircle,
+  ShieldCheck,
 } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, tints, elevation, formatMobile } from "@/src/theme";
 import { apiGet, apiDelete, getToken, API_BASE } from "@/src/api";
 import Picker from "@/src/components/Picker";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
+import Saathi from "@/src/components/Saathi";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { docTypeStyle } from "@/src/utils/docType";
 import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
@@ -65,6 +69,7 @@ function statusStyle(status: string) {
   if (status === "rejected") return { bg: colors.dangerSoft, text: colors.danger };
   return { bg: tints.amber.bg, text: tints.amber.fg };
 }
+
 
 function StatusBadge({ status }: { status: string }) {
   const { bg, text } = statusStyle(status);
@@ -238,6 +243,18 @@ function UserDocumentsTab() {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: 4 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Hero: reassurance graphic + copy */}
+        <View style={s.heroWrap}>
+          <View style={s.heroIconCircle}>
+            <RemoteIcon slug="opened-folder" size={72} fallback={FolderOpen} fallbackColor={tints.teal.fg} />
+            <View style={s.heroBadge}>
+              <RemoteIcon slug="lock" size={20} fallback={ShieldCheck} fallbackColor="#FFFFFF" />
+            </View>
+          </View>
+          <Text style={s.heroTitle}>Your documents are safe and secure</Text>
+          <Text style={s.heroSubtitle}>We protect your data with bank-level security.</Text>
+        </View>
+
         {/* Upload section */}
         <View style={s.card}>
           <Text style={s.sectionLabel}>Upload a Document</Text>
@@ -304,8 +321,7 @@ function UserDocumentsTab() {
 
         {docs.length === 0 ? (
           <View style={s.emptyCard}>
-            <FileText size={32} color={colors.textDim} strokeWidth={1.5} />
-            <Text style={s.emptyText}>No documents uploaded yet</Text>
+            <Saathi expression="reviewing_documents" size={110} message="No documents uploaded yet" />
             <Text style={s.emptyHint}>
               Select a document type above, choose a file, and tap Upload to get started.
             </Text>
@@ -313,13 +329,17 @@ function UserDocumentsTab() {
         ) : (
           docs.map((doc) => {
             const cfg = statusStyle(doc.status);
+            const accent = docTypeStyle(doc.doc_type);
             return (
             <View key={doc.id} style={[s.docCard, { borderLeftWidth: 4, borderLeftColor: cfg.text }]}>
-              <View style={s.docIcon}>
-                <FileText size={18} color={colors.primaryDark} strokeWidth={2} />
+              <View style={[s.docIcon, { backgroundColor: accent.bg }]}>
+                <RemoteIcon slug={accent.slug} size={22} fallback={FileText} fallbackColor={accent.fg} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={s.docName}>{doc.doc_type}</Text>
+                <View style={s.docTitleRow}>
+                  <Text style={s.docName} numberOfLines={1}>{doc.doc_type}</Text>
+                  <StatusBadge status={doc.status} />
+                </View>
                 {doc.file_name && (
                   <Text style={s.docFileName} numberOfLines={1}>{doc.file_name}</Text>
                 )}
@@ -328,9 +348,6 @@ function UserDocumentsTab() {
                     ? new Date(doc.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
                     : "—"}
                 </Text>
-                <View style={{ marginTop: 5 }}>
-                  <StatusBadge status={doc.status} />
-                </View>
                 {doc.status === "rejected" && doc.reject_reason && (
                   <View style={s.rejectReasonBox}>
                     <Info size={11} color={colors.danger} strokeWidth={2} />
@@ -401,6 +418,50 @@ const s = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 1,
   },
+  heroWrap: {
+    alignItems: "center",
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  heroIconCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: tints.teal.bg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm2,
+    position: "relative",
+  },
+  heroBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primaryDark,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: tints.teal.bg,
+  },
+  heroTitle: {
+    fontSize: 16,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+    textAlign: "center",
+  },
+  heroSubtitle: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    textAlign: "center",
+    marginTop: 4,
+    lineHeight: 18,
+    maxWidth: 260,
+  },
   card: {
     backgroundColor: "#FFF",
     borderRadius: radius.xxl,
@@ -408,20 +469,19 @@ const s = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
   sectionLabel: {
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 4,
+    fontSize: 15,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+    marginBottom: 3,
   },
   hint: {
     fontSize: 13,
     fontFamily: fonts.regular,
     color: colors.textMuted,
-    marginBottom: spacing.sm2,
+    marginBottom: spacing.md,
     lineHeight: 18,
   },
   bulkUploadBtn: {
@@ -434,7 +494,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface2,
-    marginBottom: 10,
+    marginBottom: spacing.sm2,
   },
   bulkUploadBtnText: { fontSize: 12, fontFamily: fonts.semiBold, color: colors.primaryDark },
   filePickerBtn: {
@@ -447,7 +507,7 @@ const s = StyleSheet.create({
     borderRadius: radius.xl,
     paddingVertical: 11,
     paddingHorizontal: 14,
-    marginBottom: 10,
+    marginBottom: spacing.sm2,
     backgroundColor: colors.primarySoft,
   },
   filePickerText: { flex: 1, fontSize: 13, fontFamily: fonts.medium, color: colors.primaryDark },
@@ -459,6 +519,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    ...elevation.l1,
   },
   uploadBtnText: { fontSize: 14, fontFamily: fonts.displayBold, color: "#FFF" },
   sectionHeader: {
@@ -502,8 +563,14 @@ const s = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  docName: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
-  docFileName: { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginTop: 1 },
+  docTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  docName: { flex: 1, fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
+  docFileName: { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginTop: 3 },
   docDate: { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginTop: 2 },
   docActions: {
     flexDirection: "column",
@@ -827,11 +894,12 @@ function AdminUserDocuments() {
         }
         renderItem={({ item: doc }) => {
           const cfg = STATUS_CFG[doc.status] ?? STATUS_CFG.pending;
+          const accent = docTypeStyle(doc.doc_type);
           return (
             <View style={[adS.docCard, { borderLeftWidth: 4, borderLeftColor: cfg.color }]}>
               <View style={adS.docCardHeader}>
-                <View style={adS.docIcon}>
-                  <FileText size={16} color={colors.primaryDark} strokeWidth={2} />
+                <View style={[adS.docIcon, { backgroundColor: accent.bg }]}>
+                  <RemoteIcon slug={accent.slug} size={20} fallback={FileText} fallbackColor={accent.fg} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={adS.docType}>{doc.doc_type}</Text>

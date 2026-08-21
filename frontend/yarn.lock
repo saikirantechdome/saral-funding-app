@@ -778,17 +778,22 @@
     "@babel/helper-string-parser" "^7.29.7"
     "@babel/helper-validator-identifier" "^7.29.7"
 
-"@dicebear/avataaars@9.4.3":
-  version "9.4.3"
-  resolved "https://registry.yarnpkg.com/@dicebear/avataaars/-/avataaars-9.4.3.tgz#58c6293ced303be3efcd8cf58685f3f972bccdb1"
-  integrity sha512-LNIZNb1TaXhL2/OfJK+lmw8Kkbn6eot1FHiLoU2/AzOmjSQQVJC0ZvwrZ/tdQEIGeMPu5nhJLmNwH/kFMoF+Tw==
-
 "@dicebear/core@9.4.3":
   version "9.4.3"
   resolved "https://registry.yarnpkg.com/@dicebear/core/-/core-9.4.3.tgz#e450781e4ef86402cb59702447f92eb29fbeb6ad"
   integrity sha512-9ITrQI57k3p5hKuU8HZJ1d0kPdrmTKEJDOdlKQ8CpaChbtmnD1R+dtWmNz5IesYThXM8F64pJ0ZvJ2rsY8Hciw==
   dependencies:
     "@types/json-schema" "^7.0.15"
+
+"@dicebear/micah@9.4.3":
+  version "9.4.3"
+  resolved "https://registry.yarnpkg.com/@dicebear/micah/-/micah-9.4.3.tgz#9c234506f5ababbac4879baf87a38fb141d2ae18"
+  integrity sha512-+76eH3Scu8jfiSbhGjK3OBWeTK+qiuKxrlZFimevaIUzNe6UjqEeaiBUg9R7LPAx3CNIXJOLhuzkHPEkOSnXtg==
+
+"@dicebear/personas@9.4.3":
+  version "9.4.3"
+  resolved "https://registry.yarnpkg.com/@dicebear/personas/-/personas-9.4.3.tgz#0410985cc7dcc1626b66513640cddd6ef3ba8c74"
+  integrity sha512-5ssYDAj0F5eOfoBq1fAVvzDMF9QGOKUaKEq/UGiNL7DMSOojazTC0cEHR7JOGcc/Fa53yfPf9v6932WXg/C0Ow==
 
 "@egjs/hammerjs@^2.0.17":
   version "2.0.17"

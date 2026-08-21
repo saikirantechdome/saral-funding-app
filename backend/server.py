@@ -259,6 +259,18 @@ class NotificationCreate(BaseModel):
     body: str
     type: str = "platform"
     target_user_ids: Optional[List[str]] = None  # None = broadcast
+
+
+class SupportMessageIn(BaseModel):
+    text: str
+    related_document_id: Optional[str] = None
+    related_scheme_application_id: Optional[str] = None
+    related_bank_application_id: Optional[str] = None
+
+
+class SupportBroadcastIn(BaseModel):
+    text: str
+    target_user_ids: Optional[List[str]] = None  # None = broadcast to all users
     schedule_at: Optional[str] = None
 
 
@@ -874,6 +886,105 @@ async def update_language(body: Dict[str, Any], user=Depends(get_current_user)):
 
 
 # ===========================================================================
+# SUPPORT CHAT — one ongoing conversation per user with the admin team
+# ===========================================================================
+@api_router.get("/support/messages")
+async def get_support_messages(
+    before: Optional[str] = None,
+    since: Optional[str] = None,
+    limit: int = Query(default=30, le=100),
+    user=Depends(get_current_user),
+):
+    convo = await db.conversations.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not convo:
+        return {"conversation": None, "items": [], "has_more": False, "next_before": None}
+
+    cid = convo["id"]
+    if since:
+        items = await db.messages.find(
+            {"conversation_id": cid, "created_at": {"$gt": since}}, {"_id": 0}
+        ).sort("created_at", 1).to_list(limit)
+        return {"conversation": convo, "items": items, "has_more": False, "next_before": None}
+
+    query: Dict[str, Any] = {"conversation_id": cid}
+    if before:
+        query["created_at"] = {"$lt": before}
+    raw = await db.messages.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit + 1)
+    has_more = len(raw) > limit
+    raw = raw[:limit]
+    items = list(reversed(raw))
+    next_before = items[0]["created_at"] if items and has_more else None
+    return {"conversation": convo, "items": items, "has_more": has_more, "next_before": next_before}
+
+
+@api_router.post("/support/messages")
+async def send_support_message(body: SupportMessageIn, user=Depends(get_current_user)):
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+    if len(text) > 2000:
+        raise HTTPException(status_code=400, detail="Message is too long (max 2000 characters).")
+
+    now = now_iso()
+    preview = text[:140]
+    await db.conversations.update_one(
+        {"user_id": user["id"]},
+        {
+            "$setOnInsert": {
+                "id": str(uuid.uuid4()), "user_id": user["id"], "created_at": now,
+                "user_last_read_at": None, "admin_last_read_at": None, "user_unread_count": 0,
+            },
+            "$set": {
+                "last_message_text": preview, "last_message_at": now,
+                "last_message_sender_role": "user", "updated_at": now,
+            },
+            "$inc": {"admin_unread_count": 1},
+        },
+        upsert=True,
+    )
+    convo = await db.conversations.find_one({"user_id": user["id"]}, {"_id": 0})
+
+    msg = {
+        "id": str(uuid.uuid4()), "conversation_id": convo["id"], "user_id": user["id"],
+        "sender_role": "user", "sender_id": user["id"], "sender_name": user.get("full_name") or "User",
+        "text": text, "is_broadcast": False,
+        "related_document_id": body.related_document_id,
+        "related_scheme_application_id": body.related_scheme_application_id,
+        "related_bank_application_id": body.related_bank_application_id,
+        "created_at": now,
+    }
+    await db.messages.insert_one(msg.copy())
+    msg.pop("_id", None)
+
+    try:
+        admin_users = await db.users.find(
+            {"role": {"$in": list(ADMIN_ROLES)}}, {"_id": 0, "push_token": 1}
+        ).to_list(200)
+        tokens = [a["push_token"] for a in admin_users if a.get("push_token")]
+        if tokens:
+            send_push(tokens, f"New message from {user.get('full_name') or 'a user'}", preview)
+    except Exception as e:
+        logging.warning(f"Support chat admin push failed: {e}")
+
+    return msg
+
+
+@api_router.post("/support/read")
+async def mark_support_read(user=Depends(get_current_user)):
+    await db.conversations.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"user_unread_count": 0, "user_last_read_at": now_iso()}},
+    )
+    return {"ok": True}
+
+
+@api_router.get("/support/unread-count")
+async def get_support_unread_count(user=Depends(get_current_user)):
+    convo = await db.conversations.find_one({"user_id": user["id"]}, {"_id": 0, "user_unread_count": 1})
+    return {"unread_count": (convo or {}).get("user_unread_count", 0)}
+
+
+# ===========================================================================
 # ADMIN — all under /admin/*
 # ===========================================================================
 @api_router.get("/admin/overview")
@@ -1230,6 +1341,196 @@ async def admin_send_notification(body: NotificationCreate, admin=Depends(requir
     return {"sent": len(docs)}
 
 
+@api_router.get("/admin/support/conversations")
+async def admin_list_support_conversations(
+    q: Optional[str] = None,
+    page: int = 1, limit: int = Query(default=50, le=200),
+    admin=Depends(require_admin),
+):
+    query: Dict[str, Any] = {}
+    if q:
+        safe_q = sanitise_search(q)
+        matching = await db.users.find(
+            {"$or": [{"full_name": {"$regex": safe_q, "$options": "i"}}, {"mobile": {"$regex": safe_q, "$options": "i"}}]},
+            {"_id": 0, "id": 1},
+        ).to_list(1000)
+        query["user_id"] = {"$in": [u["id"] for u in matching]}
+
+    skip = (max(page, 1) - 1) * limit
+    total = await db.conversations.count_documents(query)
+    convos = await db.conversations.find(query, {"_id": 0}).sort(
+        [("admin_unread_count", -1), ("last_message_at", -1)]
+    ).skip(skip).to_list(limit)
+
+    user_ids = [c["user_id"] for c in convos]
+    users = await db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "full_name": 1, "mobile": 1}).to_list(len(user_ids) or 1)
+    user_map = {u["id"]: u for u in users}
+    for c in convos:
+        u = user_map.get(c["user_id"], {})
+        c["user_full_name"] = u.get("full_name") or "Unknown"
+        c["user_mobile"] = u.get("mobile")
+
+    return {"items": convos, "total": total, "page": page, "limit": limit, "pages": max(1, (total + limit - 1) // limit)}
+
+
+@api_router.get("/admin/support/unread-count")
+async def admin_support_unread_count(admin=Depends(require_admin)):
+    result = await db.conversations.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": "$admin_unread_count"}}}
+    ]).to_list(1)
+    return {"unread_count": (result[0]["total"] if result else 0)}
+
+
+@api_router.get("/admin/support/users/{user_id}/messages")
+async def admin_get_support_messages(
+    user_id: str,
+    before: Optional[str] = None,
+    since: Optional[str] = None,
+    limit: int = Query(default=30, le=100),
+    admin=Depends(require_admin),
+):
+    target_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    convo = await db.conversations.find_one({"user_id": user_id}, {"_id": 0})
+    if not convo:
+        return {"conversation": None, "items": [], "has_more": False, "next_before": None, "user": target_user}
+
+    cid = convo["id"]
+    if since:
+        items = await db.messages.find(
+            {"conversation_id": cid, "created_at": {"$gt": since}}, {"_id": 0}
+        ).sort("created_at", 1).to_list(limit)
+        return {"conversation": convo, "items": items, "has_more": False, "next_before": None, "user": target_user}
+
+    query: Dict[str, Any] = {"conversation_id": cid}
+    if before:
+        query["created_at"] = {"$lt": before}
+    raw = await db.messages.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit + 1)
+    has_more = len(raw) > limit
+    raw = raw[:limit]
+    items = list(reversed(raw))
+    next_before = items[0]["created_at"] if items and has_more else None
+    return {"conversation": convo, "items": items, "has_more": has_more, "next_before": next_before, "user": target_user}
+
+
+@api_router.post("/admin/support/users/{user_id}/messages")
+async def admin_send_support_message(user_id: str, body: SupportMessageIn, admin=Depends(require_admin)):
+    target_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+    if len(text) > 2000:
+        raise HTTPException(status_code=400, detail="Message is too long (max 2000 characters).")
+
+    now = now_iso()
+    preview = text[:140]
+    await db.conversations.update_one(
+        {"user_id": user_id},
+        {
+            "$setOnInsert": {
+                "id": str(uuid.uuid4()), "user_id": user_id, "created_at": now,
+                "user_last_read_at": None,
+            },
+            "$set": {
+                "last_message_text": preview, "last_message_at": now,
+                "last_message_sender_role": "admin", "updated_at": now,
+                "admin_unread_count": 0, "admin_last_read_at": now,
+            },
+            "$inc": {"user_unread_count": 1},
+        },
+        upsert=True,
+    )
+    convo = await db.conversations.find_one({"user_id": user_id}, {"_id": 0})
+
+    msg = {
+        "id": str(uuid.uuid4()), "conversation_id": convo["id"], "user_id": user_id,
+        "sender_role": "admin", "sender_id": admin["id"], "sender_name": admin.get("full_name") or "Support Team",
+        "text": text, "is_broadcast": False,
+        "related_document_id": body.related_document_id,
+        "related_scheme_application_id": body.related_scheme_application_id,
+        "related_bank_application_id": body.related_bank_application_id,
+        "created_at": now,
+    }
+    await db.messages.insert_one(msg.copy())
+    msg.pop("_id", None)
+
+    try:
+        send_push_to_user(target_user, "New message from Support", preview)
+    except Exception as e:
+        logging.warning(f"Support chat user push failed: {e}")
+
+    return msg
+
+
+@api_router.post("/admin/support/users/{user_id}/read")
+async def admin_mark_support_read(user_id: str, admin=Depends(require_admin)):
+    await db.conversations.update_one(
+        {"user_id": user_id},
+        {"$set": {"admin_unread_count": 0, "admin_last_read_at": now_iso()}},
+    )
+    return {"ok": True}
+
+
+@api_router.post("/admin/support/broadcast")
+async def admin_broadcast_support_message(body: SupportBroadcastIn, admin=Depends(require_admin)):
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+    if len(text) > 2000:
+        raise HTTPException(status_code=400, detail="Message is too long (max 2000 characters).")
+
+    targets = body.target_user_ids
+    if not targets:
+        users = await db.users.find({"role": "user"}, {"_id": 0, "id": 1}).to_list(10000)
+        targets = [u["id"] for u in users]
+    if not targets:
+        return {"sent": 0}
+
+    now = now_iso()
+    preview = text[:140]
+    docs = []
+    for uid in targets:
+        await db.conversations.update_one(
+            {"user_id": uid},
+            {
+                "$setOnInsert": {
+                    "id": str(uuid.uuid4()), "user_id": uid, "created_at": now,
+                    "user_last_read_at": None, "admin_last_read_at": None, "admin_unread_count": 0,
+                },
+                "$set": {
+                    "last_message_text": preview, "last_message_at": now,
+                    "last_message_sender_role": "admin", "updated_at": now,
+                },
+                "$inc": {"user_unread_count": 1},
+            },
+            upsert=True,
+        )
+        convo = await db.conversations.find_one({"user_id": uid}, {"_id": 0, "id": 1})
+        docs.append({
+            "id": str(uuid.uuid4()), "conversation_id": convo["id"], "user_id": uid,
+            "sender_role": "admin", "sender_id": admin["id"], "sender_name": admin.get("full_name") or "Support Team",
+            "text": text, "is_broadcast": True,
+            "related_document_id": None, "related_scheme_application_id": None, "related_bank_application_id": None,
+            "created_at": now,
+        })
+    if docs:
+        await db.messages.insert_many([d.copy() for d in docs])
+
+    try:
+        recipients = await db.users.find({"id": {"$in": targets}}, {"_id": 0, "push_token": 1}).to_list(len(targets))
+        tokens = [r["push_token"] for r in recipients if r.get("push_token")]
+        for i in range(0, len(tokens), 100):
+            send_push(tokens[i:i + 100], "New message from Support", preview)
+    except Exception as e:
+        logging.warning(f"Support chat broadcast push failed: {e}")
+
+    return {"sent": len(docs)}
+
+
 @api_router.get("/admin/analytics")
 async def admin_analytics(admin=Depends(require_admin)):
     return {
@@ -1578,6 +1879,13 @@ async def _ensure_indexes():
 
         # ai_conversations — chat history lookup
         await db.ai_conversations.create_index("user_id", unique=True, background=True)
+
+        # conversations — one support thread per user; inbox sorts unread-first then recency
+        await db.conversations.create_index("user_id", unique=True, background=True)
+        await db.conversations.create_index([("admin_unread_count", -1), ("last_message_at", -1)], background=True)
+
+        # messages — paginated by conversation, newest-first (and reverse for polling)
+        await db.messages.create_index([("conversation_id", 1), ("created_at", -1)], background=True)
 
         # audit_logs — queried by user_id, action, timestamp
         await db.audit_logs.create_index("user_id", background=True)

@@ -17,14 +17,18 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   Bell, ChevronRight, Phone, Building2, TrendingUp, AlertCircle, Calendar, Landmark,
-  Users, Target, BarChart2, FolderOpen as FolderIcon, Settings, Shield,
-  Banknote, Video, Copy, X,
+  Users, Target, BarChart2, FolderOpen as FolderIcon, Settings, Shield, MessageCircle,
+  Banknote, Video, Copy, X, Hourglass, Headset,
 } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, formatINR, elevation, tints, gradients } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { DashboardSkeleton, SkeletonBox } from "@/src/components/SkeletonLoader";
 import ReadinessRing from "@/src/components/ReadinessRing";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import InitialsAvatar from "@/src/components/InitialsAvatar";
+import { schemeStyle } from "@/src/utils/schemeType";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 type Match = { scheme_id: string; name: string; score: number; funding_estimate: number; subsidy_estimate: number; reason: string };
 type DashData = { matches: Match[]; funding_estimate: number; subsidy_estimate: number; readiness_score: number };
@@ -60,6 +64,15 @@ const STAT_DEFS = [
   { id: "banks",         label: "Banks",          Icon: Banknote,   color: tints.blue.bg,     iconColor: tints.blue.fg,     route: "/admin/banks",         key: "total_banks" },
   { id: "documents",     label: "Documents",      Icon: FolderIcon, color: tints.teal.bg,     iconColor: tints.teal.fg,     route: "/(tabs)/documents",    key: "total_documents" },
   { id: "team",          label: "Team Members",   Icon: Shield,     color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg, route: "/admin/team",          key: "total_admins" },
+] as const;
+
+// Decorative marketing tiles for the bottom of the user home screen — no
+// data binding, purely reassurance copy per the Figma reference.
+const MARKETING_TILES = [
+  { id: "secure",  slug: "shield",         title: "100% Secure",         desc: "Bank-level security to protect your data", tint: tints.teal,     Fallback: Shield },
+  { id: "quick",   slug: "hourglass",      title: "Quick Process",       desc: "Fast-track approvals and disbursals",       tint: tints.deepTeal, Fallback: Hourglass },
+  { id: "support", slug: "online-support", title: "Expert Support",     desc: "Get guidance from our loan experts",         tint: tints.amber,    Fallback: Headset },
+  { id: "grow",    slug: "target",         title: "Grow Your Business", desc: "Better funding for bigger dreams",           tint: tints.blue,     Fallback: Target },
 ] as const;
 
 const ALL_MODULES = [
@@ -126,8 +139,19 @@ export default function Dashboard() {
   const [statCounts, setStatCounts] = useState({ applications: 0, documents: 0, consultations: 0, schemes: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [supportUnread, setSupportUnread] = useState(0);
   const hasLoadedOnce = useRef(false);
   const insets = useSafeAreaInsets();
+  const tabBarSpacing = useTabBarSpacing();
+
+  useFocusEffect(useCallback(() => {
+    if (!user) return;
+    const isAdminRole = user.role && user.role !== "user";
+    const path = isAdminRole ? "/admin/support/unread-count" : "/support/unread-count";
+    apiGet<{ unread_count: number }>(path)
+      .then((r) => setSupportUnread(r.unread_count || 0))
+      .catch(() => {});
+  }, [user?.role]));
 
   const load = useCallback(async () => {
     try {
@@ -222,7 +246,7 @@ export default function Dashboard() {
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="admin-home-tab">
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: spacing.lg, flexGrow: 1 }}
+          contentContainerStyle={{ paddingBottom: tabBarSpacing, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -246,13 +270,23 @@ export default function Dashboard() {
                 <Text style={styles.logoTagline}>Funding Clear Hai!</Text>
               </View>
             </View>
-            <TouchableOpacity
-              testID="bell-btn"
-              onPress={() => router.push("/notifications")}
-              style={styles.headerBtn}
-            >
-              <Bell size={18} color={colors.text} strokeWidth={2} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TouchableOpacity
+                testID="support-btn"
+                onPress={() => router.push("/admin/support" as any)}
+                style={styles.headerBtn}
+              >
+                <MessageCircle size={18} color={colors.text} strokeWidth={2} />
+                {supportUnread > 0 && <View style={styles.badgeDot} />}
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID="bell-btn"
+                onPress={() => router.push("/notifications")}
+                style={styles.headerBtn}
+              >
+                <Bell size={18} color={colors.text} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={{ paddingHorizontal: spacing.md }}>
@@ -339,7 +373,7 @@ export default function Dashboard() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="dashboard-screen">
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: spacing.lg, flexGrow: 1 }}
+        contentContainerStyle={{ paddingBottom: tabBarSpacing, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -363,14 +397,31 @@ export default function Dashboard() {
               <Text style={styles.logoTagline}>Funding Clear Hai!</Text>
             </View>
           </View>
-          <TouchableOpacity
-            testID="bell-btn"
-            onPress={() => router.push("/notifications")}
-            style={styles.headerBtn}
-          >
-            <Bell size={18} color={colors.text} strokeWidth={2} />
-            {alerts.length > 0 && <View style={styles.badgeDot} />}
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              testID="support-btn"
+              onPress={() => router.push("/support" as any)}
+              style={styles.headerBtn}
+            >
+              <MessageCircle size={18} color={colors.text} strokeWidth={2} />
+              {supportUnread > 0 && <View style={styles.badgeDot} />}
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="bell-btn"
+              onPress={() => router.push("/notifications")}
+              style={styles.headerBtn}
+            >
+              <Bell size={18} color={colors.text} strokeWidth={2} />
+              {alerts.length > 0 && <View style={styles.badgeDot} />}
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="home-avatar-btn"
+              onPress={() => router.push("/(tabs)/profile" as any)}
+              activeOpacity={0.8}
+            >
+              <InitialsAvatar name={user?.full_name || "User"} size={32} variant={isAdmin ? "staff" : "user"} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={{ paddingHorizontal: spacing.md }}>
@@ -389,11 +440,16 @@ export default function Dashboard() {
             style={styles.heroCard}
             testID="home-hero"
           >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.heroLabel}>Your Progress</Text>
-              <Text style={styles.heroGreeting}>Profile Strength</Text>
+            <View style={styles.heroTopRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.heroLabel}>Your Progress</Text>
+                <Text style={styles.heroGreeting}>Profile Strength</Text>
+              </View>
+              <ReadinessRing score={score} size={72} />
             </View>
-            <ReadinessRing score={score} size={72} />
+            <Text style={styles.heroEncourage}>
+              {score >= 90 ? "You're almost fully set up!" : "Complete your profile to unlock more opportunities."}
+            </Text>
           </LinearGradient>
 
           {/* ── Book a Free Consultation ── */}
@@ -408,7 +464,7 @@ export default function Dashboard() {
               <Text style={styles.bookSub}>Talk to our experts and get personalised guidance.</Text>
             </View>
             <View style={styles.bookIcon}>
-              <Phone size={18} color={colors.primary} strokeWidth={2} />
+              <Phone size={18} color={tints.teal.fg} strokeWidth={2} />
             </View>
           </TouchableOpacity>
 
@@ -421,12 +477,19 @@ export default function Dashboard() {
               activeOpacity={0.85}
             >
               <View style={styles.bankBadge}>
-                <Building2 size={16} color={colors.primaryDark} strokeWidth={2} />
+                <RemoteIcon slug="bank" size={20} fallback={Building2} fallbackColor={tints.blue.fg} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.sectionLabel}>Top Bank Match</Text>
                 <Text style={styles.bankName}>{bankRec.name}</Text>
-                <Text style={styles.bankMeta}>{bankRec.interest_range} interest  •  {bankRec.score}% match</Text>
+                <View style={styles.metaPillRow}>
+                  <View style={[styles.metaPill, { backgroundColor: tints.teal.bg }]}>
+                    <Text style={[styles.metaPillText, { color: tints.teal.fg }]}>{bankRec.interest_range} interest</Text>
+                  </View>
+                  <View style={[styles.metaPill, { backgroundColor: tints.amber.bg }]}>
+                    <Text style={[styles.metaPillText, { color: tints.amber.fg }]}>{bankRec.score}% match</Text>
+                  </View>
+                </View>
                 <Text style={styles.bankWhy} numberOfLines={2}>{bankRec.why}</Text>
               </View>
               <ChevronRight size={18} color={colors.textDim} strokeWidth={2} />
@@ -441,15 +504,25 @@ export default function Dashboard() {
               onPress={() => router.push("/(tabs)/schemes")}
               activeOpacity={0.85}
             >
-              <View style={styles.bankBadge}>
-                <Landmark size={16} color={colors.primaryDark} strokeWidth={2} />
+              <View style={[styles.schemeBadge, { backgroundColor: schemeStyle(data.matches[0].name).bg }]}>
+                <RemoteIcon
+                  slug={schemeStyle(data.matches[0].name).slug}
+                  size={20}
+                  fallback={Landmark}
+                  fallbackColor={schemeStyle(data.matches[0].name).fg}
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.sectionLabel}>Top Scheme Match</Text>
                 <Text style={styles.bankName}>{data.matches[0].name}</Text>
-                <Text style={styles.bankMeta}>
-                  {formatINR(data.matches[0].funding_estimate)} funding  •  {data.matches[0].score}% match
-                </Text>
+                <View style={styles.metaPillRow}>
+                  <View style={[styles.metaPill, { backgroundColor: tints.teal.bg }]}>
+                    <Text style={[styles.metaPillText, { color: tints.teal.fg }]}>{formatINR(data.matches[0].funding_estimate)} funding</Text>
+                  </View>
+                  <View style={[styles.metaPill, { backgroundColor: tints.amber.bg }]}>
+                    <Text style={[styles.metaPillText, { color: tints.amber.fg }]}>{data.matches[0].score}% match</Text>
+                  </View>
+                </View>
                 <Text style={styles.bankWhy} numberOfLines={2}>{data.matches[0].reason}</Text>
               </View>
               <ChevronRight size={18} color={colors.textDim} strokeWidth={2} />
@@ -464,7 +537,7 @@ export default function Dashboard() {
             activeOpacity={0.85}
           >
             <View style={styles.waIcon}>
-              <MaterialCommunityIcons name="whatsapp" size={20} color="#FFF" />
+              <MaterialCommunityIcons name="whatsapp" size={20} color="#25D366" />
             </View>
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.waTitle}>WhatsApp Support</Text>
@@ -494,8 +567,31 @@ export default function Dashboard() {
                   </View>
                 )}
               </View>
+              <TouchableOpacity
+                testID="upcoming-view-details-btn"
+                style={styles.viewDetailsPill}
+                onPress={() => setMeetModal(true)}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.viewDetailsPillText}>View Details</Text>
+                <ChevronRight size={12} color={colors.primaryDark} strokeWidth={2.5} />
+              </TouchableOpacity>
             </TouchableOpacity>
           )}
+
+          {/* ── Why Saral Funding (marketing tiles) ── */}
+          <Text style={[styles.sectionLabel, { marginTop: 4 }]}>Why Saral Funding</Text>
+          <View style={styles.marketingGrid}>
+            {MARKETING_TILES.map((t) => (
+              <View key={t.id} style={styles.marketingTile} testID={`marketing-tile-${t.id}`}>
+                <View style={[styles.marketingIconWrap, { backgroundColor: t.tint.bg }]}>
+                  <RemoteIcon slug={t.slug} size={22} fallback={t.Fallback} fallbackColor={t.tint.fg} />
+                </View>
+                <Text style={styles.marketingTitle}>{t.title}</Text>
+                <Text style={styles.marketingDesc}>{t.desc}</Text>
+              </View>
+            ))}
+          </View>
 
           {/* Meet link modal */}
           <Modal visible={meetModal} transparent animationType="slide" onRequestClose={() => setMeetModal(false)}>
@@ -738,9 +834,6 @@ const styles = StyleSheet.create({
   },
 
   heroCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
     marginBottom: spacing.sm2,
     borderRadius: radius.xxl,
     padding: spacing.md,
@@ -749,6 +842,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 6,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  heroEncourage: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 14,
+    lineHeight: 17,
   },
   heroGreeting: {
     fontSize: 18,
@@ -807,10 +912,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   bookIcon: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.lg,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: tints.teal.bg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -907,10 +1012,18 @@ const styles = StyleSheet.create({
     borderColor: colors.primarySoft,
   },
   bankBadge: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.lg,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: tints.blue.bg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  schemeBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    backgroundColor: tints.amber.bg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -934,6 +1047,22 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
 
+  metaPillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 4,
+  },
+  metaPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  metaPillText: {
+    fontSize: 11,
+    fontFamily: fonts.semiBold,
+  },
+
   waBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -952,7 +1081,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -992,6 +1121,59 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     color: colors.primaryDark,
     textTransform: "capitalize",
+  },
+  viewDetailsPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 10,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+  },
+  viewDetailsPillText: {
+    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    color: colors.primaryDark,
+  },
+
+  marketingGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: spacing.sm2,
+    marginBottom: spacing.sm2,
+  },
+  marketingTile: {
+    flexBasis: "47%",
+    flexGrow: 1,
+    backgroundColor: "#FFF",
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.sm2,
+    ...elevation.l1,
+  },
+  marketingIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  marketingTitle: {
+    fontSize: 13,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+  },
+  marketingDesc: {
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    marginTop: 3,
+    lineHeight: 15,
   },
 
   schemeCard: {

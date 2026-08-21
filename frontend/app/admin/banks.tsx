@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator,
-  Modal, ScrollView, TextInput, Alert,
+  Modal, ScrollView, TextInput, Alert, type TextInputProps,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -12,6 +12,8 @@ import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import EmptyState from "@/src/components/EmptyState";
 import Button from "@/src/components/ui/Button";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { bankTypeStyle } from "@/src/utils/bankType";
 
 const BANK_TYPES = ["Public", "Private", "Development", "Small Finance Bank", "NBFC", "Fintech NBFC"];
 
@@ -101,21 +103,23 @@ export default function AdminBanks() {
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : items.length === 0 ? (
-        <EmptyState Icon={Banknote} title="No banks found" subtitle="Banks will appear here after seeding." />
+        <EmptyState Icon={Banknote} iconSlug="bank" title="No banks found" subtitle="Banks will appear here after seeding." />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(x) => x.id}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const accent = bankTypeStyle(item.type);
+            return (
             <TouchableOpacity
               style={styles.card}
               onPress={() => router.push(`/admin/bank/${item.id}` as any)}
               activeOpacity={0.8}
             >
-              <View style={styles.iconWrap}>
-                <Building2 size={18} color={tints.blue.fg} strokeWidth={2} />
+              <View style={[styles.iconWrap, { backgroundColor: accent.bg }]}>
+                <RemoteIcon slug={accent.slug} size={22} fallback={Building2} fallbackColor={accent.fg} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.bankName}>{item.name}</Text>
@@ -128,7 +132,8 @@ export default function AdminBanks() {
               </View>
               <ChevronRight size={16} color={colors.textDim} strokeWidth={2} />
             </TouchableOpacity>
-          )}
+            );
+          }}
         />
       )}
 
@@ -201,7 +206,7 @@ export default function AdminBanks() {
   );
 }
 
-function Field({ label, ...props }: { label: string; [key: string]: any }) {
+function Field({ label, ...props }: { label: string } & TextInputProps) {
   return (
     <View>
       <Text style={styles.fieldLabel}>{label}</Text>

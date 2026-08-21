@@ -29,6 +29,8 @@ import {
 import { colors, spacing, radius, fonts, tints, formatMobile } from "@/src/theme";
 import { apiGet, apiPost, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { docTypeStyle } from "@/src/utils/docType";
 
 const FILTERS = ["all", "pending", "verified", "rejected"] as const;
 type Filter = typeof FILTERS[number];
@@ -155,13 +157,14 @@ export default function AdminDocuments() {
   const renderDoc = ({ item }: { item: any }) => {
     const isPending = item.status === "pending";
     const isActioning = actioning === item.id;
+    const accent = docTypeStyle(item.doc_type);
 
     return (
       <View style={s.card}>
         {/* Top row: type + status */}
         <View style={s.cardHeader}>
-          <View style={s.docIconWrap}>
-            <FileText size={16} color={colors.primaryDark} strokeWidth={2} />
+          <View style={[s.docIconWrap, { backgroundColor: accent.bg }]}>
+            <RemoteIcon slug={accent.slug} size={20} fallback={FileText} fallbackColor={accent.fg} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.docType}>{item.doc_type}</Text>
@@ -275,7 +278,7 @@ export default function AdminDocuments() {
         </View>
       ) : docs.length === 0 ? (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 8 }}>
-          <FileText size={36} color={colors.textDim} strokeWidth={1.5} />
+          <RemoteIcon slug="file" size={48} fallback={FileText} fallbackColor={colors.textDim} />
           <Text style={{ fontSize: 15, fontFamily: fonts.displayBold, color: colors.text }}>No documents</Text>
           <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted }}>
             {filter !== "all" ? `No ${filter} documents` : "No documents uploaded yet"}
