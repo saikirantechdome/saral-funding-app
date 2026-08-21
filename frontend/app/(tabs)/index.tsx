@@ -142,7 +142,11 @@ export default function Dashboard() {
   const [supportUnread, setSupportUnread] = useState(0);
   const hasLoadedOnce = useRef(false);
   const insets = useSafeAreaInsets();
-  const tabBarSpacing = useTabBarSpacing();
+  // Smaller than the default clearance — this screen's content is a fixed,
+  // bounded set of sections (not an open-ended list), so the far-tighter
+  // margin doesn't risk the last row hiding behind the tab bar the way an
+  // unbounded list could.
+  const tabBarSpacing = useTabBarSpacing(-36);
 
   useFocusEffect(useCallback(() => {
     if (!user) return;
@@ -245,8 +249,8 @@ export default function Dashboard() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="admin-home-tab">
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: tabBarSpacing, flexGrow: 1 }}
+          style={{ flex: 1, marginBottom: tabBarSpacing }}
+          contentContainerStyle={{ paddingBottom: 4 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -372,8 +376,8 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="dashboard-screen">
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: tabBarSpacing, flexGrow: 1 }}
+        style={{ flex: 1, marginBottom: tabBarSpacing }}
+        contentContainerStyle={{ paddingBottom: 4 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -447,9 +451,6 @@ export default function Dashboard() {
               </View>
               <ReadinessRing score={score} size={72} />
             </View>
-            <Text style={styles.heroEncourage}>
-              {score >= 90 ? "You're almost fully set up!" : "Complete your profile to unlock more opportunities."}
-            </Text>
           </LinearGradient>
 
           {/* ── Book a Free Consultation ── */}
@@ -537,7 +538,7 @@ export default function Dashboard() {
             activeOpacity={0.85}
           >
             <View style={styles.waIcon}>
-              <MaterialCommunityIcons name="whatsapp" size={20} color="#25D366" />
+              <RemoteIcon slug="whatsapp" size={24} fallback={MessageCircle} fallbackColor="#25D366" />
             </View>
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.waTitle}>WhatsApp Support</Text>
@@ -848,13 +849,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 14,
   },
-  heroEncourage: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: "rgba(255,255,255,0.85)",
-    marginTop: 14,
-    lineHeight: 17,
-  },
   heroGreeting: {
     fontSize: 18,
     fontFamily: fonts.displayBold,
@@ -1080,8 +1074,6 @@ const styles = StyleSheet.create({
   waIcon: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },

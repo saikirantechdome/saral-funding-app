@@ -68,7 +68,10 @@ type SchemeApp = {
 
 export default function MyApplications() {
   const router = useRouter();
-  const tabBarSpacing = useTabBarSpacing();
+  // Smaller than the default clearance — this list is bounded (a handful of
+  // schemes per user, not an open-ended feed), so the tighter margin doesn't
+  // risk the last card hiding behind the tab bar the way an unbounded list could.
+  const tabBarSpacing = useTabBarSpacing(-36);
   const [apps, setApps] = useState<SchemeApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -131,8 +134,8 @@ export default function MyApplications() {
       )}
       <ScrollView
         ref={scrollRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={[s.content, { paddingBottom: tabBarSpacing }]}
+        style={{ flex: 1, marginBottom: tabBarSpacing }}
+        contentContainerStyle={s.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
