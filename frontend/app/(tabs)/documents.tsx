@@ -35,6 +35,7 @@ import {
   User as UserIcon,
   XCircle,
   ShieldCheck,
+  Eye,
 } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, tints, elevation, formatMobile } from "@/src/theme";
@@ -245,10 +246,16 @@ function UserDocumentsTab() {
       >
         {/* Hero: reassurance graphic + copy */}
         <View style={s.heroWrap}>
+          <View style={s.heroLeafTL}>
+            <RemoteIcon slug="leaf" size={26} fallback={FolderOpen} fallbackColor={tints.teal.fg} />
+          </View>
+          <View style={s.heroLeafBR}>
+            <RemoteIcon slug="potted-plant" size={30} fallback={FolderOpen} fallbackColor={tints.teal.fg} />
+          </View>
           <View style={s.heroIconCircle}>
-            <RemoteIcon slug="opened-folder" size={72} fallback={FolderOpen} fallbackColor={tints.teal.fg} />
+            <RemoteIcon slug="opened-folder" size={88} fallback={FolderOpen} fallbackColor={tints.teal.fg} />
             <View style={s.heroBadge}>
-              <RemoteIcon slug="lock" size={20} fallback={ShieldCheck} fallbackColor="#FFFFFF" />
+              <RemoteIcon slug="security-checked" size={26} fallback={ShieldCheck} fallbackColor="#FFFFFF" />
             </View>
           </View>
           <Text style={s.heroTitle}>Your documents are safe and secure</Text>
@@ -423,11 +430,24 @@ const s = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
+    position: "relative",
+  },
+  heroLeafTL: {
+    position: "absolute",
+    top: 6,
+    left: spacing.md,
+    opacity: 0.35,
+  },
+  heroLeafBR: {
+    position: "absolute",
+    top: 40,
+    right: spacing.md,
+    opacity: 0.35,
   },
   heroIconCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     backgroundColor: tints.teal.bg,
     alignItems: "center",
     justifyContent: "center",
@@ -436,16 +456,16 @@ const s = StyleSheet.create({
   },
   heroBadge: {
     position: "absolute",
-    bottom: 4,
-    right: 4,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    bottom: 6,
+    right: 6,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: colors.primaryDark,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: tints.teal.bg,
+    borderColor: "#FFFFFF",
   },
   heroTitle: {
     fontSize: 16,
@@ -852,30 +872,30 @@ function AdminUserDocuments() {
       </View>
 
       <View style={adS.filterRow}>
-        {(["all", "pending", "rejected", "verified"] as const).map((f) => {
-          const active = docFilter === f;
-          const cfg = f === "all" ? { bg: colors.primarySoft, color: colors.primaryDark } : STATUS_CFG[f];
-          return (
-            <TouchableOpacity
-              key={f}
-              testID={`doc-filter-${f}`}
-              style={[
-                adS.filterChip,
-                { backgroundColor: active ? (f === "all" ? colors.primary : cfg.bg) : "#FFF" },
-                active && f !== "all" && { borderWidth: 1.5, borderColor: cfg.color },
-              ]}
-              onPress={() => setDocFilter(f)}
-            >
-              <Text style={[
-                adS.filterChipText,
-                { color: active ? (f === "all" ? "#FFF" : cfg.color) : colors.textMuted },
-                active && { fontFamily: fonts.bold },
-              ]}>
-                {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)} ({filterCounts[f]})
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+          {(["all", "pending", "rejected", "verified"] as const).map((f) => {
+            const active = docFilter === f;
+            const cfg = f === "all" ? { bg: colors.primarySoft, color: colors.primaryDark } : STATUS_CFG[f];
+            return (
+              <TouchableOpacity
+                key={f}
+                testID={`doc-filter-${f}`}
+                style={[
+                  adS.filterChip,
+                  { backgroundColor: active ? (f === "all" ? colors.primary : cfg.bg) : "#FFF" },
+                  active && f !== "all" && { borderWidth: 1.5, borderColor: cfg.color },
+                ]}
+                onPress={() => setDocFilter(f)}
+              >
+                <Text style={[
+                  adS.filterChipText,
+                  { color: active ? (f === "all" ? "#FFF" : cfg.color) : colors.textMuted },
+                  active && { fontFamily: fonts.bold },
+                ]}>
+                  {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)} ({filterCounts[f]})
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
       </View>
 
       <FlatList
@@ -905,8 +925,13 @@ function AdminUserDocuments() {
                   <Text style={adS.docType}>{doc.doc_type}</Text>
                   {doc.file_name && <Text style={adS.docFile} numberOfLines={1}>{doc.file_name}</Text>}
                 </View>
-                <View style={[adS.statusPill, { backgroundColor: cfg.bg }]}>
-                  <Text style={[adS.statusText, { color: cfg.color }]}>{doc.status}</Text>
+                <View style={adS.docHeaderRight}>
+                  <View style={[adS.statusPill, { backgroundColor: cfg.bg }]}>
+                    <Text style={[adS.statusText, { color: cfg.color }]}>{doc.status}</Text>
+                  </View>
+                  <TouchableOpacity style={adS.viewIconBtn} onPress={() => handleView(doc.id)} activeOpacity={0.8}>
+                    <Eye size={14} color={colors.primaryDark} strokeWidth={2.5} />
+                  </TouchableOpacity>
                 </View>
               </View>
               <Text style={adS.docDate}>
@@ -916,49 +941,46 @@ function AdminUserDocuments() {
               </Text>
               {doc.status === "rejected" && doc.reject_reason && (
                 <View style={adS.reasonBox}>
-                  <AlertCircle size={11} color={colors.danger} strokeWidth={2} />
-                  <Text style={adS.reasonText}>{toSentenceCase(doc.reject_reason)}</Text>
+                  <AlertCircle size={11} color={colors.textMuted} strokeWidth={2} />
+                  <Text style={adS.reasonText}>
+                    <Text style={adS.reasonLabel}>Reason: </Text>
+                    {toSentenceCase(doc.reject_reason)}
+                  </Text>
                 </View>
               )}
-              <View style={adS.docFooterRow}>
-                <TouchableOpacity style={adS.viewBtn} onPress={() => handleView(doc.id)} activeOpacity={0.8}>
-                  <ExternalLink size={13} color={colors.primaryDark} strokeWidth={2.5} />
-                  <Text style={adS.viewBtnText}>View</Text>
-                </TouchableOpacity>
-                {doc.status === "pending" && (
-                  <>
-                    <TouchableOpacity
-                      style={adS.verifyBtn}
-                      onPress={() =>
-                        Alert.alert("Verify Document", `Mark "${doc.doc_type}" as verified?`, [
-                          { text: "Cancel", style: "cancel" },
-                          { text: "Verify", onPress: () => handleVerify(doc.id) },
-                        ])
-                      }
-                      disabled={actionLoading === doc.id}
-                      activeOpacity={0.8}
-                    >
-                      {actionLoading === doc.id ? (
-                        <ActivityIndicator color="#FFF" size="small" />
-                      ) : (
-                        <>
-                          <CheckCircle2 size={13} color="#FFF" strokeWidth={2.5} />
-                          <Text style={adS.verifyBtnText}>Verify</Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={adS.rejectBtn}
-                      onPress={() => setRejectModal({ visible: true, docId: doc.id, reason: "" })}
-                      disabled={actionLoading === doc.id}
-                      activeOpacity={0.8}
-                    >
-                      <X size={13} color={colors.danger} strokeWidth={2.5} />
-                      <Text style={adS.rejectBtnText}>Reject</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
+              {doc.status === "pending" && (
+                <View style={adS.docFooterRow}>
+                  <TouchableOpacity
+                    style={adS.verifyBtn}
+                    onPress={() =>
+                      Alert.alert("Verify Document", `Mark "${doc.doc_type}" as verified?`, [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Verify", onPress: () => handleVerify(doc.id) },
+                      ])
+                    }
+                    disabled={actionLoading === doc.id}
+                    activeOpacity={0.8}
+                  >
+                    {actionLoading === doc.id ? (
+                      <ActivityIndicator color="#FFF" size="small" />
+                    ) : (
+                      <>
+                        <CheckCircle2 size={13} color="#FFF" strokeWidth={2.5} />
+                        <Text style={adS.verifyBtnText}>Verify</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={adS.rejectBtn}
+                    onPress={() => setRejectModal({ visible: true, docId: doc.id, reason: "" })}
+                    disabled={actionLoading === doc.id}
+                    activeOpacity={0.8}
+                  >
+                    <X size={13} color="#FFF" strokeWidth={2.5} />
+                    <Text style={adS.rejectBtnText}>Reject</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           );
         }}
@@ -1011,8 +1033,7 @@ const adS = StyleSheet.create({
   headerSub: { fontSize: 11, fontFamily: fonts.regular, color: colors.textMuted, marginTop: 1 },
   filterRow: {
     flexDirection: "row", flexWrap: "wrap", gap: 6,
-    paddingHorizontal: spacing.md, paddingVertical: 10,
-    backgroundColor: "#FFF", borderBottomWidth: 1, borderBottomColor: colors.border,
+    paddingHorizontal: spacing.md, paddingTop: spacing.sm2, paddingBottom: 10,
   },
   filterChip: {
     paddingHorizontal: 10, height: 28, borderRadius: radius.pill,
@@ -1058,25 +1079,24 @@ const adS = StyleSheet.create({
   },
   docType: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
   docFile: { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginTop: 1 },
+  docHeaderRight: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 0 },
   statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.pill, flexShrink: 0 },
   statusText: { fontSize: 11, fontFamily: fonts.bold, textTransform: "capitalize" },
+  viewIconBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
   docDate: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted },
   reasonBox: {
     flexDirection: "row", alignItems: "flex-start", gap: 6,
-    backgroundColor: colors.dangerSoft, borderRadius: radius.lg, padding: 10,
-    borderWidth: 1, borderColor: colors.danger,
+    backgroundColor: colors.surfaceAlt, borderRadius: radius.md,
+    paddingVertical: 6, paddingHorizontal: 10,
   },
-  reasonText: { fontSize: 12, fontFamily: fonts.medium, color: colors.danger, flex: 1, lineHeight: 17 },
+  reasonText: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, flex: 1, lineHeight: 17 },
+  reasonLabel: { fontFamily: fonts.semiBold, color: colors.text },
   docFooterRow: {
     flexDirection: "row", gap: 8, flexWrap: "wrap",
   },
-  viewBtn: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: radius.lg, borderWidth: 1,
-    borderColor: colors.border, backgroundColor: colors.surface2,
-  },
-  viewBtnText: { fontSize: 12, fontFamily: fonts.semiBold, color: colors.primaryDark },
   verifyBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
     paddingVertical: 9, borderRadius: radius.lg,
@@ -1086,9 +1106,9 @@ const adS = StyleSheet.create({
   rejectBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
     paddingVertical: 9, borderRadius: radius.lg,
-    borderWidth: 1.5, borderColor: colors.danger, backgroundColor: colors.dangerSoft,
+    backgroundColor: colors.danger,
   },
-  rejectBtnText: { fontSize: 12, fontFamily: fonts.displayBold, color: colors.danger },
+  rejectBtnText: { fontSize: 12, fontFamily: fonts.displayBold, color: "#FFF" },
   modalOverlay: {
     flex: 1, backgroundColor: colors.overlay,
     alignItems: "center", justifyContent: "center", padding: 24,

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search, Download, User, MapPin, Shield, CheckCircle2, Clock } from "lucide-react-native";
+import { ChevronLeft, Search, Download, User, MapPin, Shield, CheckCircle2, Clock } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, formatMobile } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatMobile } from "@/src/theme";
 import { apiGet, getToken, API_BASE } from "@/src/api";
-import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import EmptyState from "@/src/components/EmptyState";
 
@@ -67,6 +66,7 @@ export default function AdminUsers() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   const load = useCallback(async (query: string) => {
     setLoading(true);
@@ -115,15 +115,71 @@ export default function AdminUsers() {
     }
   };
 
+  // Stat boxes: "Total" is the real server-reported total. There is no
+  // active/inactive flag on the user record, so "Active"/"Inactive" are
+  // derived client-side from the already-loaded page, using the real
+  // onboarding_step field every user already has (done = active).
+  const activeCount = useMemo(
+    () => items.filter((it) => it.onboarding_step === "done").length,
+    [items]
+  );
+  const inactiveCount = items.length - activeCount;
+
+  const countText = loading
+    ? "Loading…"
+    : `${total} User${total !== 1 ? "s" : ""}${q ? ` matching "${q}"` : ""}`;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-users">
-      <BackBar title="Users" onBack={() => router.back()} />
+      {/* Header: back chevron, title + live subtitle, search + role-filter icons */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          testID="back-btn"
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <ChevronLeft size={22} color={colors.text} strokeWidth={2} />
+        </TouchableOpacity>
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.headerTitle} numberOfLines={1}>Users</Text>
+          <Text style={styles.headerSubtitle} numberOfLines={1}>{countText}</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={() => searchInputRef.current?.focus()}
+            activeOpacity={0.75}
+          >
+            <Search size={16} color={colors.textMuted} strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Stat boxes */}
+      {!loading && (
+        <View style={styles.statsRow}>
+          <View style={[styles.statBox, styles.statBoxTotal]}>
+            <Text style={styles.statValue}>{total}</Text>
+            <Text style={styles.statLabel}>Total Users</Text>
+          </View>
+          <View style={[styles.statBox, styles.statBoxActive]}>
+            <Text style={[styles.statValue, styles.statValueActive]}>{activeCount}</Text>
+            <Text style={[styles.statLabel, styles.statLabelActive]}>Active Users</Text>
+          </View>
+          <View style={[styles.statBox, styles.statBoxInactive]}>
+            <Text style={[styles.statValue, styles.statValueInactive]}>{inactiveCount}</Text>
+            <Text style={[styles.statLabel, styles.statLabelInactive]}>Inactive Users</Text>
+          </View>
+        </View>
+      )}
 
       {/* Search bar */}
       <View style={styles.searchSection}>
         <View style={styles.searchBox}>
           <Search size={15} color={colors.textDim} strokeWidth={2} />
           <TextInput
+            ref={searchInputRef}
             testID="admin-users-search"
             placeholder="Search by name or mobile…"
             placeholderTextColor={colors.textPlaceholder}
@@ -144,12 +200,6 @@ export default function AdminUsers() {
         </TouchableOpacity>
         */}
       </View>
-
-      {!loading && (
-        <Text style={styles.countLabel}>
-          {total} user{total !== 1 ? "s" : ""}{q ? ` matching "${q}"` : ""}
-        </Text>
-      )}
 
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
@@ -190,9 +240,11 @@ export default function AdminUsers() {
                     </View>
                   )}
                 </View>
-                <View style={{ marginTop: 6 }}>
-                  <StepPill step={item.onboarding_step} />
-                </View>
+              </View>
+              {/* Right-aligned status pill — driven by the real onboarding_step
+                  field (no active/inactive flag exists on the user record). */}
+              <View style={styles.statusSlot}>
+                <StepPill step={item.onboarding_step} />
               </View>
             </TouchableOpacity>
           )}
@@ -203,6 +255,96 @@ export default function AdminUsers() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: "#FFF",
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitleWrap: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm2,
+  },
+  statBox: {
+    flex: 1,
+    borderRadius: radius.xl,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  statBoxTotal: {
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...elevation.l1,
+  },
+  statBoxActive: {
+    backgroundColor: tints.green.bg,
+  },
+  statBoxInactive: {
+    backgroundColor: tints.red.bg,
+  },
+  statValue: {
+    fontSize: 22,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+  },
+  statValueActive: {
+    color: tints.green.fg,
+  },
+  statValueInactive: {
+    color: tints.red.fg,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  statLabelActive: {
+    color: tints.green.fg,
+  },
+  statLabelInactive: {
+    color: tints.red.fg,
+  },
   searchSection: {
     flexDirection: "row",
     gap: 8,
@@ -238,15 +380,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  countLabel: {
-    fontSize: 12,
-    fontFamily: fonts.medium,
-    color: colors.textDim,
-    paddingHorizontal: spacing.md,
-    paddingBottom: 6,
-  },
   userCard: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     backgroundColor: "#FFF",
     borderRadius: radius.xl,
@@ -291,5 +427,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fonts.medium,
     color: colors.textDim,
+  },
+  statusSlot: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+    marginLeft: 4,
   },
 });

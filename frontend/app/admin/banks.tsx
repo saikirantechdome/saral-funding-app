@@ -5,15 +5,14 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Banknote, ChevronRight, Building2, Plus, X } from "lucide-react-native";
+import { Banknote, ChevronRight, Plus, X } from "lucide-react-native";
 
 import { colors, tints, spacing, radius, fonts, elevation, formatINR } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import EmptyState from "@/src/components/EmptyState";
 import Button from "@/src/components/ui/Button";
-import RemoteIcon from "@/src/components/RemoteIcon";
-import { bankTypeStyle } from "@/src/utils/bankType";
+import BankBadge from "@/src/components/BankBadge";
 
 const BANK_TYPES = ["Public", "Private", "Development", "Small Finance Bank", "NBFC", "Fintech NBFC"];
 
@@ -111,16 +110,13 @@ export default function AdminBanks() {
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
-            const accent = bankTypeStyle(item.type);
             return (
             <TouchableOpacity
               style={styles.card}
               onPress={() => router.push(`/admin/bank/${item.id}` as any)}
               activeOpacity={0.8}
             >
-              <View style={[styles.iconWrap, { backgroundColor: accent.bg }]}>
-                <RemoteIcon slug={accent.slug} size={22} fallback={Building2} fallbackColor={accent.fg} />
-              </View>
+              <BankBadge name={item.name} shortName={item.short_name} size={44} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.bankName}>{item.name}</Text>
                 <Text style={styles.bankMeta}>
@@ -225,7 +221,6 @@ const styles = StyleSheet.create({
   createBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: tints.blue.bg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
   createBtnText: { fontSize: 12, fontFamily: fonts.bold, color: tints.blue.fg },
   card: { flexDirection: "row", alignItems: "center", gap: spacing.sm2, backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
-  iconWrap: { width: 44, height: 44, borderRadius: radius.xl, backgroundColor: tints.blue.bg, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   bankName: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text, marginBottom: 3 },
   bankMeta: { fontSize: 12, fontFamily: fonts.regular, color: colors.textMuted, marginBottom: 6 },
   typePill: { alignSelf: "flex-start", backgroundColor: tints.blue.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },

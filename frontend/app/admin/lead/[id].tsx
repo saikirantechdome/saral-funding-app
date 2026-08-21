@@ -9,17 +9,20 @@ import {
   User, Phone, MapPin, Building2, DollarSign, StickyNote,
   Calendar, Clock, ArrowRight, CheckCircle2, AlertCircle,
   FileText, ChevronDown, X, Tag, Upload, Star, ExternalLink,
-  Plus, Trash2, ChevronRight, Bell, Send, MessageCircle,
+  Plus, Trash2, ChevronRight, Bell, Send,
+  MoreVertical, Check, Hash, Users, Landmark,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, stageColor, tints, elevation, tagColor, formatMobile } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, stageColor, tints, elevation, tagColor, formatMobile, shortRef } from "@/src/theme";
 import { apiGet, apiPost, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import Button from "@/src/components/ui/Button";
 import RemoteIcon from "@/src/components/RemoteIcon";
+import BankBadge from "@/src/components/BankBadge";
 import { docTypeStyle } from "@/src/utils/docType";
+import { schemeStyle } from "@/src/utils/schemeType";
 
 const RECOMMENDED_BANKS = [
   "State Bank of India",
@@ -76,6 +79,58 @@ const card = StyleSheet.create({
   title: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 },
 });
 
+// Horizontal progress tracker over this lead's own real stage model — a
+// checkmark for every stage already passed, a highlighted current step, and
+// a connecting line, scrollable since the CRM has more raw stages than fit
+// on screen at once. Labels are the real stage values, just title-cased —
+// nothing here is an invented milestone name.
+function StageTracker({ stages, current }: { stages: string[]; current: string }) {
+  const idx = stages.indexOf(current);
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={tracker.row}>
+      {stages.map((s, i) => {
+        const done = idx >= 0 && i < idx;
+        const active = i === idx;
+        const isLast = i === stages.length - 1;
+        return (
+          <View key={s} style={tracker.step}>
+            <View style={tracker.stepRow}>
+              <View style={[tracker.dot, done && tracker.dotDone, active && tracker.dotActive]}>
+                {done ? (
+                  <Check size={12} color="#FFF" strokeWidth={3} />
+                ) : (
+                  <Text style={[tracker.dotText, active && tracker.dotTextActive]}>{i + 1}</Text>
+                )}
+              </View>
+              {!isLast && <View style={[tracker.line, done && tracker.lineDone]} />}
+            </View>
+            <Text style={[tracker.label, active && tracker.labelActive]} numberOfLines={1}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </Text>
+          </View>
+        );
+      })}
+    </ScrollView>
+  );
+}
+const tracker = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "flex-start", paddingVertical: 4 },
+  step: { alignItems: "center", width: 76 },
+  stepRow: { flexDirection: "row", alignItems: "center", width: "100%" },
+  dot: {
+    width: 24, height: 24, borderRadius: 12, backgroundColor: colors.surfaceAlt,
+    borderWidth: 1.5, borderColor: colors.border, alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
+  dotDone: { backgroundColor: colors.primary, borderColor: colors.primary },
+  dotActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary, borderWidth: 2 },
+  dotText: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted },
+  dotTextActive: { color: colors.primaryDark },
+  line: { flex: 1, height: 2, backgroundColor: colors.border, marginHorizontal: 2 },
+  lineDone: { backgroundColor: colors.primary },
+  label: { fontSize: 10, fontFamily: fonts.medium, color: colors.textDim, marginTop: 5, textAlign: "center", textTransform: "capitalize" },
+  labelActive: { fontFamily: fonts.bold, color: colors.primaryDark },
+});
+
 function TimelineEvent({ item }: { item: any }) {
   const actionLabel: Record<string, { label: string; color: string }> = {
     stage_changed: { label: "Stage Changed", color: tints.blue.fg },
@@ -118,6 +173,7 @@ export default function LeadDetail() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [moreMenu, setMoreMenu] = useState(false);
   const [notes, setNotes] = useState("");
   const [followUp, setFollowUp] = useState("");
   const [saving, setSaving] = useState(false);
@@ -340,7 +396,7 @@ export default function LeadDetail() {
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]}>
-        <BackBar title="Lead Detail" onBack={() => router.back()} />
+        <BackBar title="Application Details" onBack={() => router.back()} />
         <ScrollView contentContainerStyle={{ padding: spacing.md, gap: 12 }}>
           {[120, 160, 200, 140].map((h, i) => (
             <SkeletonBox key={i} width="100%" height={h} borderRadius={radius.xxl} />
@@ -359,13 +415,30 @@ export default function LeadDetail() {
   const consultations: any[] = data.consultations || [];
   const schemeMatches: any[] = data.scheme_matches || [];
 
+  const appliedOn = data.created_at
+    ? new Date(data.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+    : null;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="lead-detail">
-      <BackBar title="Lead Detail" onBack={() => router.back()} />
+      <BackBar
+        title="Application Details"
+        onBack={() => router.back()}
+        right={
+          <TouchableOpacity
+            testID="application-more-btn"
+            style={styles.moreBtn}
+            onPress={() => setMoreMenu(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MoreVertical size={18} color={colors.text} strokeWidth={2} />
+          </TouchableOpacity>
+        }
+      />
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
 
-        {/* Header card */}
+        {/* Person row */}
         <View style={card.wrap}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm2 }}>
             <InitialsAvatar name={user.full_name || data.full_name || "Unknown"} size={48} />
@@ -373,47 +446,73 @@ export default function LeadDetail() {
               <Text style={styles.leadName}>{user.full_name || data.full_name || "Unknown"}</Text>
               <Text style={styles.leadMobile}>{formatMobile(user.mobile || data.mobile)}</Text>
             </View>
-            <TouchableOpacity
-              testID="message-user-btn"
-              style={styles.messageBtn}
-              onPress={() => router.push(`/admin/support/${user.id || data.user_id}` as any)}
-              activeOpacity={0.8}
-            >
-              <MessageCircle size={16} color={colors.primaryDark} strokeWidth={2} />
-            </TouchableOpacity>
-            <Button label="Edit" onPress={() => setEditing(true)} variant="tertiary" size="sm" fullWidth={false} />
-          </View>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: spacing.sm2, flexWrap: "wrap" }}>
             <StagePill stage={data.stage} />
-            {data.consultation_type && (
-              <View style={[styles.typeTag, { backgroundColor: tagColor(data.consultation_type).bg }]}>
-                <Tag size={10} color={tagColor(data.consultation_type).text} strokeWidth={2} />
-                <Text style={[styles.typeText, { color: tagColor(data.consultation_type).text }]}>{data.consultation_type}</Text>
-              </View>
-            )}
           </View>
         </View>
 
-        {/* User Profile */}
-        <SectionCard title="User Profile">
-          <InfoRow icon={<MapPin size={13} color={colors.primaryDark} />} label="State" value={user.state || "—"} />
-          <InfoRow icon={<User size={13} color={colors.primaryDark} />} label="Category" value={user.category || "—"} />
-          <InfoRow icon={<Phone size={13} color={colors.primaryDark} />} label="Mobile" value={formatMobile(user.mobile)} />
-          <InfoRow icon={<DollarSign size={13} color={colors.primaryDark} />} label="Funding Required" value={data.funding_required ? formatINR(data.funding_required) : "—"} />
+        {/* Headline: loan/scheme type + requested amount */}
+        {(data.consultation_type || data.funding_required > 0) && (
+          <View style={card.wrap}>
+            {data.consultation_type && (
+              <Text style={styles.headlineType}>{data.consultation_type}</Text>
+            )}
+            {data.funding_required > 0 && (
+              <>
+                <Text style={styles.headlineAmount}>{formatINR(data.funding_required)}</Text>
+                <Text style={styles.headlineCaption}>Requested Amount</Text>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Meta row: applied-on date, state, reference code */}
+        <View style={styles.metaRow}>
+          {appliedOn && (
+            <View style={styles.metaChip}>
+              <Calendar size={12} color={colors.textDim} strokeWidth={2} />
+              <Text style={styles.metaChipText}>{appliedOn}</Text>
+            </View>
+          )}
+          {user.state && (
+            <View style={styles.metaChip}>
+              <MapPin size={12} color={colors.textDim} strokeWidth={2} />
+              <Text style={styles.metaChipText}>{user.state}</Text>
+            </View>
+          )}
+          <View style={styles.metaChip}>
+            <Hash size={12} color={colors.textDim} strokeWidth={2} />
+            <Text style={styles.metaChipText}>{shortRef(data.id || id)}</Text>
+          </View>
+        </View>
+
+        {/* Progress tracker over this lead's own real stages */}
+        <SectionCard title="Application Progress">
+          <StageTracker stages={STAGES} current={data.stage} />
         </SectionCard>
 
-        {/* Business Profile */}
-        {(bp.industry || bp.business_stage) && (
-          <SectionCard title="Business Profile">
+        {/* Application Information */}
+        {(bp.industry || bp.business_stage || user.category) && (
+          <SectionCard title="Application Information">
             <InfoRow icon={<Building2 size={13} color={colors.primaryDark} />} label="Industry" value={bp.industry || "—"} />
+            <InfoRow icon={<User size={13} color={colors.primaryDark} />} label="Category" value={user.category || "—"} />
             <InfoRow icon={<FileText size={13} color={colors.primaryDark} />} label="Business Activity" value={bp.business_activity || ""} />
             <InfoRow icon={<Tag size={13} color={colors.primaryDark} />} label="Stage" value={bp.business_stage || "—"} />
+            <InfoRow icon={<Users size={13} color={colors.primaryDark} />} label="Employees" value={bp.employees ? String(bp.employees) : ""} />
             <InfoRow icon={<DollarSign size={13} color={colors.primaryDark} />} label="Annual Turnover" value={bp.annual_turnover ? formatINR(bp.annual_turnover) : "—"} />
             <InfoRow icon={<CheckCircle2 size={13} color={colors.primaryDark} />} label="GST" value={bp.gst_available ? "Registered" : "Not Registered"} />
             <InfoRow icon={<CheckCircle2 size={13} color={colors.primaryDark} />} label="Udyam" value={bp.udyam_available ? "Registered" : "Not Registered"} />
           </SectionCard>
         )}
 
+        {/* Assigned To — read-only; this screen has no reassignment action to wire an edit affordance to */}
+        {data.assigned_to && (
+          <SectionCard title="Assigned To">
+            <View style={styles.assignedToRow}>
+              <InitialsAvatar name={data.assigned_to} size={36} variant="staff" />
+              <Text style={styles.assignedToName}>{data.assigned_to}</Text>
+            </View>
+          </SectionCard>
+        )}
 
         {/* Uploaded Documents */}
         <SectionCard title={`Uploaded Documents (${userDocs.length})`}>
@@ -488,8 +587,13 @@ export default function LeadDetail() {
           {schemeApps.length === 0 ? (
             <Text style={styles.emptyNote}>No schemes assigned yet. Tap below to assign.</Text>
           ) : (
-            schemeApps.map((app: any) => (
+            schemeApps.map((app: any) => {
+              const accent = schemeStyle(app.scheme_name);
+              return (
               <View key={app.id} style={styles.appRow}>
+                <View style={[{ width: 28, height: 28, borderRadius: radius.md, alignItems: "center", justifyContent: "center", flexShrink: 0 }, { backgroundColor: accent.bg }]}>
+                  <RemoteIcon slug={accent.slug} size={16} fallback={Landmark} fallbackColor={accent.fg} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.appSchemeName}>{app.scheme_name}</Text>
                   {app.bank_name ? (
@@ -519,7 +623,8 @@ export default function LeadDetail() {
                   </TouchableOpacity>
                 </View>
               </View>
-            ))
+              );
+            })
           )}
           <View style={{ marginTop: spacing.sm2 }}>
             <Button label="Assign Scheme" Icon={Plus} iconPosition="left" onPress={() => setAssignModal(true)} size="sm" />
@@ -533,9 +638,7 @@ export default function LeadDetail() {
           ) : (
             bankAssignments.map((ba: any) => (
               <View key={ba.id} style={styles.appRow}>
-                <View style={{ width: 28, height: 28, borderRadius: radius.md, backgroundColor: tints.blue.bg, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Building2 size={14} color={tints.blue.fg} strokeWidth={2} />
-                </View>
+                <BankBadge name={ba.bank_name} shortName={ba.bank_short_name} size={28} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.appSchemeName}>{ba.bank_name}</Text>
                   {ba.bank_short_name ? (
@@ -561,12 +664,6 @@ export default function LeadDetail() {
             <View style={styles.followUpRow}>
               <Calendar size={12} color={colors.primaryDark} strokeWidth={2} />
               <Text style={styles.followUpText}>Follow-up: {data.follow_up_date}</Text>
-            </View>
-          )}
-          {data.assigned_to && (
-            <View style={styles.assignedRow}>
-              <User size={12} color={colors.textDim} strokeWidth={2} />
-              <Text style={styles.assignedText}>Assigned to: {data.assigned_to}</Text>
             </View>
           )}
         </SectionCard>
@@ -648,6 +745,29 @@ export default function LeadDetail() {
         </SectionCard>
 
       </ScrollView>
+
+      {/* Bottom actions — "Request Info" reuses the existing message-user
+          navigation, "Review Application" reuses the existing stage/notes
+          editor; neither wires to a new backend call. */}
+      <View style={[styles.footerBar, { paddingBottom: spacing.md + insets.bottom }]}>
+        <View style={{ flex: 1 }}>
+          <Button
+            label="Request Info"
+            variant="tertiary"
+            onPress={() => router.push(`/admin/support/${user.id || data.user_id}` as any)}
+            testID="message-user-btn"
+            size="md"
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            label="Review Application"
+            variant="primary"
+            onPress={() => setEditing(true)}
+            size="md"
+          />
+        </View>
+      </View>
 
       {/* Stage + Notes edit modal */}
       <Modal visible={editing} animationType="slide" transparent onRequestClose={() => setEditing(false)}>
@@ -841,6 +961,29 @@ export default function LeadDetail() {
         </View>
       </Modal>
 
+      {/* More Options — quick access to actions that already exist further
+          down this screen, without duplicating their backend calls. */}
+      <Modal visible={moreMenu} animationType="fade" transparent onRequestClose={() => setMoreMenu(false)}>
+        <TouchableOpacity style={styles.modalBg} activeOpacity={1} onPress={() => setMoreMenu(false)}>
+          <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>More Options</Text>
+              <TouchableOpacity style={styles.closeBtn} onPress={() => setMoreMenu(false)}>
+                <X size={16} color={colors.textMuted} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              testID="more-menu-assign-scheme"
+              style={styles.listItem}
+              onPress={() => { setMoreMenu(false); setAssignModal(true); }}
+            >
+              <Plus size={15} color={colors.primaryDark} strokeWidth={2} />
+              <Text style={[styles.listItemText, { marginLeft: 8 }]}>Assign Scheme</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -848,12 +991,32 @@ export default function LeadDetail() {
 const styles = StyleSheet.create({
   leadName: { fontSize: 17, fontFamily: fonts.displayBold, color: colors.text },
   leadMobile: { fontSize: 13, fontFamily: fonts.regular, color: colors.textDim, marginTop: 2 },
-  messageBtn: { width: 36, height: 36, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  typeTag: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: colors.surfaceAlt, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill,
+  moreBtn: { width: 36, height: 36, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
+
+  headlineType: { fontSize: 18, fontFamily: fonts.displayBold, color: colors.text, marginBottom: 10 },
+  headlineAmount: { fontSize: 32, fontFamily: fonts.displayBold, color: colors.primaryDark, letterSpacing: -0.5 },
+  headlineCaption: {
+    fontSize: 11, fontFamily: fonts.medium, color: colors.textDim,
+    textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2,
   },
-  typeText: { fontSize: 11, fontFamily: fonts.medium, color: colors.textMuted },
+
+  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.sm2 },
+  metaChip: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: "#FFF", borderWidth: 1, borderColor: colors.border,
+    borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6,
+  },
+  metaChipText: { fontSize: 11, fontFamily: fonts.medium, color: colors.textMuted },
+
+  assignedToRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  assignedToName: { fontSize: 14, fontFamily: fonts.semiBold, color: colors.text },
+
+  footerBar: {
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    flexDirection: "row", gap: 10,
+    paddingHorizontal: spacing.md, paddingTop: spacing.sm2,
+    backgroundColor: "#FFF", borderTopWidth: 1, borderTopColor: colors.border,
+  },
 
   schemeRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 10,
@@ -871,8 +1034,6 @@ const styles = StyleSheet.create({
   emptyNote: { fontSize: 13, fontFamily: fonts.regular, color: colors.textDim, fontStyle: "italic" },
   followUpRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
   followUpText: { fontSize: 12, fontFamily: fonts.medium, color: colors.primaryDark },
-  assignedRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
-  assignedText: { fontSize: 12, fontFamily: fonts.regular, color: colors.textDim },
 
   consultRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 10,

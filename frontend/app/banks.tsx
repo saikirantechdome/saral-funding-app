@@ -17,8 +17,7 @@ import { BackBar } from "@/src/components/StepBar";
 import { SchemesSkeleton } from "@/src/components/SkeletonLoader";
 import EmptyState from "@/src/components/EmptyState";
 import Button from "@/src/components/ui/Button";
-import RemoteIcon from "@/src/components/RemoteIcon";
-import { bankTypeStyle } from "@/src/utils/bankType";
+import BankBadge from "@/src/components/BankBadge";
 
 function bankApplyWhatsAppUrl(bankName: string) {
   const text = `Hey team, I want to apply for the ${bankName} loan. Could you please help me with the next steps?`;
@@ -126,7 +125,6 @@ export default function BanksScreen() {
         renderItem={({ item }) => {
           const isSel = selected.includes(item.bank_id);
           const isPublic = item.type === "Public";
-          const accent = bankTypeStyle(item.type);
           return (
             <View style={[styles.card, isSel && styles.cardSelected]}>
               {/* Card header */}
@@ -136,9 +134,7 @@ export default function BanksScreen() {
                 activeOpacity={0.85}
               >
                 <View style={styles.cardTop}>
-                  <View style={[styles.bankIcon, { backgroundColor: accent.bg }]}>
-                    <RemoteIcon slug={accent.slug} size={20} fallback={Building2} fallbackColor={accent.fg} />
-                  </View>
+                  <BankBadge name={item.name} shortName={item.short_name} size={40} />
                   <View style={{ flex: 1 }}>
                     <View style={styles.nameRow}>
                       <Text style={styles.bankName}>{item.name}</Text>
@@ -279,20 +275,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
     marginBottom: 10,
-  },
-  bankIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.lg,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bankIconPublic: {
-    backgroundColor: colors.primarySoft,
-  },
-  bankIconPrivate: {
-    backgroundColor: tints.blue.bg,
   },
   nameRow: {
     flexDirection: "row",

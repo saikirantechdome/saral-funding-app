@@ -21,12 +21,13 @@ import {
   Banknote, Video, Copy, X, Hourglass, Headset,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, elevation, tints, gradients } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, elevation, tints, gradients, stageColor } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { DashboardSkeleton, SkeletonBox } from "@/src/components/SkeletonLoader";
 import ReadinessRing from "@/src/components/ReadinessRing";
 import RemoteIcon from "@/src/components/RemoteIcon";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
+import BankBadge from "@/src/components/BankBadge";
 import { schemeStyle } from "@/src/utils/schemeType";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
@@ -42,6 +43,10 @@ type Overview = {
   scheme_views: number; bank_recommendation_views: number;
   total_banks: number; total_documents: number;
 };
+// Normalized shape for the admin dashboard's Overview pipeline breakdown —
+// built from either /admin/leads (stage) or /admin/consultations (status),
+// whichever this admin's role can access. See `pipelineBucket` below.
+type PipelineItem = { id: string; name: string; stage: string; created_at: string };
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   super_admin: ["users", "consultations", "leads", "settings"],
@@ -54,6 +59,35 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 function canAccess(role: string, module: string): boolean {
   if (role === "super_admin") return true;
   return (ROLE_PERMISSIONS[role] ?? []).includes(module);
+}
+
+// Buckets a lead `stage` or consultation `status` into the New / In Progress
+// / Approved / Rejected groups the admin dashboard's Overview card shows.
+// The two source vocabularies overlap enough (both use "new", "approved",
+// "closed") for one function to cover either. Mirrors the spirit of
+// `appBucket` in my-applications.tsx, adapted to this domain's stage
+// vocab — which has no literal "rejected" value; "closed" is the terminal
+// non-conversion outcome here (see its X-circle icon in admin/consultations.tsx).
+function pipelineBucket(stage: string): "new" | "inProgress" | "approved" | "rejected" {
+  if (stage === "new") return "new";
+  if (stage === "closed") return "rejected";
+  if (stage === "approved" || stage === "disbursed") return "approved";
+  return "inProgress";
+}
+
+// Mirrors the relative-time formatter already used in the admin support
+// inbox (admin/support/index.tsx) — small and presentational enough that
+// repeating it locally (this codebase already repeats small per-screen
+// helpers like STAGES across admin/leads.tsx and admin/lead/[id].tsx) beats
+// adding a new shared export for one line of formatting.
+function formatRelative(iso?: string): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60000) return "Just now";
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  if (diff < 172800000) return "Yesterday";
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
 const STAT_DEFS = [
@@ -134,6 +168,7 @@ export default function Dashboard() {
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [pipelineItems, setPipelineItems] = useState<PipelineItem[]>([]);
   const [hasAssignedSchemes, setHasAssignedSchemes] = useState(false);
   const [hasAssignedBanks, setHasAssignedBanks] = useState(false);
   const [statCounts, setStatCounts] = useState({ applications: 0, documents: 0, consultations: 0, schemes: 0 });
@@ -163,9 +198,29 @@ export default function Dashboard() {
       setUser(me);
 
       if (me?.role && me.role !== "user") {
-        // Admin: fetch overview data only
-        const ov = await apiGet<Overview>("/admin/overview").catch(() => null);
+        // Admin: fetch the overview aggregate, plus a lightweight pipeline
+        // list to bucket into the dashboard's New/In Progress/Approved/
+        // Rejected breakdown — leads via the same endpoint the Leads screen
+        // uses, for roles that can see leads; otherwise consultations (whose
+        // status vocab buckets the same way) for roles like "expert" that
+        // can't. Also this admin's own unread notifications, for the bell badge.
+        const usingLeads = canAccess(me.role, "leads");
+        const [ov, rawItems, notif] = await Promise.all([
+          apiGet<Overview>("/admin/overview").catch(() => null),
+          usingLeads
+            ? apiGet<any[]>("/admin/leads").catch(() => [])
+            : canAccess(me.role, "consultations")
+              ? apiGet<any[]>("/admin/consultations").catch(() => [])
+              : Promise.resolve([] as any[]),
+          apiGet<any[]>("/notifications/me").catch(() => []),
+        ]);
         setOverview(ov);
+        setPipelineItems((rawItems || []).map((it: any): PipelineItem => (
+          usingLeads
+            ? { id: it.id, name: it.full_name || "Unknown", stage: it.stage, created_at: it.created_at }
+            : { id: it.id, name: it.user?.full_name || "Unknown", stage: it.status, created_at: it.created_at }
+        )));
+        setAlerts((notif || []).filter((n: any) => !n.read));
       } else {
         // Normal user: fetch full dashboard data
         const [m, c, banks, ready, mySchemes, myBanks, docs] = await Promise.all([
@@ -246,6 +301,26 @@ export default function Dashboard() {
   // ── Admin Console View ──
   if (isAdmin) {
     const visibleModules = ALL_MODULES.filter((m) => canAccess(user.role, m.id));
+
+    // Prefer the leads pipeline for the Overview breakdown (same data the
+    // Leads screen shows); a role without leads access (only "expert" today)
+    // falls back to the consultations pipeline instead — never show a
+    // breakdown sourced from a module this role can't otherwise see.
+    const usingLeads = canAccess(user.role, "leads");
+    const pipelineCounts = pipelineItems.reduce(
+      (acc, it) => { acc[pipelineBucket(it.stage)]++; return acc; },
+      { new: 0, inProgress: 0, approved: 0, rejected: 0 }
+    );
+    const heroTotal = usingLeads ? (overview?.total_leads ?? 0) : (overview?.total_consultations ?? 0);
+    const heroTotalLabel = usingLeads ? "Total Leads" : "Total Consultations";
+    const pipelineViewAllRoute = usingLeads ? "/admin/leads" : "/admin/consultations";
+    const pipelineStats = [
+      { id: "new",         label: "New",         value: pipelineCounts.new },
+      { id: "in-progress", label: "In Progress", value: pipelineCounts.inProgress },
+      { id: "approved",    label: "Approved",    value: pipelineCounts.approved },
+      { id: "rejected",    label: "Rejected",    value: pipelineCounts.rejected },
+    ];
+
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="admin-home-tab">
         <ScrollView
@@ -271,7 +346,7 @@ export default function Dashboard() {
               />
               <View>
                 <Text style={styles.logoName}>SARAL</Text>
-                <Text style={styles.logoTagline}>Funding Clear Hai!</Text>
+                <Text style={styles.logoTagline}>Admin Dashboard</Text>
               </View>
             </View>
             <View style={{ flexDirection: "row", gap: 8 }}>
@@ -280,7 +355,7 @@ export default function Dashboard() {
                 onPress={() => router.push("/admin/support" as any)}
                 style={styles.headerBtn}
               >
-                <MessageCircle size={18} color={colors.text} strokeWidth={2} />
+                <MessageCircle size={17} color={colors.text} strokeWidth={2} />
                 {supportUnread > 0 && <View style={styles.badgeDot} />}
               </TouchableOpacity>
               <TouchableOpacity
@@ -288,7 +363,19 @@ export default function Dashboard() {
                 onPress={() => router.push("/notifications")}
                 style={styles.headerBtn}
               >
-                <Bell size={18} color={colors.text} strokeWidth={2} />
+                <Bell size={17} color={colors.text} strokeWidth={2} />
+                {alerts.length > 0 && (
+                  <View style={adStyles.countBadge}>
+                    <Text style={adStyles.countBadgeText}>{alerts.length > 9 ? "9+" : alerts.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID="admin-avatar-btn"
+                onPress={() => router.push("/(tabs)/profile" as any)}
+                activeOpacity={0.8}
+              >
+                <InitialsAvatar name={user?.full_name || "Admin"} size={32} variant="staff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -300,56 +387,33 @@ export default function Dashboard() {
             </Text>
             <Text style={styles.pageGreetingSub}>Here's what's happening today</Text>
 
-            {/* Hero: headline stat, on a dark gradient like the reviewer dashboard */}
-            {(() => {
-              const visibleStats = STAT_DEFS.filter((s) => canAccess(user.role, s.id));
-              const heroStat = visibleStats.find((s) => s.id === "leads") ?? visibleStats.find((s) => s.id === "users") ?? visibleStats[0];
-              const restStats = visibleStats.filter((s) => s.id !== heroStat?.id);
+            {/* Overview: headline pipeline total + stage breakdown, on a dark gradient */}
+            <LinearGradient
+              colors={gradients.heroCompact}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={adStyles.heroCard}
+              testID="admin-home-hero"
+            >
+              <Text style={adStyles.heroLabel}>Overview</Text>
 
-              return (
-                <>
-                  {heroStat && (
-                    <LinearGradient
-                      colors={gradients.heroCompact}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={adStyles.heroCard}
-                      testID="admin-home-hero"
-                    >
-                      <View style={adStyles.heroTopRow}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={adStyles.heroLabel}>{heroStat.label}</Text>
-                          <Text style={adStyles.heroStatVal}>{heroStat.key ? String((overview as any)?.[heroStat.key] ?? 0) : "—"}</Text>
-                        </View>
-                        <View style={adStyles.heroIconWrap}>
-                          <heroStat.Icon size={22} color="#FFFFFF" strokeWidth={2} />
-                        </View>
-                      </View>
+              <Text style={adStyles.heroStatVal}>{heroTotal}</Text>
+              <Text style={adStyles.heroStatCaption}>{heroTotalLabel}</Text>
 
-                      {restStats.length > 0 && (
-                        <View style={adStyles.heroStatsGrid}>
-                          {restStats.map((s) => (
-                            <TouchableOpacity
-                              key={s.id}
-                              testID={`stat-${s.id}`}
-                              style={adStyles.heroStatBox}
-                              onPress={() => router.push(s.route as any)}
-                              activeOpacity={0.8}
-                            >
-                              <Text style={adStyles.heroStatBoxVal}>{s.key ? String((overview as any)?.[s.key] ?? 0) : "—"}</Text>
-                              <Text style={adStyles.heroStatBoxLabel}>{s.label}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      )}
-                    </LinearGradient>
-                  )}
-                </>
-              );
-            })()}
+              <View style={adStyles.pipelineGrid}>
+                {pipelineStats.map((p) => (
+                  <View key={p.id} testID={`overview-stat-${p.id}`} style={adStyles.pipelineBox}>
+                    <Text style={adStyles.pipelineVal}>{p.value}</Text>
+                    <Text style={adStyles.pipelineLabel}>{p.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </LinearGradient>
 
             {/* Quick Access */}
-            <Text style={[adStyles.sectionLabel, { marginTop: 20 }]}>Quick Access</Text>
+            <View style={[adStyles.sectionHeaderRow, { marginTop: 20 }]}>
+              <Text style={adStyles.sectionLabel}>Quick Access</Text>
+            </View>
             <View style={adStyles.modulesGrid}>
               {visibleModules.map((m) => (
                 <TouchableOpacity
@@ -360,9 +424,9 @@ export default function Dashboard() {
                   activeOpacity={0.85}
                 >
                   <View style={[adStyles.moduleIcon, { backgroundColor: m.color }]}>
-                    <m.Icon size={20} color={m.iconColor} strokeWidth={2} />
+                    <m.Icon size={19} color={m.iconColor} strokeWidth={2} />
                   </View>
-                  <Text style={adStyles.moduleLabel} numberOfLines={1}>{m.label}</Text>
+                  <Text style={adStyles.moduleLabel} numberOfLines={2}>{m.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -477,9 +541,7 @@ export default function Dashboard() {
               onPress={() => router.push("/banks")}
               activeOpacity={0.85}
             >
-              <View style={styles.bankBadge}>
-                <RemoteIcon slug="bank" size={20} fallback={Building2} fallbackColor={tints.blue.fg} />
-              </View>
+              <BankBadge name={bankRec.name} shortName={bankRec.short_name} size={44} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.sectionLabel}>Top Bank Match</Text>
                 <Text style={styles.bankName}>{bankRec.name}</Text>
@@ -661,11 +723,10 @@ const adStyles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: 10,
   },
-  statsGrid: {
+  sectionHeaderRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 4,
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   heroCard: {
     borderRadius: radius.xxl,
@@ -679,56 +740,56 @@ const adStyles = StyleSheet.create({
   },
   heroTopRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: 14,
   },
   heroLabel: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
     color: "rgba(255,255,255,0.72)",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
   heroStatVal: {
-    fontSize: 30,
+    fontSize: 36,
     fontFamily: fonts.displayBold,
     color: "#FFFFFF",
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
+    marginTop: 14,
+  },
+  heroStatCaption: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: "rgba(255,255,255,0.72)",
     marginTop: 2,
+    marginBottom: 16,
   },
-  heroIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: radius.lg,
-    backgroundColor: "rgba(255,255,255,0.16)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroStatsGrid: {
+  pipelineGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-    marginTop: 16,
+    gap: 8,
   },
-  heroStatBox: {
-    flexBasis: "30%",
+  pipelineBox: {
+    flexBasis: "22%",
     flexGrow: 1,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
     borderRadius: radius.lg,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.14)",
   },
-  heroStatBoxVal: {
-    fontSize: 20,
+  pipelineVal: {
+    fontSize: 18,
     fontFamily: fonts.displayBold,
+    letterSpacing: -0.3,
     color: "#FFFFFF",
-    letterSpacing: -0.4,
   },
-  heroStatBoxLabel: {
-    fontSize: 11,
+  pipelineLabel: {
+    fontSize: 10,
     fontFamily: fonts.medium,
-    color: "rgba(255,255,255,0.65)",
+    color: "rgba(255,255,255,0.75)",
+    marginTop: 2,
+    textAlign: "center",
   },
   modulesGrid: {
     flexDirection: "row",
@@ -736,16 +797,16 @@ const adStyles = StyleSheet.create({
     gap: 10,
   },
   moduleTile: {
-    flexBasis: "30%",
+    flexBasis: "22%",
     flexGrow: 1,
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     backgroundColor: "#FFF",
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 16,
-    paddingHorizontal: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
     shadowColor: colors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -753,17 +814,38 @@ const adStyles = StyleSheet.create({
     elevation: 1,
   },
   moduleIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.xl,
+    width: 40,
+    height: 40,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   moduleLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: fonts.semiBold,
     color: colors.text,
     textAlign: "center",
+    lineHeight: 14,
+  },
+  countBadge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FFF",
+  },
+  countBadgeText: {
+    fontSize: 9,
+    fontFamily: fonts.bold,
+    color: "#FFFFFF",
+    lineHeight: 11,
   },
 });
 

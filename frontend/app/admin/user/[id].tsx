@@ -16,6 +16,9 @@ import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import EmptyState from "@/src/components/EmptyState";
 import Button from "@/src/components/ui/Button";
+import RemoteIcon from "@/src/components/RemoteIcon";
+import { schemeStyle } from "@/src/utils/schemeType";
+import BankBadge from "@/src/components/BankBadge";
 
 const STAGE_LABELS: Record<string, string> = {
   scheme_identified: "Scheme Identified",
@@ -231,20 +234,23 @@ export default function UserDetail() {
         {applications.length === 0 ? (
           <EmptyState
             Icon={Landmark}
+            iconSlug="briefcase"
             title="No schemes assigned yet"
             ctaLabel="+ Assign a Scheme"
             onCta={openAssignModal}
           />
         ) : (
-          applications.map((app) => (
+          applications.map((app) => {
+            const accent = schemeStyle(app.scheme_name);
+            return (
             <TouchableOpacity
               key={app.id}
               style={s.appCard}
               onPress={() => router.push(`/admin/scheme/${app.scheme_id}`)}
               activeOpacity={0.8}
             >
-              <View style={s.schemeIcon}>
-                <Landmark size={14} color={colors.primaryDark} strokeWidth={2} />
+              <View style={[s.schemeIcon, { backgroundColor: accent.bg }]}>
+                <RemoteIcon slug={accent.slug} size={16} fallback={Landmark} fallbackColor={accent.fg} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.schemeName}>{app.scheme_name}</Text>
@@ -262,7 +268,8 @@ export default function UserDetail() {
               </TouchableOpacity>
               <ChevronRight size={14} color={colors.textDim} strokeWidth={2} />
             </TouchableOpacity>
-          ))
+            );
+          })
         )}
         {/* Assigned Banks */}
         <View style={[s.sectionHeader, { marginTop: spacing.lg }]}>
@@ -277,7 +284,7 @@ export default function UserDetail() {
         </View>
 
         {bankAssignments.length === 0 ? (
-          <EmptyState Icon={Building2} title="No banks assigned yet" />
+          <EmptyState Icon={Building2} iconSlug="bank" title="No banks assigned yet" />
         ) : (
           bankAssignments.map((ba) => (
             <TouchableOpacity
@@ -286,9 +293,7 @@ export default function UserDetail() {
               onPress={() => router.push(`/admin/bank/${ba.bank_id}` as any)}
               activeOpacity={0.8}
             >
-              <View style={[s.schemeIcon, { backgroundColor: tints.blue.bg }]}>
-                <Building2 size={14} color={tints.blue.fg} strokeWidth={2} />
-              </View>
+              <BankBadge name={ba.bank_name} shortName={ba.bank_short_name} size={32} />
               <View style={{ flex: 1 }}>
                 <Text style={s.schemeName}>{ba.bank_name}</Text>
                 {ba.bank_short_name && <Text style={s.bankName}>{ba.bank_short_name}</Text>}

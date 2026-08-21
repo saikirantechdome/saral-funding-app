@@ -183,6 +183,13 @@ export default function Legal() {
         >
           <Text style={styles.attributionText}>Some icons by Icons8</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.attribution}
+          onPress={() => Linking.openURL("https://commons.wikimedia.org")}
+          testID="wikimedia-attribution"
+        >
+          <Text style={styles.attributionText}>Bank logos via Wikimedia Commons</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

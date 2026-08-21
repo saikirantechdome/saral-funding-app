@@ -12,6 +12,7 @@ import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import Button from "@/src/components/ui/Button";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
+import BankBadge from "@/src/components/BankBadge";
 
 export default function BankDetail() {
   const router = useRouter();
@@ -115,9 +116,7 @@ export default function BankDetail() {
         ) : bank ? (
           <View style={s.infoCard}>
             <View style={s.bankHeader}>
-              <View style={s.bankIconWrap}>
-                <Building2 size={22} color={tints.blue.fg} strokeWidth={2} />
-              </View>
+              <BankBadge name={bank.name} shortName={bank.short_name} size={48} />
               <View style={{ flex: 1 }}>
                 <Text style={s.bankFullName}>{bank.name}</Text>
                 <View style={s.typePill}>

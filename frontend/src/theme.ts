@@ -194,6 +194,14 @@ export const formatMobile = (mobile?: string | null): string => {
   return `+91 ${digits}`;
 };
 
+// Deterministic short reference code derived from a record's own real id —
+// used as a human-scannable "#XXXXXX" tag on application cards/detail screens
+// that don't have a separate ticket/application number field of their own.
+export const shortRef = (id?: string | null): string => {
+  if (!id) return "——";
+  return id.replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase();
+};
+
 // Colour-code CRM stages — deliberately a richer, more varied palette than
 // the rest of the app. The marketing site has no lead/consultation status
 // system to audit against, so these stay a wider rainbow (by user request)

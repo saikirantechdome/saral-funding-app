@@ -14,15 +14,40 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { X, ChevronRight, Phone, MapPin, DollarSign, StickyNote, Briefcase } from "lucide-react-native";
+import { X, ChevronRight, Phone, MapPin, DollarSign, StickyNote, Briefcase, Calendar } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, stageColor, tagColor, formatMobile } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, formatINR, stageColor, tagColor, formatMobile, shortRef } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
+// Full raw CRM stages — still used for the long-press "Move to Stage" editor,
+// which keeps its fine-grained control even though the list's own filter
+// chips above now show the coarser buckets below.
 const STAGES = ["all", "new", "contacted", "interested", "documentation", "submitted", "approved", "disbursed", "closed"];
+
+// Coarse filter chips shown at the top of the list — buckets the raw CRM
+// stages into the 4 groups used across the admin app (same convention as
+// `appBucket` in app/my-applications.tsx): rejected -> Rejected,
+// approved/disbursed -> Approved, everything else -> In Progress, except the
+// lead's own "new" stage gets its own bucket.
+const FILTER_TABS = ["All", "New", "In Progress", "Approved", "Rejected"] as const;
+type FilterTab = typeof FILTER_TABS[number];
+
+function leadBucket(stage: string): Exclude<FilterTab, "All"> {
+  if (stage === "new") return "New";
+  if (stage === "rejected") return "Rejected";
+  if (stage === "approved" || stage === "disbursed") return "Approved";
+  return "In Progress";
+}
+
+const BUCKET_STYLE: Record<Exclude<FilterTab, "All">, { bg: string; text: string }> = {
+  New: stageColor("new"),
+  "In Progress": { bg: tints.blue.bg, text: tints.blue.fg },
+  Approved: stageColor("approved"),
+  Rejected: { bg: tints.red.bg, text: tints.red.fg },
+};
 
 function StagePill({ stage }: { stage: string }) {
   const { bg, text } = stageColor(stage);
@@ -42,7 +67,7 @@ export default function AdminLeads() {
   const insets = useSafeAreaInsets();
   const tabBarSpacing = useTabBarSpacing();
   const [items, setItems] = useState<any[]>([]);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState<FilterTab>("All");
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any>(null);
   const [notes, setNotes] = useState("");
@@ -51,10 +76,10 @@ export default function AdminLeads() {
     router.push(`/admin/lead/${lead.id}` as any);
   };
 
-  const load = async (st: string) => {
+  const load = async () => {
     setLoading(true);
     try {
-      const data = await apiGet<any[]>(`/admin/leads${st !== "all" ? `?stage=${st}` : ""}`);
+      const data = await apiGet<any[]>("/admin/leads");
       setItems(data);
     } catch (e) {
       Alert.alert("Error", "Failed to load leads");
@@ -63,7 +88,9 @@ export default function AdminLeads() {
     }
   };
 
-  useEffect(() => { load(filter); }, [filter]);
+  useEffect(() => { load(); }, []);
+
+  const filteredItems = filter === "All" ? items : items.filter((i) => leadBucket(i.stage) === filter);
 
   const openEdit = (lead: any) => {
     setEditing(lead);
@@ -73,82 +100,86 @@ export default function AdminLeads() {
   const moveStage = async (lid: string, stage: string) => {
     await apiPost(`/admin/leads/${lid}`, { stage, notes });
     setEditing(null);
-    load(filter);
+    load();
   };
 
   const saveNotes = async () => {
     if (!editing) return;
     await apiPost(`/admin/leads/${editing.id}`, { stage: editing.stage, notes });
     setEditing(null);
-    load(filter);
+    load();
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="admin-leads">
       <BackBar
-        title="CRM / Leads"
+        title="Applications"
         onBack={() => router.back()}
       />
 
-      {/* Stage filter chips */}
+      {/* Bucketed filter chips */}
       <View style={{ position: "relative" }}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 6, paddingVertical: 8, paddingHorizontal: spacing.md }}
-          style={{ flexGrow: 0 }}
-        >
-          {STAGES.map((s) => {
-            const active = filter === s;
-            const { bg, text } = s !== "all" ? stageColor(s) : { bg: colors.surfaceAlt, text: colors.textMuted };
-            const isAllActive = s === "all" && active;
-            return (
-              <TouchableOpacity
-                key={s}
-                testID={`stage-filter-${s}`}
-                style={[
-                  styles.filterChip,
-                  { backgroundColor: isAllActive ? colors.primary : bg },
-                  active && { borderWidth: 1.5, borderColor: isAllActive ? colors.primary : text },
-                ]}
-                onPress={() => setFilter(s)}
-              >
-                <Text style={[
-                  styles.filterChipText,
-                  { color: isAllActive ? "#FFF" : text },
-                  active && { fontFamily: fonts.bold },
-                ]}>
-                  {s}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-        <LinearGradient
-          pointerEvents="none"
-          colors={["rgba(240,246,246,0)", colors.surface2]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.filterFade}
-        />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 6, paddingVertical: 8, paddingHorizontal: spacing.md }}
+            style={{ flexGrow: 0 }}
+          >
+            {FILTER_TABS.map((tab) => {
+              const active = filter === tab;
+              const { bg, text } = tab !== "All" ? BUCKET_STYLE[tab] : { bg: colors.surfaceAlt, text: colors.textMuted };
+              const isAllActive = tab === "All" && active;
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  testID={`stage-filter-${tab.toLowerCase().replace(/\s+/g, "-")}`}
+                  style={[
+                    styles.filterChip,
+                    { backgroundColor: isAllActive ? colors.primary : bg },
+                    active && { borderWidth: 1.5, borderColor: isAllActive ? colors.primary : text },
+                  ]}
+                  onPress={() => setFilter(tab)}
+                >
+                  <Text style={[
+                    styles.filterChipText,
+                    { color: isAllActive ? "#FFF" : text },
+                    active && { fontFamily: fonts.bold },
+                  ]}>
+                    {tab}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <LinearGradient
+            pointerEvents="none"
+            colors={["rgba(240,246,246,0)", colors.surface2]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.filterFade}
+          />
       </View>
 
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          data={items}
+          data={filteredItems}
           keyExtractor={(x) => x.id}
           style={{ flex: 1, marginBottom: tabBarSpacing }}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 4 }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyText}>No leads in "{filter}" stage</Text>
+              <Text style={styles.emptyText}>No applications in "{filter}"</Text>
             </View>
           }
           renderItem={({ item }) => {
             const accent = stageColor(item.stage);
+            const tag = item.consultation_type ? tagColor(item.consultation_type) : null;
+            const appliedOn = item.created_at
+              ? new Date(item.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+              : null;
             return (
             <TouchableOpacity
               testID={`lead-${item.id}`}
@@ -172,27 +203,24 @@ export default function AdminLeads() {
 
               {/* Details */}
               <View style={styles.detailsRow}>
+                {tag && (
+                  <View style={[styles.tagItem, { backgroundColor: tag.bg }]}>
+                    <Briefcase size={11} color={tag.text} strokeWidth={2} />
+                    <Text style={[styles.tagText, { color: tag.text }]}>{item.consultation_type}</Text>
+                  </View>
+                )}
+                {item.funding_required > 0 && (
+                  <View style={[styles.metaItem, styles.amountChip]}>
+                    <DollarSign size={11} color={colors.primaryDark} strokeWidth={2.4} />
+                    <Text style={styles.amountText}>{formatINR(item.funding_required)}</Text>
+                  </View>
+                )}
                 {item.state && (
                   <View style={styles.metaItem}>
                     <MapPin size={11} color={colors.textDim} strokeWidth={2} />
                     <Text style={styles.metaText}>{item.state}</Text>
                   </View>
                 )}
-                {item.funding_required > 0 && (
-                  <View style={styles.metaItem}>
-                    <DollarSign size={11} color={colors.textDim} strokeWidth={2} />
-                    <Text style={styles.metaText}>{formatINR(item.funding_required)}</Text>
-                  </View>
-                )}
-                {item.consultation_type && (() => {
-                  const tag = tagColor(item.consultation_type);
-                  return (
-                    <View style={[styles.tagItem, { backgroundColor: tag.bg }]}>
-                      <Briefcase size={11} color={tag.text} strokeWidth={2} />
-                      <Text style={[styles.tagText, { color: tag.text }]}>{item.consultation_type}</Text>
-                    </View>
-                  );
-                })()}
               </View>
 
               {/* Notes preview */}
@@ -202,6 +230,15 @@ export default function AdminLeads() {
                   <Text style={styles.notesText} numberOfLines={1}>{item.notes}</Text>
                 </View>
               )}
+
+              {/* Footer */}
+              <View style={styles.footerRow}>
+                <View style={styles.footerDateGroup}>
+                  <Calendar size={10} color={colors.textDim} strokeWidth={2} />
+                  <Text style={styles.footerText}>{appliedOn ? `Applied on ${appliedOn}` : "Applied date unavailable"}</Text>
+                </View>
+                <Text style={styles.footerCode}>#{shortRef(item.id)}</Text>
+              </View>
 
               <ChevronRight size={14} color={colors.textDim} strokeWidth={2} style={{ position: "absolute", right: 14, top: 20 }} />
             </TouchableOpacity>
@@ -360,6 +397,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     color: colors.textMuted,
   },
+  amountChip: {
+    backgroundColor: colors.primarySoft,
+  },
+  amountText: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    color: colors.primaryDark,
+  },
   notesPreview: {
     flexDirection: "row",
     alignItems: "center",
@@ -372,6 +417,30 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textDim,
     fontStyle: "italic",
+  },
+  footerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  footerDateGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  footerText: {
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    color: colors.textDim,
+  },
+  footerCode: {
+    fontSize: 11,
+    fontFamily: fonts.semiBold,
+    color: colors.textMuted,
   },
   emptyWrap: { alignItems: "center", paddingTop: 60 },
   emptyText: { fontSize: 14, fontFamily: fonts.regular, color: colors.textMuted },

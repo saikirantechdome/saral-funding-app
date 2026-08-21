@@ -4,7 +4,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { TrendingUp, MapPin, Target, Phone, Users, Calendar } from "lucide-react-native";
+import { TrendingUp, MapPin, Target, Phone, Users, Calendar, ChevronDown, CheckCircle2, Banknote } from "lucide-react-native";
 import Svg, { Polyline, Circle, Line, Text as SvgText, G } from "react-native-svg";
 
 import { colors, spacing, radius, fonts, stageColor, tints } from "@/src/theme";
@@ -70,6 +70,87 @@ const pipeStyles = StyleSheet.create({
   label: { fontSize: 10, fontFamily: fonts.semiBold, marginTop: 2, textTransform: "capitalize", textAlign: "center" },
 });
 
+/** Decorative period pill — this screen's data has no time-range filter wired up
+ * yet, so this is visual-only (matches the Figma "This Month ▾" affordance). */
+function MonthPill() {
+  return (
+    <View style={pillStyles.pill}>
+      <Text style={pillStyles.text}>This Month</Text>
+      <ChevronDown size={14} color={colors.primaryDark} strokeWidth={2} />
+    </View>
+  );
+}
+const pillStyles = StyleSheet.create({
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-end",
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 12,
+  },
+  text: { fontSize: 12, fontFamily: fonts.semiBold, color: colors.text },
+});
+
+/** Top-row stat tile — mirrors the StatCard pattern on the admin overview screen. */
+function StatTile({ label, value, Icon, color, iconColor }: { label: string; value: string; Icon: any; color: string; iconColor: string }) {
+  return (
+    <View style={statStyles.tile}>
+      <View style={[statStyles.icon, { backgroundColor: color }]}>
+        <Icon size={14} color={iconColor} strokeWidth={2} />
+      </View>
+      <Text style={statStyles.value}>{value}</Text>
+      <Text style={statStyles.label}>{label}</Text>
+    </View>
+  );
+}
+const statStyles = StyleSheet.create({
+  row: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  tile: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 12,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  icon: { width: 28, height: 28, borderRadius: radius.md, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  value: { fontSize: 20, fontFamily: fonts.displayBold, color: colors.text, lineHeight: 24 },
+  label: { fontSize: 11, fontFamily: fonts.medium, color: colors.textMuted, marginTop: 3 },
+});
+
+/** Buckets the real per-stage `lead_pipeline` counts into the same coarse
+ * New / In Progress / Approved / Rejected grouping already used for scheme-
+ * application stage pills (see admin/lead/[id].tsx's "won / rejected / else"
+ * convention) — extended with a "New" bucket since leads (unlike scheme
+ * applications) have a distinct "new" stage in LEAD_STAGES. "closed" is the
+ * terminal non-conversion stage in LEAD_STAGES, so it maps to Rejected. */
+type LeadBucket = "New" | "In Progress" | "Approved" | "Rejected";
+
+function leadBucket(stage: string): LeadBucket {
+  if (stage === "new") return "New";
+  if (stage === "approved" || stage === "disbursed") return "Approved";
+  if (stage === "closed") return "Rejected";
+  return "In Progress";
+}
+
+const BUCKET_COLOR: Record<LeadBucket, string> = {
+  New: stageColor("new").text,
+  "In Progress": tints.amber.fg,
+  Approved: colors.success,
+  Rejected: colors.danger,
+};
+
 /** Simple SVG sparkline / area chart for trend data */
 function TrendChart({ data, color = colors.primary, height = 80 }: {
   data: { date: string; count: number }[];
@@ -133,10 +214,11 @@ function TrendChart({ data, color = colors.primary, height = 80 }: {
 }
 
 /** Donut chart — one ring segment per entry, proportional to value. */
-function DonutChart({ segments, size = 132, strokeWidth = 20 }: {
+function DonutChart({ segments, size = 132, strokeWidth = 20, centerLabel = "Total Leads" }: {
   segments: { label: string; value: number; color: string }[];
   size?: number;
   strokeWidth?: number;
+  centerLabel?: string;
 }) {
   const total = segments.reduce((s, x) => s + x.value, 0);
   const r = (size - strokeWidth) / 2;
@@ -172,7 +254,7 @@ function DonutChart({ segments, size = 132, strokeWidth = 20 }: {
       <View style={StyleSheet.absoluteFillObject}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontSize: 22, fontFamily: fonts.displayBold, color: colors.text }}>{total}</Text>
-          <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: colors.textDim }}>Total Leads</Text>
+          <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: colors.textDim }}>{centerLabel}</Text>
         </View>
       </View>
     </View>
@@ -221,10 +303,44 @@ export default function AdminAnalytics() {
   const maxState = Math.max(1, ...(data.state_distribution || []).map((s: any) => s.count));
   const stateColors = [colors.primaryDark, tints.deepTeal.fg, colors.primary, tints.teal.fg, colors.primaryLight];
 
+  // Stat tiles + Applications Overview donut — all derived from the same
+  // already-fetched `lead_pipeline` (real per-stage counts), no new API calls.
+  const pipeline: Record<string, number> = data.lead_pipeline || {};
+  const totalLeads = Object.values(pipeline).reduce((s: number, v: any) => s + Number(v), 0);
+  const approvedCount = Number(pipeline.approved || 0);
+  const disbursedCount = Number(pipeline.disbursed || 0);
+  const bucketedSegments = (["New", "In Progress", "Approved", "Rejected"] as LeadBucket[]).map((b) => ({
+    label: b,
+    value: Object.entries(pipeline).reduce((s, [k, v]) => s + (leadBucket(k) === b ? Number(v) : 0), 0),
+    color: BUCKET_COLOR[b],
+  }));
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-analytics">
       <BackBar title="Analytics" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+
+        <MonthPill />
+
+        {/* Stat tiles */}
+        <View style={statStyles.row}>
+          <StatTile label="Total Leads" value={String(totalLeads)} Icon={Users} color={colors.primarySoft} iconColor={colors.primaryDark} />
+          <StatTile label="Approved" value={String(approvedCount)} Icon={CheckCircle2} color={tints.green.bg} iconColor={tints.green.fg} />
+          <StatTile label="Disbursed" value={String(disbursedCount)} Icon={Banknote} color={tints.deepTeal.bg} iconColor={tints.deepTeal.fg} />
+        </View>
+
+        {/* Applications Overview — bucketed donut (New / In Progress / Approved / Rejected) */}
+        <View style={styles.section}>
+          <SectionHeader Icon={Target} title="Applications Overview" />
+          {totalLeads === 0 ? (
+            <Text style={styles.empty}>No leads yet</Text>
+          ) : (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
+              <DonutChart segments={bucketedSegments} centerLabel="Total" />
+              <DonutLegend segments={bucketedSegments} />
+            </View>
+          )}
+        </View>
 
         {/* Daily User Trend */}
         {(data.daily_user_trend || []).length > 0 && (

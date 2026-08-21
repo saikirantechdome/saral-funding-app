@@ -13,6 +13,7 @@ import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
 import Button from "@/src/components/ui/Button";
+import BankBadge from "@/src/components/BankBadge";
 
 function BankSkeleton() {
   return (
@@ -141,9 +142,7 @@ export default function BankDetail() {
         {/* Hero */}
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
-            <View style={[styles.bankAvatar, !isPublic && styles.bankAvatarPrivate]}>
-              <Building2 size={24} color={isPublic ? colors.primaryDark : tints.blue.fg} strokeWidth={1.5} />
-            </View>
+            <BankBadge name={bank.name} shortName={bank.short_name} size={56} />
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <View style={[styles.typePill, isPublic ? styles.typePillPub : styles.typePillPriv]}>
