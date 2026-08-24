@@ -58,13 +58,12 @@ Full architecture/API/component inventory is in the audit already done this sess
 
 ---
 
-## 4. Open questions before Step 3 (implementation) begins
+## 4. Decisions (resolved 2026-08-24)
 
-1. **Which file is authoritative for visual style?** The named `Saral User Prototype.dc.html` (compact, flat, boxy nav) or `Saral User UI v2.dc.html` (curved hero, pill nav, arc gauges) sitting in the same project? They disagree on nav bar shape, corner radii, and palette for the same screens.
-2. **Login/OTP hero**: keep the existing app's recently-added 3D illustration (commit `053419c`) on the login screen, or strip it down to match the Prototype's plain wordmark-only layout?
-3. **Home screen scope**: the Prototype's Home is a minimal 4-card layout; the existing Home also surfaces scheme matches, a funding/subsidy estimate, and bank recommendations. Should those extra sections be dropped to match the Prototype exactly, or kept below the Prototype's cards (i.e. Prototype layout for the top of the screen, existing content preserved further down)?
-4. **Bottom tab bar restructuring**: adopt the Prototype's 5 tabs (Home / Status / FAB-upload / Docs / Chat, Profile moved behind the Home-header avatar), replacing today's (Home / Applications / Documents / Chat / Profile)? This drops "Applications" as a tab (folds into the new Status screen?) and removes Profile from the tab bar.
-5. **Duplicate document-vault screens**: `(tabs)/documents.tsx` and the standalone `documents.tsx` both implement upload/list/delete today. Revamp both to the new design, or consolidate into one screen?
-6. **Screens absent from the Prototype** (onboarding steps, Schemes, Bank list/detail/compare, bank-linking, booking, readiness, My Applications, language, legal): leave these on current UI for now (out of scope until a prototype covers them), or should I extend the Prototype's established visual language (teal/amber, card style, type scale) to these screens using my own judgment for layout?
+1. **Authoritative design file — RESOLVED.** User confirmed via screenshot: `Saral User Prototype.dc.html` and `Saral Admin Prototype.dc.html` are "the two final, approved designs / final flow." `Saral User UI v2.dc.html`, `Saral User UI.dc.html`, and the Wireframes files are superseded explorations — not used as reference.
+2. **Login/OTP hero — RESOLVED by extension.** Since the Prototype is the approved design and instructions require matching it exactly, the existing app's 3D-illustration hero (commit `053419c`) is replaced with the Prototype's plain layout (logo top-left, headline, subtext, single field, full-width button, terms footer).
+3. **Bottom tab bar — RESOLVED by extension.** Adopt the Prototype's exact 5 tabs: Home / Status / [FAB → upload] / Docs / Chat. Profile is reached via the avatar tap on Home's header, not a tab. "Applications" as a tab is retired; its content is superseded by the new Status screen.
+4. **Screens absent from the Prototype** (onboarding steps, Schemes, Bank list/detail/compare, bank-linking, booking, readiness, My Applications, language, legal): **left on current UI for now** — not part of the approved flow, so no invented visual style for them in Phase 1. Flagged for a follow-up decision once Phase 1 is reviewed.
+5. **Duplicate document-vault screens** (`(tabs)/documents.tsx` and standalone `documents.tsx`): to be consolidated into one screen matching the Prototype's Documents state, since the Prototype models only one Documents screen.
 
-I'd rather get your call on these six before writing UI code, since a wrong guess on #1 or #4 would mean redoing most of the visual work. Once you confirm, I'll start on Authentication (Login → OTP) first, per your suggested order, then commit that milestone to `sa-dev-revamp` before moving on.
+Implementation proceeds screen-by-screen per the suggested order, starting with Authentication (Login → OTP), committing to `sa-dev-revamp` after each milestone.

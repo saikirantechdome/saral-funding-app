@@ -12,13 +12,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ShieldCheck, RefreshCw } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts } from "@/src/theme";
+import { protoColors, protoRadius, protoSpacing, protoSize } from "@/src/theme.proto";
 import { apiPost, setTokens } from "@/src/api";
 import { getLang } from "@/src/i18n";
-import Button from "@/src/components/ui/Button";
-import { BackBar } from "@/src/components/StepBar";
+import ProtoButton from "@/src/components/proto/ProtoButton";
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
@@ -35,7 +34,6 @@ export default function Otp() {
 
   const inputs = useRef<(TextInput | null)[]>([]);
 
-  // Countdown timer
   useEffect(() => {
     if (countdown <= 0) { setCanResend(true); return; }
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
@@ -51,10 +49,7 @@ export default function Otp() {
     next[index] = cleaned;
     setDigits(next);
     setErr("");
-
-    if (cleaned && index < OTP_LENGTH - 1) {
-      inputs.current[index + 1]?.focus();
-    }
+    if (cleaned && index < OTP_LENGTH - 1) inputs.current[index + 1]?.focus();
   };
 
   const handleKeyPress = (key: string, index: number) => {
@@ -66,7 +61,6 @@ export default function Otp() {
     }
   };
 
-  // Handle paste (user pastes full OTP)
   const handlePaste = (text: string, index: number) => {
     const cleaned = text.replace(/\D/g, "").slice(0, OTP_LENGTH);
     if (cleaned.length > 1) {
@@ -90,8 +84,6 @@ export default function Otp() {
       );
       await setTokens(r.token, r.refresh_token);
       const step = r.user.onboarding_step;
-      // Drop login/otp from history so the hardware back button from the
-      // destination screen doesn't pop back into the auth flow.
       if (router.canDismiss()) router.dismissAll();
       if (step === "profile") router.replace("/onboarding/profile");
       else if (step === "business") router.replace("/onboarding/business");
@@ -120,46 +112,33 @@ export default function Otp() {
     }
   };
 
+  const mm = String(Math.floor(countdown / 60)).padStart(2, "0");
+  const ss = String(countdown % 60).padStart(2, "0");
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="otp-screen">
-      <BackBar title="" onBack={() => router.back()} />
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]} testID="otp-screen">
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView
           contentContainerStyle={styles.body}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Icon */}
-          <View style={styles.iconWrap}>
-            <ShieldCheck size={36} color="#FFFFFF" strokeWidth={2} />
-          </View>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={12}>
+            <ArrowLeft size={20} color={protoColors.text} strokeWidth={2} />
+          </TouchableOpacity>
 
-          <Text style={styles.title}>Verify your number</Text>
-          <Text style={styles.subtitle}>
-            We sent a 6-digit code to{"\n"}
-            <Text style={styles.mobile}>+91 {mobile}</Text>
-          </Text>
+          <Text style={styles.headline}>Enter the code</Text>
+          <Text style={styles.subtitle}>Sent to +91 {mobile}</Text>
 
-          {/* OTP boxes */}
           <View style={styles.boxRow}>
             {digits.map((digit, i) => (
               <TextInput
                 key={i}
                 ref={(r) => { inputs.current[i] = r; }}
                 testID={i === 0 ? "otp-input" : `otp-digit-${i}`}
-                style={[
-                  styles.box,
-                  digit && styles.boxFilled,
-                  err && styles.boxError,
-                ]}
+                style={[styles.box, (digit.length > 0 || i === code.length) && styles.boxFocused, !!err && styles.boxError]}
                 value={digit}
-                onChangeText={(t) => {
-                  if (t.length > 1) {
-                    handlePaste(t, i);
-                  } else {
-                    handleChange(t, i);
-                  }
-                }}
+                onChangeText={(t) => (t.length > 1 ? handlePaste(t, i) : handleChange(t, i))}
                 onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
                 keyboardType="number-pad"
                 maxLength={1}
@@ -171,146 +150,99 @@ export default function Otp() {
 
           {err ? (
             <Text style={styles.err}>{err}</Text>
+          ) : canResend ? (
+            <TouchableOpacity onPress={onResend} testID="resend-otp">
+              <Text style={styles.resend}>Resend OTP</Text>
+            </TouchableOpacity>
           ) : (
-            <View style={{ height: 20 }} />
+            <Text style={styles.resend}>Resend in {mm}:{ss}</Text>
           )}
 
-          {/* Resend */}
-          <View style={styles.resendRow}>
-            {canResend ? (
-              <TouchableOpacity onPress={onResend} style={styles.resendBtn} testID="resend-otp">
-                <RefreshCw size={13} color={colors.primaryDark} strokeWidth={2} />
-                <Text style={styles.resendText}>Resend OTP</Text>
-              </TouchableOpacity>
-            ) : (
-              <Text style={styles.resendTimer}>
-                Resend in <Text style={{ fontFamily: fonts.bold }}>{countdown}s</Text>
-              </Text>
-            )}
-          </View>
+          <View style={{ height: protoSpacing.lg }} />
 
-          <Button
+          <ProtoButton
             testID="verify-btn"
-            label={loading ? "Verifying…" : "Verify & Continue"}
+            label={loading ? "Verifying…" : "Verify"}
             onPress={onVerify}
             disabled={!isComplete}
             loading={loading}
-            size="lg"
           />
+
+          <View style={{ flex: 1, minHeight: protoSpacing.xl }} />
+
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.footer}>Change number</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const OTP_GAP = 8;
+const OTP_GAP = protoSpacing.sm;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BOX_SIZE = Math.min(
-  56,
-  Math.floor((SCREEN_WIDTH - spacing.lg * 2 - OTP_GAP * (OTP_LENGTH - 1)) / OTP_LENGTH),
+  protoSize.otpBox + 8,
+  Math.floor((SCREEN_WIDTH - protoSpacing.lg * 2 - OTP_GAP * (OTP_LENGTH - 1)) / OTP_LENGTH),
 );
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: protoColors.surface },
   body: {
     flexGrow: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: protoSpacing.lg,
+    paddingTop: protoSpacing.xl,
+    paddingBottom: protoSpacing.lg,
   },
-  iconWrap: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-    alignSelf: "center",
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  title: {
-    fontSize: 26,
-    fontFamily: fonts.displayBold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    textAlign: "center",
+  back: { marginBottom: protoSpacing.md, alignSelf: "flex-start" },
+  headline: {
+    fontSize: protoSize.headline - 2,
+    lineHeight: (protoSize.headline - 2) * 1.2,
+    color: protoColors.text,
+    fontWeight: "700",
+    marginBottom: protoSpacing.xs,
   },
   subtitle: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    lineHeight: 22,
-    marginBottom: spacing.xl,
-    textAlign: "center",
-  },
-  mobile: {
-    fontFamily: fonts.semiBold,
-    color: colors.text,
+    fontSize: protoSize.body,
+    color: protoColors.textMuted,
+    marginBottom: protoSpacing.lg,
   },
   boxRow: {
     flexDirection: "row",
     gap: OTP_GAP,
-    justifyContent: "center",
-    marginBottom: spacing.sm,
+    marginBottom: protoSpacing.sm,
   },
   box: {
     width: BOX_SIZE,
     height: BOX_SIZE,
-    borderRadius: radius.xl,
+    borderRadius: protoRadius.field,
+    backgroundColor: protoColors.fieldBg,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
+    borderColor: "transparent",
     textAlign: "center",
-    fontSize: 20,
-    // Plain system font, not the custom DM Sans family — some Android
-    // devices were rendering the custom font's digits here with a visible
-    // slant, making the code hard to read. The system font renders crisp
-    // and upright everywhere.
+    fontSize: 18,
     fontWeight: "700",
-    color: colors.text,
+    color: protoColors.text,
   },
-  boxFilled: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
+  boxFocused: {
+    backgroundColor: "#FFFFFF",
+    borderColor: protoColors.accent,
   },
   boxError: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerSoft,
+    borderColor: protoColors.danger,
+    backgroundColor: protoColors.dangerSoft,
   },
   err: {
-    fontSize: 13,
-    fontFamily: fonts.medium,
-    color: colors.danger,
+    fontSize: 12,
+    color: protoColors.danger,
+  },
+  resend: {
+    fontSize: protoSize.small,
+    color: protoColors.textMuted,
+  },
+  footer: {
+    fontSize: protoSize.small,
+    color: protoColors.textMuted,
     textAlign: "center",
-    height: 20,
-  },
-  resendRow: {
-    alignItems: "center",
-    marginTop: spacing.sm2,
-    marginBottom: spacing.lg,
-  },
-  resendBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-  },
-  resendText: {
-    fontSize: 13,
-    fontFamily: fonts.semiBold,
-    color: colors.primaryDark,
-  },
-  resendTimer: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
   },
 });
