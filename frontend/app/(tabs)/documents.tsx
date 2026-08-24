@@ -222,6 +222,7 @@ function UserDocumentsTab() {
 
   const uploadedTypes = new Set(docs.map((d) => d.doc_type));
   const canUpload = !!selected && !!pickedFile && !uploading;
+  const verifiedCount = docs.filter((d) => d.status === "verified").length;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="documents-tab">
@@ -238,6 +239,18 @@ function UserDocumentsTab() {
           <Text style={s.headerSub}>{docs.length} document{docs.length !== 1 ? "s" : ""} uploaded</Text>
         </View>
       </View>
+
+      {/* Completion progress strip — one segment per uploaded document, colored by status */}
+      {docs.length > 0 && (
+        <View style={s.progressStrip} testID="documents-progress-strip">
+          <View style={s.progressSegRow}>
+            {docs.map((doc) => (
+              <View key={doc.id} style={[s.progressSeg, { backgroundColor: statusStyle(doc.status).text }]} />
+            ))}
+          </View>
+          <Text style={s.progressLabel}>{verifiedCount}/{docs.length} verified</Text>
+        </View>
+      )}
 
       <ScrollView
         style={{ flex: 1, marginBottom: tabBarSpacing }}
@@ -264,7 +277,12 @@ function UserDocumentsTab() {
 
         {/* Upload section */}
         <View style={s.card}>
-          <Text style={s.sectionLabel}>Upload a Document</Text>
+          <View style={s.cardHeaderRow}>
+            <View style={s.cardHeaderIcon}>
+              <Upload size={14} color={colors.primaryDark} strokeWidth={2.5} />
+            </View>
+            <Text style={s.sectionLabel}>Upload a Document</Text>
+          </View>
           <Text style={s.hint}>Select the document type, choose a file, then tap Upload.</Text>
 
           <Picker
@@ -343,10 +361,7 @@ function UserDocumentsTab() {
                 <RemoteIcon slug={accent.slug} size={22} fallback={FileText} fallbackColor={accent.fg} />
               </View>
               <View style={{ flex: 1 }}>
-                <View style={s.docTitleRow}>
-                  <Text style={s.docName} numberOfLines={1}>{doc.doc_type}</Text>
-                  <StatusBadge status={doc.status} />
-                </View>
+                <Text style={s.docName} numberOfLines={1}>{doc.doc_type}</Text>
                 {doc.file_name && (
                   <Text style={s.docFileName} numberOfLines={1}>{doc.file_name}</Text>
                 )}
@@ -362,21 +377,24 @@ function UserDocumentsTab() {
                   </View>
                 )}
               </View>
-              <View style={s.docActions}>
-                {doc.file_name && (
-                  <TouchableOpacity style={s.viewBtn} onPress={() => handleView(doc.id)} disabled={viewingDoc === doc.id}>
-                    {viewingDoc === doc.id
-                      ? <ActivityIndicator color={colors.primaryDark} size="small" />
-                      : <ExternalLink size={13} color={colors.primaryDark} strokeWidth={2.5} />}
-                  </TouchableOpacity>
-                )}
-                {doc.status === "pending" && (
-                  <TouchableOpacity style={s.deleteBtn} onPress={() => handleDelete(doc.id)} disabled={deleting === doc.id}>
-                    {deleting === doc.id
-                      ? <ActivityIndicator color={colors.textDim} size="small" />
-                      : <X size={14} color={colors.danger} strokeWidth={2.5} />}
-                  </TouchableOpacity>
-                )}
+              <View style={s.docRight}>
+                <StatusBadge status={doc.status} />
+                <View style={s.docActions}>
+                  {doc.file_name && (
+                    <TouchableOpacity style={s.viewBtn} onPress={() => handleView(doc.id)} disabled={viewingDoc === doc.id}>
+                      {viewingDoc === doc.id
+                        ? <ActivityIndicator color={colors.primaryDark} size="small" />
+                        : <ExternalLink size={13} color={colors.primaryDark} strokeWidth={2.5} />}
+                    </TouchableOpacity>
+                  )}
+                  {doc.status === "pending" && (
+                    <TouchableOpacity style={s.deleteBtn} onPress={() => handleDelete(doc.id)} disabled={deleting === doc.id}>
+                      {deleting === doc.id
+                        ? <ActivityIndicator color={colors.textDim} size="small" />
+                        : <X size={14} color={colors.danger} strokeWidth={2.5} />}
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </View>
             );
@@ -424,6 +442,33 @@ const s = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textMuted,
     marginTop: 1,
+  },
+  progressStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    backgroundColor: "#FFF",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  progressSegRow: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 4,
+  },
+  progressSeg: {
+    flex: 1,
+    minWidth: 4,
+    height: 6,
+    borderRadius: radius.pill,
+  },
+  progressLabel: {
+    fontSize: 11,
+    fontFamily: fonts.semiBold,
+    color: colors.textMuted,
+    flexShrink: 0,
   },
   heroWrap: {
     alignItems: "center",
@@ -491,11 +536,24 @@ const s = StyleSheet.create({
     marginBottom: spacing.sm2,
     ...elevation.l1,
   },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 3,
+  },
+  cardHeaderIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   sectionLabel: {
     fontSize: 15,
     fontFamily: fonts.displayBold,
     color: colors.text,
-    marginBottom: 3,
   },
   hint: {
     fontSize: 13,
@@ -584,22 +642,17 @@ const s = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  docTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  docName: { flex: 1, fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
+  docName: { fontSize: 14, fontFamily: fonts.displayBold, color: colors.text },
   docFileName: { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginTop: 3 },
   docDate: { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginTop: 2 },
-  docActions: {
-    flexDirection: "column",
-    gap: 6,
-    alignItems: "center",
-    justifyContent: "center",
+  docRight: {
+    alignItems: "flex-end",
+    gap: 8,
     flexShrink: 0,
-    alignSelf: "center",
+  },
+  docActions: {
+    flexDirection: "row",
+    gap: 6,
   },
   viewBtn: {
     width: 30,

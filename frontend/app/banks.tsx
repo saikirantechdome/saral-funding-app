@@ -144,37 +144,38 @@ export default function BanksScreen() {
                         </Text>
                       </View>
                     </View>
-                    <Text style={styles.interestRate}>{item.interest_range} p.a.</Text>
                   </View>
                   {item.score > 0 && <ScoreRing score={item.score} />}
                 </View>
 
                 <Text style={styles.whyText} numberOfLines={2}>{item.why}</Text>
 
-                {/* Stats */}
-                <View style={styles.statsRow}>
-                  <View style={styles.statBox}>
-                    <Text style={styles.statKey}>Suggested Amount</Text>
-                    <Text style={styles.statVal}>{formatINR(item.suggested_amount)}</Text>
+                {/* Headline figures — the real interest range + funding amount, front and centre */}
+                <View style={styles.headlineRow}>
+                  <View style={styles.headlineBox}>
+                    <Text style={styles.headlineLabel}>Interest Rate</Text>
+                    <Text style={styles.headlineVal}>{item.interest_range} <Text style={styles.headlineUnit}>p.a.</Text></Text>
                   </View>
-                  <View style={[styles.statBox, styles.statBoxBorder]}>
-                    <Text style={styles.statKey}>Collateral</Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
-                      {item.collateral_required
-                        ? <XCircle size={13} color={colors.warning} strokeWidth={2} />
-                        : <CheckCircle2 size={13} color={colors.primary} strokeWidth={2} />}
-                      <Text style={[styles.statVal, { color: item.collateral_required ? colors.warning : colors.primary }]}>
-                        {item.collateral_required ? "Required" : "Not required"}
-                      </Text>
-                    </View>
+                  <View style={[styles.headlineBox, styles.headlineBoxBorder]}>
+                    <Text style={styles.headlineLabel}>Funding up to</Text>
+                    <Text style={styles.headlineVal}>{formatINR(item.suggested_amount)}</Text>
+                  </View>
+                </View>
+
+                {/* Secondary meta */}
+                <View style={styles.metaChipsRow}>
+                  <View style={styles.metaChip}>
+                    {item.collateral_required
+                      ? <XCircle size={12} color={colors.warning} strokeWidth={2} />
+                      : <CheckCircle2 size={12} color={colors.primary} strokeWidth={2} />}
+                    <Text style={[styles.metaChipText, { color: item.collateral_required ? colors.warning : colors.primary }]}>
+                      {item.collateral_required ? "Collateral required" : "No collateral required"}
+                    </Text>
                   </View>
                   {item.processing_time_days != null && (
-                    <View style={[styles.statBox, styles.statBoxBorder]}>
-                      <Text style={styles.statKey}>Processing</Text>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
-                        <Clock size={11} color={colors.textDim} strokeWidth={2} />
-                        <Text style={styles.statVal}>{item.processing_time_days}d</Text>
-                      </View>
+                    <View style={styles.metaChip}>
+                      <Clock size={11} color={colors.textDim} strokeWidth={2} />
+                      <Text style={styles.metaChipText}>{item.processing_time_days}d processing</Text>
                     </View>
                   )}
                 </View>
@@ -297,12 +298,6 @@ const styles = StyleSheet.create({
   typePillText: { fontSize: 10, fontFamily: fonts.bold },
   typePillTextPublic: { color: colors.primaryDark },
   typePillTextPrivate: { color: tints.blue.fg },
-  interestRate: {
-    fontSize: 13,
-    fontFamily: fonts.semiBold,
-    color: colors.primaryDark,
-    marginTop: 3,
-  },
   whyText: {
     fontSize: 13,
     fontFamily: fonts.regular,
@@ -310,33 +305,58 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 12,
   },
-  statsRow: {
+  headlineRow: {
     flexDirection: "row",
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.primarySoft,
     borderRadius: radius.lg,
     overflow: "hidden",
     marginBottom: 10,
   },
-  statBox: {
+  headlineBox: {
     flex: 1,
-    padding: 10,
+    padding: 12,
   },
-  statBoxBorder: {
+  headlineBoxBorder: {
     borderLeftWidth: 1,
-    borderLeftColor: colors.border,
+    borderLeftColor: colors.primaryMid,
   },
-  statKey: {
+  headlineLabel: {
     fontSize: 10,
     fontFamily: fonts.semiBold,
-    color: colors.textMuted,
+    color: colors.primaryDark,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
-  statVal: {
-    fontSize: 13,
-    fontFamily: fonts.bold,
-    color: colors.text,
+  headlineVal: {
+    fontSize: 16,
+    fontFamily: fonts.displayBold,
+    color: colors.primaryDark,
     marginTop: 4,
+  },
+  headlineUnit: {
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    color: colors.primaryDark,
+  },
+  metaChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  metaChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.surface2,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  metaChipText: {
+    fontSize: 11,
+    fontFamily: fonts.semiBold,
+    color: colors.textMuted,
   },
   supportsRow: {
     flexDirection: "row",

@@ -6,10 +6,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
-  XCircle, ChevronRight, FileText, Building2,
+  XCircle, ChevronRight, FileText, Building2, CheckCircle2,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, shortRef } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import Saathi from "@/src/components/Saathi";
@@ -38,10 +38,12 @@ const STAGE_LABELS: Record<string, string> = {
   rejected:            "Rejected",
 };
 
-const STAGE_COLORS: Record<string, string> = {
-  approved:  tints.teal.fg,
-  disbursed: tints.deepTeal.fg,
-  rejected:  tints.red.fg,
+// Per-stage accent tint (bg + fg) — drives the percent ring, the stage
+// pill, and the "done" checkmarks/connector lines in the vertical tracker.
+const STAGE_TINTS: Record<string, { bg: string; fg: string }> = {
+  approved:  tints.teal,
+  disbursed: tints.deepTeal,
+  rejected:  tints.red,
 };
 
 // Client-side filter tabs — bucket each app's `stage` into one of these
@@ -65,6 +67,17 @@ type SchemeApp = {
   stage_history: { stage: string; note: string; updated_by: string; updated_at: string }[];
   created_at: string;
 };
+
+// Most recent update timestamp for the reference line under each card's
+// percent ring — falls back to the application's creation date when no
+// stage_history entries exist yet. `stage_history` is stored oldest-first
+// (see the reversed render below), so the last entry is the newest one.
+function lastUpdatedLabel(app: SchemeApp): string {
+  const iso = app.stage_history.length > 0
+    ? app.stage_history[app.stage_history.length - 1].updated_at
+    : app.created_at;
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export default function MyApplications() {
   const router = useRouter();
@@ -179,7 +192,8 @@ function AppCard({ app, expanded, onToggle }: {
   const isRejected = app.stage === "rejected";
   const isDisbursed = app.stage === "disbursed";
   const activeStageIdx = STAGES.indexOf(app.stage);
-  const accentColor = STAGE_COLORS[app.stage] ?? tints.blue.fg;
+  const accentTint = STAGE_TINTS[app.stage] ?? tints.blue;
+  const accentColor = accentTint.fg;
   const progressPct = Math.round(((activeStageIdx + 1) / STAGES.length) * 100);
 
   return (
@@ -204,28 +218,22 @@ function AppCard({ app, expanded, onToggle }: {
           ) : null}
           <StagePill stage={app.stage} label={app.stage_label} />
         </View>
-        <ChevronRight
-          size={18}
-          color={colors.textDim}
-          style={{ transform: [{ rotate: expanded ? "90deg" : "0deg" }] }}
-          strokeWidth={2}
-        />
-      </TouchableOpacity>
-
-      {/* Progress tracker — compact bar + current-stage caption, not a cramped 7-across row */}
-      {!isRejected && (
-        <View style={s.progressWrap}>
-          <View style={s.progressBarRow}>
-            <View style={s.progressBarTrack}>
-              <View style={[s.progressBarFill, { width: `${progressPct}%` }]} />
+        {/* Top-right: percent ring for this application's overall progress,
+            plus the expand/collapse chevron underneath it */}
+        <View style={s.headerRight}>
+          {!isRejected && (
+            <View style={[s.percentRing, { borderColor: accentTint.fg, backgroundColor: accentTint.bg }]}>
+              <Text style={[s.percentRingText, { color: accentTint.fg }]}>{progressPct}%</Text>
             </View>
-            <Text style={s.progressPercent}>{progressPct}%</Text>
-          </View>
-          <Text style={s.progressCaption}>
-            Stage {activeStageIdx + 1} of {STAGES.length} · <Text style={s.progressCaptionActive}>{STAGE_LABELS[app.stage] ?? app.stage_label}</Text>
-          </Text>
+          )}
+          <ChevronRight
+            size={18}
+            color={colors.textDim}
+            style={{ transform: [{ rotate: expanded ? "90deg" : "0deg" }] }}
+            strokeWidth={2}
+          />
         </View>
-      )}
+      </TouchableOpacity>
 
       {isRejected && (
         <View style={s.rejectedBanner}>
@@ -234,10 +242,54 @@ function AppCard({ app, expanded, onToggle }: {
         </View>
       )}
 
+      {/* Journey tracker — reference line + a clean vertical checklist of
+          every stage (done / current / upcoming), replacing the old
+          horizontal progress bar so the whole journey is scannable at once */}
+      {!isRejected && (
+        <>
+          <Text style={s.refLine}>Ref #{shortRef(app.id)} · Updated {lastUpdatedLabel(app)}</Text>
+          <View style={s.stageList}>
+            {STAGES.map((stg, i) => {
+              const isLastStage = i === STAGES.length - 1;
+              const isDone = i < activeStageIdx || (i === activeStageIdx && isLastStage);
+              const isCurrent = i === activeStageIdx && !isLastStage;
+              const statusWord = isDone ? "Done" : isCurrent ? "Now" : "—";
+              return (
+                <View key={stg} style={s.stageRow}>
+                  <View style={s.stageDotCol}>
+                    {isDone ? (
+                      <CheckCircle2 size={18} color={accentTint.fg} strokeWidth={2.2} />
+                    ) : isCurrent ? (
+                      <View style={[s.stageDotCurrent, { borderColor: accentTint.fg }]} />
+                    ) : (
+                      <View style={s.stageDotUpcoming} />
+                    )}
+                    {!isLastStage && (
+                      <View style={[s.stageLine, isDone && { backgroundColor: accentTint.fg }]} />
+                    )}
+                  </View>
+                  <View style={s.stageInfo}>
+                    <Text
+                      style={[s.stageName, isCurrent && s.stageNameCurrent, isDone && s.stageNameDone]}
+                      numberOfLines={1}
+                    >
+                      {STAGE_LABELS[stg]}
+                    </Text>
+                    <Text style={[s.stageStatus, isDone && { color: accentTint.fg }, isCurrent && { color: accentTint.fg, fontFamily: fonts.bold }]}>
+                      {statusWord}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      )}
+
       {/* History (expanded) — connected vertical timeline */}
       {expanded && app.stage_history.length > 0 && (
         <View style={s.history}>
-          <Text style={s.historyTitle}>Activity</Text>
+          <Text style={s.historyTitle}>Activity Log</Text>
           {[...app.stage_history].reverse().map((h, i, arr) => {
             const isFirst = i === 0;
             return (
@@ -275,14 +327,10 @@ function AppCard({ app, expanded, onToggle }: {
 }
 
 function StagePill({ stage, label }: { stage: string; label: string }) {
-  const bg = stage === "approved" ? tints.teal.bg
-    : stage === "disbursed" ? tints.deepTeal.bg
-    : stage === "rejected" ? tints.red.bg
-    : tints.blue.bg;
-  const fg = STAGE_COLORS[stage] ?? tints.blue.fg;
+  const tint = STAGE_TINTS[stage] ?? tints.blue;
   return (
-    <View style={[s.pill, { backgroundColor: bg }]}>
-      <Text style={[s.pillText, { color: fg }]}>{label}</Text>
+    <View style={[s.pill, { backgroundColor: tint.bg }]}>
+      <Text style={[s.pillText, { color: tint.fg }]}>{label}</Text>
     </View>
   );
 }
@@ -326,13 +374,25 @@ const s = StyleSheet.create({
   pill:            { alignSelf: "flex-start", borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 3, marginTop: 2 },
   pillText:        { fontSize: 11, fontFamily: fonts.semiBold },
 
-  progressWrap:    { marginBottom: 4, gap: 6 },
-  progressBarRow:  { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  progressBarTrack:{ flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.surface2, overflow: "hidden" },
-  progressBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
-  progressPercent: { width: 34, textAlign: "right", fontSize: 12, fontFamily: fonts.bold, color: colors.primaryDark },
-  progressCaption: { fontSize: 12, fontFamily: fonts.medium, color: colors.textDim },
-  progressCaptionActive: { fontFamily: fonts.semiBold, color: colors.primaryDark },
+  headerRight:     { alignItems: "center", gap: 6 },
+  percentRing:     { width: 42, height: 42, borderRadius: 21, borderWidth: 2.5,
+                     alignItems: "center", justifyContent: "center" },
+  percentRingText: { fontSize: 12, fontFamily: fonts.bold },
+
+  refLine:         { fontSize: 11, fontFamily: fonts.regular, color: colors.textDim, marginBottom: spacing.sm },
+
+  stageList:       { gap: 0 },
+  stageRow:        { flexDirection: "row", alignItems: "stretch", gap: 10 },
+  stageDotCol:     { width: 20, alignItems: "center" },
+  stageDotCurrent: { width: 14, height: 14, borderRadius: 7, borderWidth: 2.5, marginTop: 3, backgroundColor: "#fff" },
+  stageDotUpcoming:{ width: 8, height: 8, borderRadius: 4, marginTop: 8, backgroundColor: colors.border },
+  stageLine:       { width: 2, flex: 1, minHeight: 18, backgroundColor: colors.border, marginVertical: 2 },
+  stageInfo:       { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                     minHeight: 34, paddingBottom: 4 },
+  stageName:       { flex: 1, fontSize: 13, fontFamily: fonts.medium, color: colors.textDim, marginRight: spacing.sm },
+  stageNameDone:   { color: colors.text },
+  stageNameCurrent:{ fontFamily: fonts.semiBold, color: colors.text },
+  stageStatus:     { fontSize: 11, fontFamily: fonts.semiBold, color: colors.textPlaceholder },
 
   rejectedBanner:  { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: tints.red.bg,
                      borderRadius: radius.md, padding: spacing.sm, marginBottom: 4 },

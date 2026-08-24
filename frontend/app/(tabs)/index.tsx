@@ -24,7 +24,6 @@ import {
 import { colors, spacing, radius, fonts, formatINR, elevation, tints, gradients, stageColor } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { DashboardSkeleton, SkeletonBox } from "@/src/components/SkeletonLoader";
-import ReadinessRing from "@/src/components/ReadinessRing";
 import RemoteIcon from "@/src/components/RemoteIcon";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import BankBadge from "@/src/components/BankBadge";
@@ -99,6 +98,11 @@ const STAT_DEFS = [
   { id: "documents",     label: "Documents",      Icon: FolderIcon, color: tints.teal.bg,     iconColor: tints.teal.fg,     route: "/(tabs)/documents",    key: "total_documents" },
   { id: "team",          label: "Team Members",   Icon: Shield,     color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg, route: "/admin/team",          key: "total_admins" },
 ] as const;
+
+// Number of pill segments in the user home hero's application-progress bar —
+// purely a display resolution for the same 0-100 readiness score already
+// shown elsewhere as a ring/percentage, not a new data field.
+const PROGRESS_SEGMENTS = 7;
 
 // Decorative marketing tiles for the bottom of the user home screen — no
 // data binding, purely reassurance copy per the Figma reference.
@@ -278,6 +282,11 @@ export default function Dashboard() {
 
   const isAdmin = user?.role && user.role !== "user";
   const score = readiness?.score ?? data?.readiness_score ?? 0;
+  // Same score, shown as filled/current/pale pill segments instead of a
+  // circular ring — filledSegments are fully complete, currentSegment (if
+  // any progress remains) gets a brighter highlight, the rest stay pale.
+  const filledSegments = Math.min(PROGRESS_SEGMENTS, Math.floor((score / 100) * PROGRESS_SEGMENTS));
+  const currentSegment = score > 0 && score < 100 ? filledSegments : -1;
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -450,17 +459,18 @@ export default function Dashboard() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <View style={styles.logoWrap}>
-            <Image
-              source={require("../../assets/images/logo-icon.png")}
-              style={styles.logoIcon}
-              resizeMode="contain"
-            />
+          <TouchableOpacity
+            testID="home-avatar-btn"
+            onPress={() => router.push("/(tabs)/profile" as any)}
+            activeOpacity={0.8}
+            style={styles.headerIdentity}
+          >
+            <InitialsAvatar name={user?.full_name || "User"} size={40} variant={isAdmin ? "staff" : "user"} />
             <View>
-              <Text style={styles.logoName}>SARAL</Text>
-              <Text style={styles.logoTagline}>Funding Clear Hai!</Text>
+              <Text style={styles.headerGreeting}>{greeting}</Text>
+              <Text style={styles.headerName}>{user?.full_name ? user.full_name.split(" ")[0] : "there"}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity
               testID="support-btn"
@@ -476,27 +486,18 @@ export default function Dashboard() {
               style={styles.headerBtn}
             >
               <Bell size={18} color={colors.text} strokeWidth={2} />
-              {alerts.length > 0 && <View style={styles.badgeDot} />}
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="home-avatar-btn"
-              onPress={() => router.push("/(tabs)/profile" as any)}
-              activeOpacity={0.8}
-            >
-              <InitialsAvatar name={user?.full_name || "User"} size={32} variant={isAdmin ? "staff" : "user"} />
+              {alerts.length > 0 && (
+                <View style={adStyles.countBadge}>
+                  <Text style={adStyles.countBadgeText}>{alerts.length > 9 ? "9+" : alerts.length}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={{ paddingHorizontal: spacing.md }}>
 
-          {/* ── Greeting ── */}
-          <Text style={styles.pageGreeting}>
-            Hi, {user?.full_name ? user.full_name.split(" ")[0] : "there"}
-          </Text>
-          <Text style={styles.pageGreetingSub}>Let's grow your business</Text>
-
-          {/* ── Hero: your progress / profile strength ── */}
+          {/* ── Hero: application progress ── */}
           <LinearGradient
             colors={gradients.hero}
             start={{ x: 0, y: 0 }}
@@ -504,12 +505,19 @@ export default function Dashboard() {
             style={styles.heroCard}
             testID="home-hero"
           >
-            <View style={styles.heroTopRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heroLabel}>Your Progress</Text>
-                <Text style={styles.heroGreeting}>Profile Strength</Text>
-              </View>
-              <ReadinessRing score={score} size={72} />
+            <Text style={styles.heroLabel}>Application Progress</Text>
+            <Text style={styles.heroPercent}>{score}%</Text>
+            <View style={styles.progressBarRow}>
+              {Array.from({ length: PROGRESS_SEGMENTS }).map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.progressSegment,
+                    i < filledSegments && styles.progressSegmentFilled,
+                    i === currentSegment && styles.progressSegmentCurrent,
+                  ]}
+                />
+              ))}
             </View>
           </LinearGradient>
 
@@ -896,6 +904,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 4,
   },
+  headerIdentity: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flexShrink: 1,
+  },
+  headerGreeting: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    color: colors.textMuted,
+  },
+  headerName: {
+    fontSize: 16,
+    fontFamily: fonts.displayBold,
+    color: colors.text,
+    marginTop: 1,
+  },
   badgeDot: {
     position: "absolute",
     top: 6,
@@ -918,16 +943,29 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 6,
   },
-  heroTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  heroGreeting: {
-    fontSize: 18,
+  heroPercent: {
+    fontSize: 40,
     fontFamily: fonts.displayBold,
     color: "#FFFFFF",
-    letterSpacing: -0.3,
+    letterSpacing: -1,
+    marginTop: 6,
+  },
+  progressBarRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 18,
+  },
+  progressSegment: {
+    flex: 1,
+    height: 8,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.22)",
+  },
+  progressSegmentFilled: {
+    backgroundColor: colors.primaryLight,
+  },
+  progressSegmentCurrent: {
+    backgroundColor: "#FFFFFF",
   },
   heroSub: {
     fontSize: 12,

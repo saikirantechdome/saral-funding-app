@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, X, Landmark, ChevronLeft } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, formatINR, elevation } from "@/src/theme";
+import { colors, spacing, radius, fonts, formatINR, elevation, tints } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { SCHEME_CATEGORIES } from "@/src/constants";
 import { SchemesSkeleton } from "@/src/components/SkeletonLoader";
@@ -47,9 +47,15 @@ export default function Schemes() {
         apiGet<any[]>("/my/scheme-applications").catch(() => []),
         apiGet<any[]>("/schemes"),
       ]);
-      const assignedIds = new Set((myApps || []).map((a: any) => a.scheme_id));
+      // Each scheme application already carries its own stage/stage_label
+      // (see my-applications.tsx) — surface that as the card's status pill
+      // instead of inventing a separate status field.
+      const appsBySchemeId = new Map((myApps || []).map((a: any) => [a.scheme_id, a]));
+      const assignedIds = new Set(appsBySchemeId.keys());
       const assigned = assignedIds.size > 0
-        ? (allSchemes || []).filter((s: any) => assignedIds.has(s.id))
+        ? (allSchemes || [])
+            .filter((s: any) => assignedIds.has(s.id))
+            .map((s: any) => ({ ...s, _application: appsBySchemeId.get(s.id) }))
         : [];
       setAllAssigned(assigned);
       setItems(assigned);
@@ -156,11 +162,22 @@ export default function Schemes() {
   );
 }
 
+// Status pill colour follows the same stage vocabulary as my-applications.tsx
+// (rejected / approved+disbursed / everything else still in progress) rather
+// than a fabricated "Assigned/Pending/Active" set.
+function stageTint(stage?: string): { bg: string; fg: string } {
+  if (stage === "rejected") return { bg: colors.dangerSoft, fg: colors.danger };
+  if (stage === "approved" || stage === "disbursed") return tints.teal;
+  return tints.amber;
+}
+
 function SchemeCard({ item, onPress }: { item: any; onPress: () => void }) {
   const statesLabel = (item.states || []).includes("All India")
     ? "All India"
     : (item.states || [])[0] || "All India";
   const accent = schemeStyle(item.name);
+  const statusLabel: string | undefined = item._application?.stage_label;
+  const statusTint = stageTint(item._application?.stage);
 
   return (
     <TouchableOpacity
@@ -174,21 +191,28 @@ function SchemeCard({ item, onPress }: { item: any; onPress: () => void }) {
           <RemoteIcon slug={accent.slug} size={18} fallback={Landmark} fallbackColor={accent.fg} />
         </View>
         <Text style={styles.schemeName} numberOfLines={1}>{item.name}</Text>
-        <View style={styles.statePill}>
-          <Text style={styles.statePillText}>{statesLabel}</Text>
-        </View>
+        {statusLabel && (
+          <View style={[styles.statusPill, { backgroundColor: statusTint.bg }]}>
+            <Text style={[styles.statusPillText, { color: statusTint.fg }]}>{statusLabel}</Text>
+          </View>
+        )}
       </View>
 
       <Text style={styles.schemeDesc} numberOfLines={2}>{item.description}</Text>
 
+      <View style={styles.fundingRow}>
+        <Text style={styles.fundingLabel}>Funding up to</Text>
+        <Text style={styles.fundingAmt}>{formatINR(item.max_funding)}</Text>
+        {item.max_subsidy_percent > 0 && (
+          <View style={styles.subsidyPill}>
+            <Text style={styles.subsidyText}>{item.max_subsidy_percent}% subsidy</Text>
+          </View>
+        )}
+      </View>
+
       <View style={styles.cardBottom}>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaAmt}>Up to {formatINR(item.max_funding)}</Text>
-          {item.max_subsidy_percent > 0 && (
-            <View style={styles.subsidyPill}>
-              <Text style={styles.subsidyText}>{item.max_subsidy_percent}% subsidy</Text>
-            </View>
-          )}
+        <View style={styles.statePill}>
+          <Text style={styles.statePillText}>{statesLabel}</Text>
         </View>
         {(item.categories || []).slice(0, 2).map((c: string) => (
           <View key={c} style={styles.catChip}>
@@ -304,6 +328,18 @@ const styles = StyleSheet.create({
     color: colors.text,
     lineHeight: 21,
   },
+  statusPill: {
+    flexShrink: 0,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontFamily: fonts.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
   statePill: {
     backgroundColor: colors.surface2,
     paddingHorizontal: 8,
@@ -326,22 +362,28 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 18,
   },
+  fundingRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 6,
+    marginTop: 12,
+  },
+  fundingLabel: {
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    color: colors.textDim,
+  },
+  fundingAmt: {
+    fontSize: 17,
+    fontFamily: fonts.displayBold,
+    color: colors.primaryDark,
+  },
   cardBottom: {
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
     gap: 8,
     marginTop: 10,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  metaAmt: {
-    fontSize: 12,
-    fontFamily: fonts.bold,
-    color: colors.primaryDark,
   },
   subsidyPill: {
     backgroundColor: colors.primarySoft,

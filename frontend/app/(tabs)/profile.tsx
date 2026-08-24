@@ -197,9 +197,13 @@ export default function Profile() {
           ) : (
             <Text style={styles.nameDark}>{me?.full_name || "—"}</Text>
           )}
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleBadgeText}>
+              {me?.role === "user" ? "User" : me?.role?.replace(/_/g, " ") || "User"}
+            </Text>
+          </View>
           <Text style={styles.mobileDark}>
-            {me?.role === "user" ? "User" : me?.role?.replace(/_/g, " ") || "User"}
-            {me?.email ? ` · ${me.email}` : ` · ${formatMobile(me?.mobile)}`}
+            {me?.email ? me.email : formatMobile(me?.mobile)}
           </Text>
         </LinearGradient>
 
@@ -280,7 +284,7 @@ export default function Profile() {
 
             <TouchableOpacity
               testID="logout-btn"
-              style={[styles.actionRow, styles.logoutRow]}
+              style={[styles.actionRow, styles.lastActionRow]}
               onPress={logout}
               activeOpacity={0.8}
             >
@@ -453,7 +457,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.regular,
     color: "rgba(255,255,255,0.7)",
-    textTransform: "capitalize",
+  },
+  roleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+    marginBottom: 6,
+  },
+  roleBadgeText: {
+    fontSize: 10,
+    fontFamily: fonts.semiBold,
+    color: "#FFFFFF",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   avatarOuter: {
     position: "relative",
@@ -527,23 +546,24 @@ const styles = StyleSheet.create({
     ...elevation.l1,
   },
   actionsWrap: {
-    gap: 8,
+    backgroundColor: "#FFF",
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...elevation.l1,
   },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#FFF",
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
     paddingVertical: 14,
     paddingHorizontal: spacing.md,
-    ...elevation.l1,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  logoutRow: {
-    borderColor: colors.dangerSoft,
-    backgroundColor: "#FFF",
+  lastActionRow: {
+    borderBottomWidth: 0,
   },
   actionIcon: {
     width: 34,

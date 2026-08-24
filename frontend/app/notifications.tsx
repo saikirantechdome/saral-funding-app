@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
@@ -39,6 +39,22 @@ function formatTs(iso: string): string {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+// Group by real recency off `created_at` only — "Today" vs "Earlier" — no
+// invented buckets beyond what the timestamp already supports.
+function groupByRecency(items: any[]): { title: string; data: any[] }[] {
+  const now = new Date();
+  const today = items.filter((n) => isSameDay(new Date(n.created_at), now));
+  const earlier = items.filter((n) => !isSameDay(new Date(n.created_at), now));
+  return [
+    ...(today.length ? [{ title: "Today", data: today }] : []),
+    ...(earlier.length ? [{ title: "Earlier", data: earlier }] : []),
+  ];
+}
+
 export default function Notifications() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
@@ -62,6 +78,7 @@ export default function Notifications() {
   };
 
   const unreadCount = items.filter((n) => !n.read).length;
+  const sections = groupByRecency(items);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="notifications-screen">
@@ -88,11 +105,15 @@ export default function Notifications() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={items}
+        <SectionList
+          sections={sections}
           keyExtractor={(x) => x.id}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionHeader}>{section.title}</Text>
+          )}
           renderItem={({ item }) => {
             const { icon: IconComponent, slug, bg, color } = notifIcon(item.type);
             return (
@@ -171,6 +192,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.semiBold,
     color: colors.primaryDark,
+  },
+  sectionHeader: {
+    fontSize: 11,
+    fontFamily: fonts.bold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    marginLeft: 4,
   },
   card: {
     flexDirection: "row",

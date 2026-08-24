@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Building2, TrendingDown, DollarSign, BadgePercent,
@@ -8,7 +9,7 @@ import {
   TrendingUp, TrendingDown as TrendingDownIcon, Minus,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, elevation, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatINR, gradients } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
@@ -130,8 +131,6 @@ export default function BankDetail() {
     );
   }
 
-  const isPublic = bank.type === "Public";
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID={`bank-detail-${id}`}>
       <BackBar title="" onBack={() => router.back()} />
@@ -139,22 +138,25 @@ export default function BankDetail() {
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero */}
-        <View style={styles.heroCard}>
+        {/* Hero: dark gradient header — badge, name, sector pill, headline rate + funding figures */}
+        <LinearGradient
+          colors={gradients.hero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+          testID="bank-hero"
+        >
           <View style={styles.heroTop}>
             <BankBadge name={bank.name} shortName={bank.short_name} size={56} />
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <View style={[styles.typePill, isPublic ? styles.typePillPub : styles.typePillPriv]}>
-                  <Text style={[styles.typePillText, isPublic ? styles.typePillTextPub : styles.typePillTextPriv]}>
-                    {bank.type} Sector
-                  </Text>
+                <View style={styles.typePill}>
+                  <Text style={styles.typePillText}>{bank.type} Sector</Text>
                 </View>
               </View>
               <Text style={styles.bankName}>{bank.name}</Text>
             </View>
           </View>
-          <Text style={styles.bankDesc}>{bank.description}</Text>
 
           {/* Key rates */}
           <View style={styles.ratesRow}>
@@ -169,9 +171,17 @@ export default function BankDetail() {
               <Text style={styles.rateUnit}>loan amount</Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
         <View style={{ paddingHorizontal: spacing.md }}>
+          {/* Clean info section — label + value, not a dense paragraph under the hero */}
+          {!!bank.description && (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>What it is</Text>
+              <Text style={styles.infoValue}>{bank.description}</Text>
+            </View>
+          )}
+
           {/* Match score */}
           {bank.score != null && (
             <View style={styles.matchCard}>
@@ -290,60 +300,47 @@ export default function BankDetail() {
 }
 
 const styles = StyleSheet.create({
+  // Dark gradient hero — badge + name + sector pill, then headline rate/funding figures
   heroCard: {
-    backgroundColor: "#FFF",
     margin: spacing.md,
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...elevation.l1,
     marginBottom: spacing.lg,
+    borderRadius: radius.xxl,
+    padding: spacing.md,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
   },
   heroTop: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    marginBottom: 12,
-  },
-  bankAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.xl,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bankAvatarPrivate: {
-    backgroundColor: tints.blue.bg,
+    marginBottom: 16,
   },
   typePill: {
+    backgroundColor: "rgba(255,255,255,0.18)",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.pill,
     marginBottom: 4,
   },
-  typePillPub: { backgroundColor: colors.primarySoft },
-  typePillPriv: { backgroundColor: tints.blue.bg },
-  typePillText: { fontSize: 10, fontFamily: fonts.bold, textTransform: "uppercase", letterSpacing: 0.4 },
-  typePillTextPub: { color: colors.primaryDark },
-  typePillTextPriv: { color: tints.blue.fg },
+  typePillText: {
+    fontSize: 10,
+    fontFamily: fonts.bold,
+    color: "#FFF",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
   bankName: {
     fontSize: 20,
     fontFamily: fonts.displayBold,
-    color: colors.text,
+    color: "#FFF",
     lineHeight: 26,
-  },
-  bankDesc: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    lineHeight: 19,
-    marginBottom: 16,
   },
   ratesRow: {
     flexDirection: "row",
-    backgroundColor: colors.primarySoft,
+    backgroundColor: "rgba(255,255,255,0.14)",
     borderRadius: radius.xl,
     overflow: "hidden",
   },
@@ -354,26 +351,49 @@ const styles = StyleSheet.create({
   },
   rateBoxBorder: {
     borderLeftWidth: 1,
-    borderLeftColor: colors.primaryMid,
+    borderLeftColor: "rgba(255,255,255,0.22)",
   },
   rateLabel: {
     fontSize: 11,
     fontFamily: fonts.semiBold,
-    color: colors.primaryDark,
+    color: "rgba(255,255,255,0.72)",
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
   rateValue: {
     fontSize: 18,
     fontFamily: fonts.displayBold,
-    color: colors.primaryDark,
+    color: "#FFF",
     marginTop: 2,
   },
   rateUnit: {
     fontSize: 10,
     fontFamily: fonts.regular,
-    color: colors.textDim,
+    color: "rgba(255,255,255,0.6)",
     marginTop: 1,
+  },
+  infoCard: {
+    backgroundColor: "#FFF",
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    ...elevation.l1,
+  },
+  infoLabel: {
+    fontSize: 11,
+    fontFamily: fonts.bold,
+    color: colors.primaryDark,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 8,
+  },
+  infoValue: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    lineHeight: 19,
   },
   tileGrid: {
     flexDirection: "row",

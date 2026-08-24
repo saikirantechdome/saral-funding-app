@@ -8,11 +8,12 @@ import {
   Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { CheckCircle2, FileText, ChevronDown, ChevronUp, TrendingUp, Zap, MapPin, Tag, Phone } from "lucide-react-native";
+import { CheckCircle2, FileText, ChevronDown, ChevronUp, Zap, MapPin, Tag, Phone } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, elevation, formatINR } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation, formatINR, gradients } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
@@ -171,149 +172,258 @@ export default function SchemeDetail() {
     ? scheme.process.split(/\n|\.(?=\s)/).filter(Boolean).map((s: string) => s.trim()).filter((s: string) => s.length > 5)
     : Array.isArray(scheme.process) ? scheme.process : [];
 
+  const statesLabel = (scheme.states || []).includes("All India")
+    ? "All India"
+    : (scheme.states || [])[0];
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID={`scheme-detail-${id}`}>
       <BackBar title="" onBack={() => router.back()} />
       <ScrollView
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero */}
-        <View style={styles.heroCard}>
-          <Text style={styles.schemeName}>{scheme.name}</Text>
-          {scheme.full_name && scheme.full_name !== scheme.name && (
-            <Text style={styles.schemeFullName}>{scheme.full_name}</Text>
-          )}
-          <Text style={styles.schemeDesc}>{scheme.description}</Text>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <TrendingUp size={13} color={colors.primaryDark} strokeWidth={2} />
-                <Text style={styles.statLabel}>Max Funding</Text>
-              </View>
-              <Text style={styles.statVal}>{formatINR(scheme.max_funding)}</Text>
-            </View>
-            {scheme.max_subsidy_percent > 0 && (
-              <View style={[styles.statBox, { borderLeftWidth: 1, borderLeftColor: colors.border }]}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                  <Zap size={13} color={colors.primaryDark} strokeWidth={2} />
-                  <Text style={styles.statLabel}>Subsidy</Text>
-                </View>
-                <Text style={styles.statVal}>{scheme.max_subsidy_percent}%</Text>
+        {/* Hero: dark gradient header — name, applicability pill, headline funding figure */}
+        <LinearGradient
+          colors={gradients.hero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+          testID="scheme-hero"
+        >
+          <View style={styles.heroTopRow}>
+            <Text style={styles.schemeName}>{scheme.name}</Text>
+            {statesLabel && (
+              <View style={styles.heroPill}>
+                <Text style={styles.heroPillText}>{statesLabel}</Text>
               </View>
             )}
           </View>
-        </View>
+          {scheme.full_name && scheme.full_name !== scheme.name && (
+            <Text style={styles.schemeFullName}>{scheme.full_name}</Text>
+          )}
 
-        {/* Tags */}
-        {(scheme.categories || []).length > 0 && (
-          <View style={styles.tagsRow}>
-            <Tag size={12} color={colors.textDim} strokeWidth={2} />
-            {scheme.categories.map((c: string) => (
-              <View key={c} style={styles.tag}>
-                <Text style={styles.tagText}>{c}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Accordion sections */}
-        {(scheme.eligibility || []).length > 0 && (
-          <AccordionSection
-            title="Eligibility"
-            icon={<CheckCircle2 size={15} color={tints.teal.fg} strokeWidth={2} />}
-            tint={tints.teal}
-            defaultOpen={true}
-          >
-            {scheme.eligibility.map((item: string, i: number) => (
-              <CheckItem key={i} text={item} />
-            ))}
-          </AccordionSection>
-        )}
-
-        {(scheme.benefits || []).length > 0 && (
-          <AccordionSection
-            title="Benefits"
-            icon={<Zap size={15} color={tints.amber.fg} strokeWidth={2} />}
-            tint={tints.amber}
-            defaultOpen={true}
-          >
-            {scheme.benefits.map((item: string, i: number) => (
-              <CheckItem key={i} text={item} />
-            ))}
-          </AccordionSection>
-        )}
-
-        {(scheme.documents || []).length > 0 && (
-          <AccordionSection
-            title="Documents Required"
-            icon={<FileText size={15} color={tints.blue.fg} strokeWidth={2} />}
-            tint={tints.blue}
-          >
-            {scheme.documents.map((item: string, i: number) => (
-              <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary, marginTop: 6 }} />
-                <Text style={{ flex: 1, fontSize: 13, fontFamily: fonts.regular, color: colors.text, lineHeight: 19 }}>{item}</Text>
-              </View>
-            ))}
-          </AccordionSection>
-        )}
-
-        {processList.length > 0 && (
-          <AccordionSection
-            title="Application Process"
-            icon={<CheckCircle2 size={15} color={tints.deepTeal.fg} strokeWidth={2} />}
-            tint={tints.deepTeal}
-          >
-            {processList.map((step: string, i: number) => (
-              <StepItem key={i} index={i + 1} text={step} />
-            ))}
-          </AccordionSection>
-        )}
-
-        {(scheme.states || []).length > 0 && (
-          <AccordionSection
-            title="State Applicability"
-            icon={<MapPin size={15} color={tints.green.fg} strokeWidth={2} />}
-            tint={tints.green}
-          >
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {scheme.states.map((s: string) => (
-                <View key={s} style={styles.statePill}>
-                  <Text style={styles.statePillText}>{s}</Text>
-                </View>
-              ))}
+          <View style={styles.heroFundingRow}>
+            <View>
+              <Text style={styles.heroFundingLabel}>Maximum Funding</Text>
+              <Text style={styles.heroFundingVal}>{formatINR(scheme.max_funding)}</Text>
             </View>
-          </AccordionSection>
-        )}
+            {scheme.max_subsidy_percent > 0 && (
+              <View style={styles.heroSubsidyBox}>
+                <Zap size={12} color="#FFF" strokeWidth={2} />
+                <Text style={styles.heroSubsidyText}>{scheme.max_subsidy_percent}% subsidy</Text>
+              </View>
+            )}
+          </View>
+        </LinearGradient>
 
-        <View style={styles.ctaWrap}>
-          <Button
-            testID="book-from-scheme"
-            label="Book Free Consultation"
-            onPress={() => router.push("/booking")}
-            size="lg"
-            Icon={Phone}
-          />
+        <View style={{ paddingHorizontal: spacing.md }}>
+          {/* Clean info sections — label + value, not dense paragraphs */}
+          {!!scheme.description && (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>What it is</Text>
+              <Text style={styles.infoValue}>{scheme.description}</Text>
+            </View>
+          )}
+
+          {(scheme.eligibility || []).length > 0 && (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>Eligibility</Text>
+              <View style={{ marginTop: 4 }}>
+                {scheme.eligibility.map((item: string, i: number) => (
+                  <CheckItem key={i} text={item} />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Category + document-requirement tags, as small pills */}
+          {((scheme.categories || []).length > 0 || (scheme.documents || []).length > 0) && (
+            <View style={styles.tagsCard}>
+              {(scheme.categories || []).length > 0 && (
+                <View style={styles.tagsGroup}>
+                  <View style={styles.tagsGroupHeader}>
+                    <Tag size={12} color={colors.textDim} strokeWidth={2} />
+                    <Text style={styles.tagsGroupLabel}>Categories</Text>
+                  </View>
+                  <View style={styles.tagsRow}>
+                    {scheme.categories.map((c: string) => (
+                      <View key={c} style={styles.tag}>
+                        <Text style={styles.tagText}>{c}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+              {(scheme.documents || []).length > 0 && (
+                <View style={styles.tagsGroup}>
+                  <View style={styles.tagsGroupHeader}>
+                    <FileText size={12} color={colors.textDim} strokeWidth={2} />
+                    <Text style={styles.tagsGroupLabel}>Documents Required</Text>
+                  </View>
+                  <View style={styles.tagsRow}>
+                    {scheme.documents.map((d: string) => (
+                      <View key={d} style={[styles.tag, styles.docTag]}>
+                        <Text style={[styles.tagText, styles.docTagText]}>{d}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Remaining detail sections stay as expandable accordions */}
+          {(scheme.benefits || []).length > 0 && (
+            <AccordionSection
+              title="Benefits"
+              icon={<Zap size={15} color={tints.amber.fg} strokeWidth={2} />}
+              tint={tints.amber}
+              defaultOpen={true}
+            >
+              {scheme.benefits.map((item: string, i: number) => (
+                <CheckItem key={i} text={item} />
+              ))}
+            </AccordionSection>
+          )}
+
+          {processList.length > 0 && (
+            <AccordionSection
+              title="Application Process"
+              icon={<CheckCircle2 size={15} color={tints.deepTeal.fg} strokeWidth={2} />}
+              tint={tints.deepTeal}
+            >
+              {processList.map((step: string, i: number) => (
+                <StepItem key={i} index={i + 1} text={step} />
+              ))}
+            </AccordionSection>
+          )}
+
+          {(scheme.states || []).length > 0 && (
+            <AccordionSection
+              title="State Applicability"
+              icon={<MapPin size={15} color={tints.green.fg} strokeWidth={2} />}
+              tint={tints.green}
+            >
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {scheme.states.map((s: string) => (
+                  <View key={s} style={styles.statePill}>
+                    <Text style={styles.statePillText}>{s}</Text>
+                  </View>
+                ))}
+              </View>
+            </AccordionSection>
+          )}
+
+          {/* Single clear CTA */}
+          <View style={styles.ctaWrap}>
+            <Button
+              testID="book-from-scheme"
+              label="Book Free Consultation"
+              onPress={() => router.push("/booking")}
+              size="lg"
+              Icon={Phone}
+            />
+          </View>
+
+          <TouchableOpacity
+            testID="scheme-whatsapp-cta"
+            style={styles.whatsappCta}
+            onPress={() => Linking.openURL(schemeWhatsAppUrl(scheme.name))}
+            activeOpacity={0.85}
+          >
+            <MaterialCommunityIcons name="whatsapp" size={18} color={colors.primaryDark} />
+            <Text style={styles.whatsappCtaText}>Contact us on WhatsApp</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          testID="scheme-whatsapp-cta"
-          style={styles.whatsappCta}
-          onPress={() => Linking.openURL(schemeWhatsAppUrl(scheme.name))}
-          activeOpacity={0.85}
-        >
-          <MaterialCommunityIcons name="whatsapp" size={18} color={colors.primaryDark} />
-          <Text style={styles.whatsappCtaText}>Contact us on WhatsApp</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  // Dark gradient hero — name + applicability pill, then the headline funding figure
   heroCard: {
+    margin: spacing.md,
+    marginBottom: spacing.lg,
+    borderRadius: radius.xxl,
+    padding: spacing.md,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  schemeName: {
+    flex: 1,
+    fontSize: 20,
+    fontFamily: fonts.displayBold,
+    color: "#FFF",
+    lineHeight: 27,
+  },
+  heroPill: {
+    flexShrink: 0,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  heroPillText: {
+    fontSize: 10,
+    fontFamily: fonts.bold,
+    color: "#FFF",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  schemeFullName: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: "rgba(255,255,255,0.75)",
+    marginTop: 3,
+    fontStyle: "italic",
+  },
+  heroFundingRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  heroFundingLabel: {
+    fontSize: 11,
+    fontFamily: fonts.semiBold,
+    color: "rgba(255,255,255,0.72)",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  heroFundingVal: {
+    fontSize: 30,
+    fontFamily: fonts.displayBold,
+    color: "#FFF",
+    marginTop: 4,
+  },
+  heroSubsidyBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  heroSubsidyText: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    color: "#FFF",
+  },
+
+  // Clean label + value info sections
+  infoCard: {
     backgroundColor: "#FFF",
     borderRadius: radius.xl,
     borderWidth: 1,
@@ -322,58 +432,52 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm2,
     ...elevation.l1,
   },
-  schemeName: {
-    fontSize: 20,
-    fontFamily: fonts.displayBold,
-    color: colors.text,
-    lineHeight: 27,
+  infoLabel: {
+    fontSize: 11,
+    fontFamily: fonts.bold,
+    color: colors.primaryDark,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 8,
   },
-  schemeFullName: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.textDim,
-    marginTop: 3,
-    fontStyle: "italic",
-  },
-  schemeDesc: {
+  infoValue: {
     fontSize: 14,
     fontFamily: fonts.regular,
     color: colors.textMuted,
     lineHeight: 21,
-    marginTop: 10,
   },
-  statsRow: {
-    flexDirection: "row",
-    marginTop: 16,
+
+  // Category / document-requirement tags
+  tagsCard: {
+    backgroundColor: "#FFF",
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.lg,
-    overflow: "hidden",
+    padding: spacing.md,
+    marginBottom: spacing.sm2,
+    ...elevation.l1,
   },
-  statBox: {
-    flex: 1,
-    padding: 14,
-    backgroundColor: colors.primarySoft,
+  tagsGroup: {
+    marginBottom: spacing.sm2,
+  },
+  tagsGroupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
+    marginBottom: 8,
   },
-  statLabel: {
+  tagsGroupLabel: {
     fontSize: 11,
     fontFamily: fonts.semiBold,
-    color: colors.primaryDark,
+    color: colors.textDim,
     textTransform: "uppercase",
     letterSpacing: 0.4,
-  },
-  statVal: {
-    fontSize: 22,
-    fontFamily: fonts.displayBold,
-    color: colors.primaryDark,
   },
   tagsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
     alignItems: "center",
-    marginBottom: spacing.lg,
   },
   tag: {
     backgroundColor: colors.surfaceAlt,
@@ -387,6 +491,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fonts.medium,
     color: colors.textMuted,
+  },
+  docTag: {
+    backgroundColor: tints.blue.bg,
+    borderColor: tints.blue.bg,
+  },
+  docTagText: {
+    color: tints.blue.fg,
+    fontFamily: fonts.semiBold,
   },
   statePill: {
     backgroundColor: colors.surfaceAlt,
