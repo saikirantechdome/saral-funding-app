@@ -2,7 +2,7 @@
 
 Branch: `sa-dev-revamp` (created from `sai-dev-deploy`, the most up-to-date branch — it is 7 commits ahead of `sai-dev`/`origin/HEAD` and already contains prior UI redesign work; `sai-dev-deploy` has nothing `sai-dev` doesn't).
 
-Status: **Step 1 & 2 complete (audit + mapping). Not yet implementing — see "Open questions" before Step 3 begins.**
+Status: **All 10 screens/states in `Saral User Prototype.dc.html` implemented and committed locally** (Login, OTP, Home, Status, Documents list, per-document Upload, Submitted confirmation, Notifications, Chat, Profile), plus the tab bar restructure. **Not pushed yet** — holding until Admin side (Phase 2) is also done, per instruction. See "What was adapted, not copied verbatim" below for the handful of deliberate deviations, and "Still open" for follow-ups.
 
 ---
 
@@ -66,4 +66,23 @@ Full architecture/API/component inventory is in the audit already done this sess
 4. **Screens absent from the Prototype** (onboarding steps, Schemes, Bank list/detail/compare, bank-linking, booking, readiness, My Applications, language, legal): **left on current UI for now** — not part of the approved flow, so no invented visual style for them in Phase 1. Flagged for a follow-up decision once Phase 1 is reviewed.
 5. **Duplicate document-vault screens** (`(tabs)/documents.tsx` and standalone `documents.tsx`): to be consolidated into one screen matching the Prototype's Documents state, since the Prototype models only one Documents screen.
 
-Implementation proceeds screen-by-screen per the suggested order, starting with Authentication (Login → OTP), committing to `sa-dev-revamp` after each milestone.
+Implementation proceeded screen-by-screen per the suggested order, committing to `sa-dev-revamp` locally after each milestone (6 commits: plan → Login/OTP → Home/Status/tab-bar → Documents flow → Notifications/Chat/Profile). **Not pushed** — per your instruction, pushing waits until Admin (Phase 2) is also done.
+
+## 5. What was adapted, not copied verbatim
+
+Faithful to the prototype's colors/type/spacing/components everywhere, but a few real-app realities forced small, documented adaptations:
+
+- **Sizing is scaled ~1.2×** from the prototype's own px values (it's authored in a fixed 320pt-wide demo phone frame, not a 1:1 device spec) — see `theme.proto.ts`. Colors are exact; proportions are preserved; absolute px are scaled up for comfortable real touch targets.
+- **Stage taxonomy on Home/Status** uses the app's real 7-stage CRM pipeline (`call_done → documents_submitted → scheme_identified → application_filed → under_review → approved → disbursed`, from `/my/scheme-applications`) rather than the prototype's demo labels ("Schemes & your CA", etc.) — real data was already 7 stages, matching the prototype's "of 7" exactly, so I used the real names instead of inventing fake ones.
+- **Document Upload/Submitted screens are new** (`app/document/[type].tsx`, `app/document/submitted.tsx`) — the old app only had one inline upload UI on the list screen; it's now three screens matching the prototype's Documents → Upload → Submitted flow.
+- **Two duplicate document-vault implementations were consolidated** into one shared `src/screens/DocumentVault.tsx`, used by both the standalone post-onboarding route and the Documents tab.
+- **Home dropped** the bank-match / scheme-match / WhatsApp / consultation / marketing sections — none are in the prototype's Home. Those features (Banks, Schemes, Booking, WhatsApp) still work but currently have **no entry point** anywhere in the revamped nav. This is the one open item that needs your call — see below.
+- **FAB tab** (center "+") redirects into the Documents flow (`app/(tabs)/quick-upload.tsx`) since there's no generic "quick upload" endpoint to target more specifically.
+- **Reviewer name**: the prototype shows a fictional "Karan S."; the real app has no assigned-reviewer field, so screens say "Our team" instead of a fabricated name.
+
+## 6. Still open
+
+1. **Where do Banks / Schemes / Booking / WhatsApp go now?** They lost their only entry point when Home was simplified to match the prototype. Options: add a "More" section somewhere, extend the Status screen, or leave them until a prototype screen covers them explicitly.
+2. **Icon source** (Flaticon vs the current lucide-react-native + Icons8 mix) — asked earlier, no answer yet. Nothing revamped so far uses Icons8; all new icons are lucide vector components.
+3. A pre-existing, unrelated `ReferenceError: colors is not defined` shows up in the browser console on every page load — confirmed via bisection to already exist in the original pre-revamp code (053419c), harmless to visible UI. Left untouched (out of scope) but worth a look separately if it bothers you.
+4. Interactive browser click-testing became unreliable partway through this session (see chat) — Documents/Notifications/Chat/Profile were verified by compile/console cleanliness and by reusing the exact same components already pixel-verified on Login/OTP/Home/Status, not by a fresh screenshot pass. Worth a visual pass once the Browser pane is behaving normally again.
