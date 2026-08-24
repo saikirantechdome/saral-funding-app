@@ -11,7 +11,7 @@ import {
   Heart, FileText, CheckCircle2, XCircle,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, stageColor, formatMobile } from "@/src/theme";
+import { colors, spacing, radius, fonts, stageColor, formatMobile, elevation } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -295,11 +295,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: 8,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   cardHeader: {
     flexDirection: "row",

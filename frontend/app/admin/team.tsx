@@ -315,7 +315,7 @@ const s = StyleSheet.create({
   headerText: { fontSize: 13, fontFamily: fonts.medium, color: colors.textMuted },
   memberCard: {
     flexDirection: "row", alignItems: "flex-start", gap: spacing.sm2,
-    backgroundColor: "#FFF", borderRadius: radius.xxl,
+    backgroundColor: "#FFF", borderRadius: radius.xl,
     borderWidth: 1, borderColor: colors.border,
     padding: spacing.md, marginBottom: spacing.sm2,
     ...elevation.l1,

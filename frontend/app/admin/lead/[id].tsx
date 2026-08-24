@@ -75,7 +75,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
   );
 }
 const card = StyleSheet.create({
-  wrap: { backgroundColor: "#FFF", borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
+  wrap: { backgroundColor: "#FFF", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.sm2, ...elevation.l1 },
   title: { fontSize: 11, fontFamily: fonts.bold, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 },
 });
 
@@ -591,7 +591,7 @@ export default function LeadDetail() {
               const accent = schemeStyle(app.scheme_name);
               return (
               <View key={app.id} style={styles.appRow}>
-                <View style={[{ width: 28, height: 28, borderRadius: radius.md, alignItems: "center", justifyContent: "center", flexShrink: 0 }, { backgroundColor: accent.bg }]}>
+                <View style={[{ width: 36, height: 36, borderRadius: radius.lg, alignItems: "center", justifyContent: "center", flexShrink: 0 }, { backgroundColor: accent.bg }]}>
                   <RemoteIcon slug={accent.slug} size={16} fallback={Landmark} fallbackColor={accent.fg} />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -1048,7 +1048,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border, flexWrap: "wrap",
   },
   docIconChip: {
-    width: 32, height: 32, borderRadius: radius.md,
+    width: 36, height: 36, borderRadius: radius.lg,
     backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   docName: { fontSize: 13, fontFamily: fonts.medium, color: colors.text },

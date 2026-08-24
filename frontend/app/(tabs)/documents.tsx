@@ -484,7 +484,7 @@ const s = StyleSheet.create({
   },
   card: {
     backgroundColor: "#FFF",
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
@@ -553,12 +553,13 @@ const s = StyleSheet.create({
   sectionCount: { fontSize: 12, fontFamily: fonts.medium, color: colors.textMuted },
   emptyCard: {
     backgroundColor: "#FFF",
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.lg,
     alignItems: "center",
     gap: 8,
+    ...elevation.l1,
   },
   emptyText: { fontSize: 15, fontFamily: fonts.displayBold, color: colors.text },
   emptyHint: { fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center", lineHeight: 18 },

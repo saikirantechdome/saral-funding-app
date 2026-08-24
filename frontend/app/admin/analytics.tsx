@@ -7,7 +7,7 @@ import { useRouter } from "expo-router";
 import { TrendingUp, MapPin, Target, Phone, Users, Calendar, ChevronDown, CheckCircle2, Banknote } from "lucide-react-native";
 import Svg, { Polyline, Circle, Line, Text as SvgText, G } from "react-native-svg";
 
-import { colors, spacing, radius, fonts, stageColor, tints } from "@/src/theme";
+import { colors, spacing, radius, fonts, stageColor, tints, elevation } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 
@@ -118,11 +118,7 @@ const statStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 12,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   icon: { width: 28, height: 28, borderRadius: radius.md, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   value: { fontSize: 20, fontFamily: fonts.displayBold, color: colors.text, lineHeight: 24 },
@@ -435,16 +431,12 @@ export default function AdminAnalytics() {
 const styles = StyleSheet.create({
   section: {
     backgroundColor: "#FFF",
-    borderRadius: radius.xxl,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: 12,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   pipelineGrid: {
     flexDirection: "row",

@@ -26,7 +26,7 @@ import {
   XCircle,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, formatMobile } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, formatMobile, elevation } from "@/src/theme";
 import { apiGet, apiPost, getToken, API_BASE } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import RemoteIcon from "@/src/components/RemoteIcon";
@@ -358,6 +358,7 @@ const s = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     gap: 8,
+    ...elevation.l1,
   },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   docIconWrap: {

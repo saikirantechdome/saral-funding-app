@@ -390,11 +390,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 14,
     marginBottom: 8,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
+    ...elevation.l1,
   },
   nameRow: {
     flexDirection: "row",

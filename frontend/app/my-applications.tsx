@@ -9,7 +9,7 @@ import {
   XCircle, ChevronRight, FileText, Building2,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import Saathi from "@/src/components/Saathi";
@@ -179,7 +179,7 @@ function AppCard({ app, expanded, onToggle }: {
   const isRejected = app.stage === "rejected";
   const isDisbursed = app.stage === "disbursed";
   const activeStageIdx = STAGES.indexOf(app.stage);
-  const accentColor = STAGE_COLORS[app.stage] ?? colors.primary;
+  const accentColor = STAGE_COLORS[app.stage] ?? tints.blue.fg;
   const progressPct = Math.round(((activeStageIdx + 1) / STAGES.length) * 100);
 
   return (
@@ -275,10 +275,11 @@ function AppCard({ app, expanded, onToggle }: {
 }
 
 function StagePill({ stage, label }: { stage: string; label: string }) {
-  const bg = stage === "approved" || stage === "disbursed"
-    ? tints.deepTeal.bg : stage === "rejected"
-    ? tints.red.bg : tints.blue.bg;
-  const fg = STAGE_COLORS[stage] ?? colors.primary;
+  const bg = stage === "approved" ? tints.teal.bg
+    : stage === "disbursed" ? tints.deepTeal.bg
+    : stage === "rejected" ? tints.red.bg
+    : tints.blue.bg;
+  const fg = STAGE_COLORS[stage] ?? tints.blue.fg;
   return (
     <View style={[s.pill, { backgroundColor: bg }]}>
       <Text style={[s.pillText, { color: fg }]}>{label}</Text>
@@ -311,21 +312,18 @@ const s = StyleSheet.create({
   filterChipTextActive: { color: colors.primaryDark, fontFamily: fonts.bold },
   noMatchText:     { fontSize: 13, fontFamily: fonts.regular, color: colors.textDim, textAlign: "center", paddingTop: 40 },
 
-  card:            { backgroundColor: "#fff", borderRadius: radius.lg, padding: spacing.sm2,
-                     shadowColor: colors.text, shadowOffset: { width: 0, height: 2 },
-                     shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  card:            { backgroundColor: "#fff", borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border,
+                     padding: spacing.sm2, ...elevation.l1 },
   cardHeader:      { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginBottom: spacing.sm2 },
-  schemeIcon:      { width: 40, height: 40, borderRadius: radius.md, backgroundColor: tints.blue.bg,
-                     alignItems: "center", justifyContent: "center",
-                     shadowColor: colors.text, shadowOffset: { width: 0, height: 2 },
-                     shadowOpacity: 0.10, shadowRadius: 4, elevation: 2 },
+  schemeIcon:      { width: 40, height: 40, borderRadius: radius.lg, backgroundColor: tints.blue.bg,
+                     alignItems: "center", justifyContent: "center" },
   schemeIconGreen: { backgroundColor: tints.deepTeal.bg },
   schemeIconRed:   { backgroundColor: tints.red.bg },
   cardHeaderText:  { flex: 1, gap: 4 },
   schemeName:      { fontSize: 15, fontFamily: fonts.semiBold, color: colors.text },
   bankRow:         { flexDirection: "row", alignItems: "center", gap: 4 },
   bankName:        { fontSize: 12, fontFamily: fonts.regular, color: colors.textDim },
-  pill:            { alignSelf: "flex-start", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, marginTop: 2 },
+  pill:            { alignSelf: "flex-start", borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 3, marginTop: 2 },
   pillText:        { fontSize: 11, fontFamily: fonts.semiBold },
 
   progressWrap:    { marginBottom: 4, gap: 6 },

@@ -13,7 +13,7 @@ import {
   TrendingUp, MessageSquare, MessageCircle, ChevronRight, Percent, Eye, Settings, Shield, Bell, BarChart2,
 } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
 import { apiGet } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import { SkeletonBox } from "@/src/components/SkeletonLoader";
@@ -59,11 +59,7 @@ const statStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 12,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   icon: { width: 28, height: 28, borderRadius: radius.md, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   value: { fontSize: 20, fontFamily: fonts.displayBold, color: colors.text, lineHeight: 24 },
@@ -195,11 +191,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     paddingVertical: 14,
     paddingHorizontal: spacing.md,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   moduleIcon: {
     width: 44,

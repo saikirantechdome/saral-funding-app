@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { X, ChevronRight, Phone, MapPin, DollarSign, StickyNote, Briefcase, Calendar } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, formatINR, stageColor, tagColor, formatMobile, shortRef } from "@/src/theme";
+import { colors, spacing, radius, fonts, tints, formatINR, stageColor, tagColor, formatMobile, shortRef, elevation } from "@/src/theme";
 import { apiGet, apiPost } from "@/src/api";
 import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -342,11 +342,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingRight: 36,
     marginBottom: 8,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...elevation.l1,
   },
   cardHeader: {
     flexDirection: "row",

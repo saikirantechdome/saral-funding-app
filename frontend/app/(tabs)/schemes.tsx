@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface2,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
   },
