@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Tabs } from "expo-router";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  LayoutDashboard, ClipboardList, Sparkles, FolderOpen, CircleUser,
+  LayoutDashboard, ClipboardList, Activity, Plus, FolderOpen, CircleUser,
   Users, CalendarDays, FileSearch, MessageCircle,
 } from "lucide-react-native";
 
 import { colors, fonts, radius, TAB_BAR_HEIGHT } from "@/src/theme";
+import { protoColors } from "@/src/theme.proto";
 import { apiGet } from "@/src/api";
 
 const TAB_ICON_SIZE = 20;
@@ -45,6 +46,20 @@ function makeLabel(label: string) {
   );
 }
 
+// Center FAB matching the approved prototype's `.s-fab` (raised teal circle
+// with a plain "+"). Purely visual — `quick-upload.tsx` behind this tab does
+// the actual navigation (redirects into the Documents flow), so this is just
+// a styled tabBarButton, not a custom press handler.
+function FabButton(props: React.ComponentProps<typeof TouchableOpacity>) {
+  return (
+    <TouchableOpacity {...props} style={styles.fabWrap} activeOpacity={0.85}>
+      <View style={styles.fab}>
+        <Plus size={22} color="#FFFFFF" strokeWidth={2.4} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 export default function TabsLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const insets = useSafeAreaInsets();
@@ -72,8 +87,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="applications"
         options={{
+          // Retired as a user-facing tab — the prototype has no "Applications"
+          // tab; its content is superseded by the new Status tab. Admin's
+          // "Funnel" still uses this same route/file, unaffected.
+          href: isAdmin ? undefined : null,
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={isAdmin ? Users : ClipboardList} />,
           tabBarLabel: makeLabel(isAdmin ? "Funnel" : "Applications"),
+        }}
+      />
+      <Tabs.Screen
+        name="status"
+        options={{
+          href: isAdmin ? null : undefined,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={Activity} />,
+          tabBarLabel: makeLabel("Status"),
+        }}
+      />
+      <Tabs.Screen
+        name="quick-upload"
+        options={{
+          href: isAdmin ? null : undefined,
+          tabBarButton: FabButton,
+          tabBarLabel: () => null,
         }}
       />
       <Tabs.Screen
@@ -110,6 +145,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
+          // Retired as a user-facing tab — the prototype reaches Profile via
+          // the avatar tap on Home's header instead. Admin keeps this tab.
+          href: isAdmin ? undefined : null,
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={CircleUser} />,
           tabBarLabel: makeLabel("Profile"),
         }}
@@ -154,5 +192,24 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: colors.primary,
     marginTop: 3,
+  },
+  fabWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fab: {
+    width: 52,
+    height: 52,
+    borderRadius: 20,
+    backgroundColor: protoColors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -22,
+    shadowColor: protoColors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });

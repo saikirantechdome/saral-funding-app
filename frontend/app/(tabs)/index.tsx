@@ -22,12 +22,16 @@ import {
 } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, formatINR, elevation, tints, gradients, stageColor } from "@/src/theme";
+import { protoColors, protoSpacing } from "@/src/theme.proto";
 import { apiGet, apiPost } from "@/src/api";
 import { DashboardSkeleton, SkeletonBox } from "@/src/components/SkeletonLoader";
 import ReadinessRing from "@/src/components/ReadinessRing";
 import RemoteIcon from "@/src/components/RemoteIcon";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import BankBadge from "@/src/components/BankBadge";
+import ProtoRing from "@/src/components/proto/ProtoRing";
+import ProtoButton from "@/src/components/proto/ProtoButton";
+import { journeyProgress, STAGES } from "@/src/utils/stageProgress";
 import { schemeStyle } from "@/src/utils/schemeType";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
@@ -172,6 +176,10 @@ export default function Dashboard() {
   const [hasAssignedSchemes, setHasAssignedSchemes] = useState(false);
   const [hasAssignedBanks, setHasAssignedBanks] = useState(false);
   const [statCounts, setStatCounts] = useState({ applications: 0, documents: 0, consultations: 0, schemes: 0 });
+  // Raw records (not just derived counts) for the revamped Home's status
+  // card + document tile — see USER_SIDE_REVAMP_PLAN.md.
+  const [rawDocs, setRawDocs] = useState<any[]>([]);
+  const [rawApps, setRawApps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [supportUnread, setSupportUnread] = useState(0);
@@ -239,6 +247,8 @@ export default function Dashboard() {
           consultations: (c || []).length,
           schemes: (m?.matches || []).length,
         });
+        setRawDocs(docs || []);
+        setRawApps(mySchemes || []);
 
         // Only keep matches for schemes/banks actually assigned to this user
         const assignedSchemeIds = new Set((mySchemes || []).map((s: any) => s.scheme_id));
@@ -436,283 +446,203 @@ export default function Dashboard() {
     );
   }
 
-  // ── Normal User Home View ──
+  // ── Normal User Home View (matches Saral User Prototype.dc.html) ──
+  // Note: the approved prototype's Home only shows the status card, a
+  // conditional action/review card, and Documents/Chat tiles — it has no
+  // bank-match, scheme-match, WhatsApp, consultation, or marketing sections,
+  // so those are intentionally dropped here rather than adapted. Those
+  // features (Banks, Schemes, Booking, WhatsApp) still work, just aren't
+  // linked from Home anymore since the prototype doesn't place them here —
+  // flagged in USER_SIDE_REVAMP_PLAN.md for a follow-up decision on where
+  // they should live.
+  const journey = journeyProgress(rawApps);
+  const rejectedDoc = rawDocs.find((d: any) => d.status === "rejected");
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="dashboard-screen">
-      <ScrollView
-        style={{ flex: 1, marginBottom: tabBarSpacing }}
-        contentContainerStyle={{ paddingBottom: 4 }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => { setRefreshing(true); load(); }}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-      >
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.logoWrap}>
-            <Image
-              source={require("../../assets/images/logo-icon.png")}
-              style={styles.logoIcon}
-              resizeMode="contain"
+    <View style={{ flex: 1, backgroundColor: protoColors.primaryDark }} testID="dashboard-screen">
+      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+        <ScrollView
+          style={{ flex: 1, marginBottom: tabBarSpacing }}
+          contentContainerStyle={{ paddingBottom: 4 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); load(); }}
+              tintColor="#FFFFFF"
             />
-            <View>
-              <Text style={styles.logoName}>SARAL</Text>
-              <Text style={styles.logoTagline}>Funding Clear Hai!</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              testID="support-btn"
-              onPress={() => router.push("/support" as any)}
-              style={styles.headerBtn}
-            >
-              <MessageCircle size={18} color={colors.text} strokeWidth={2} />
-              {supportUnread > 0 && <View style={styles.badgeDot} />}
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="bell-btn"
-              onPress={() => router.push("/notifications")}
-              style={styles.headerBtn}
-            >
-              <Bell size={18} color={colors.text} strokeWidth={2} />
-              {alerts.length > 0 && <View style={styles.badgeDot} />}
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="home-avatar-btn"
-              onPress={() => router.push("/(tabs)/profile" as any)}
-              activeOpacity={0.8}
-            >
-              <InitialsAvatar name={user?.full_name || "User"} size={32} variant={isAdmin ? "staff" : "user"} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={{ paddingHorizontal: spacing.md }}>
-
-          {/* ── Greeting ── */}
-          <Text style={styles.pageGreeting}>
-            Hi, {user?.full_name ? user.full_name.split(" ")[0] : "there"}
-          </Text>
-          <Text style={styles.pageGreetingSub}>Let's grow your business</Text>
-
-          {/* ── Hero: your progress / profile strength ── */}
+          }
+        >
           <LinearGradient
-            colors={gradients.hero}
+            colors={protoColors.heroGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.heroCard}
-            testID="home-hero"
+            style={homeStyles.hero}
           >
-            <View style={styles.heroTopRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heroLabel}>Your Progress</Text>
-                <Text style={styles.heroGreeting}>Profile Strength</Text>
+            <View style={homeStyles.headerRow}>
+              <TouchableOpacity testID="home-avatar-btn" onPress={() => router.push("/(tabs)/profile" as any)} activeOpacity={0.8}>
+                <View style={homeStyles.avatar}>
+                  <Text style={homeStyles.avatarText}>{(user?.full_name || "U").trim()[0]?.toUpperCase()}</Text>
+                </View>
+              </TouchableOpacity>
+              <View style={{ flex: 1, marginLeft: protoSpacing.sm }}>
+                <Text style={homeStyles.greetingSmall}>{greeting}</Text>
+                <Text style={homeStyles.greetingName}>{user?.full_name ? user.full_name.split(" ")[0] : "there"}</Text>
               </View>
-              <ReadinessRing score={score} size={72} />
+              <TouchableOpacity testID="bell-btn" onPress={() => router.push("/notifications")} style={homeStyles.bell}>
+                <Bell size={18} color="#FFFFFF" strokeWidth={2} />
+                {alerts.length > 0 && <View style={homeStyles.bellDot} />}
+              </TouchableOpacity>
             </View>
           </LinearGradient>
 
-          {/* ── Book a Free Consultation ── */}
-          <TouchableOpacity
-            testID="book-cta"
-            style={styles.bookCard}
-            onPress={() => router.push("/booking")}
-            activeOpacity={0.85}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.bookTitle}>Book a Free Consultation</Text>
-              <Text style={styles.bookSub}>Talk to our experts and get personalised guidance.</Text>
-            </View>
-            <View style={styles.bookIcon}>
-              <Phone size={18} color={tints.teal.fg} strokeWidth={2} />
-            </View>
-          </TouchableOpacity>
-
-          {/* ── Top Bank Match ── */}
-          {bankRec && (
+          <View style={homeStyles.sheet}>
+            {/* Status card */}
             <TouchableOpacity
-              testID="bank-rec-widget"
-              style={[styles.card, styles.bankCard]}
-              onPress={() => router.push("/banks")}
+              testID="home-status-card"
+              style={homeStyles.card}
+              onPress={() => router.push("/(tabs)/status" as any)}
               activeOpacity={0.85}
             >
-              <BankBadge name={bankRec.name} shortName={bankRec.short_name} size={44} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sectionLabel}>Top Bank Match</Text>
-                <Text style={styles.bankName}>{bankRec.name}</Text>
-                <View style={styles.metaPillRow}>
-                  <View style={[styles.metaPill, { backgroundColor: tints.teal.bg }]}>
-                    <Text style={[styles.metaPillText, { color: tints.teal.fg }]}>{bankRec.interest_range} interest</Text>
-                  </View>
-                  <View style={[styles.metaPill, { backgroundColor: tints.amber.bg }]}>
-                    <Text style={[styles.metaPillText, { color: tints.amber.fg }]}>{bankRec.score}% match</Text>
-                  </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: protoSpacing.sm }}>
+                <ProtoRing percent={journey.percent} />
+                <View style={{ flex: 1 }}>
+                  <Text style={homeStyles.eyebrow}>Stage {journey.stageIndex + 1} of {STAGES.length}</Text>
+                  <Text style={homeStyles.cardTitle}>{journey.stageLabel}</Text>
                 </View>
-                <Text style={styles.bankWhy} numberOfLines={2}>{bankRec.why}</Text>
+                <ChevronRight size={18} color={protoColors.textMuted} strokeWidth={2} />
               </View>
-              <ChevronRight size={18} color={colors.textDim} strokeWidth={2} />
+              <View style={homeStyles.strip}>
+                {STAGES.map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      homeStyles.stripSeg,
+                      i < journey.stageIndex && homeStyles.stripOn,
+                      i === journey.stageIndex && homeStyles.stripAct,
+                    ]}
+                  />
+                ))}
+              </View>
             </TouchableOpacity>
-          )}
 
-          {/* ── Top Scheme Match ── */}
-          {data?.matches?.[0] && (
-            <TouchableOpacity
-              testID="scheme-rec-widget"
-              style={[styles.card, styles.bankCard]}
-              onPress={() => router.push("/(tabs)/schemes")}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.schemeBadge, { backgroundColor: schemeStyle(data.matches[0].name).bg }]}>
-                <RemoteIcon
-                  slug={schemeStyle(data.matches[0].name).slug}
-                  size={20}
-                  fallback={Landmark}
-                  fallbackColor={schemeStyle(data.matches[0].name).fg}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sectionLabel}>Top Scheme Match</Text>
-                <Text style={styles.bankName}>{data.matches[0].name}</Text>
-                <View style={styles.metaPillRow}>
-                  <View style={[styles.metaPill, { backgroundColor: tints.teal.bg }]}>
-                    <Text style={[styles.metaPillText, { color: tints.teal.fg }]}>{formatINR(data.matches[0].funding_estimate)} funding</Text>
-                  </View>
-                  <View style={[styles.metaPill, { backgroundColor: tints.amber.bg }]}>
-                    <Text style={[styles.metaPillText, { color: tints.amber.fg }]}>{data.matches[0].score}% match</Text>
-                  </View>
+            {/* Conditional action / review card */}
+            {rejectedDoc ? (
+              <View style={homeStyles.amberCard} testID="home-action-card">
+                <View style={homeStyles.pillRow}>
+                  <View style={homeStyles.pillAmber}><Text style={homeStyles.pillAmberText}>Action</Text></View>
+                  <Text style={homeStyles.pillRowRight} numberOfLines={1}>{rejectedDoc.doc_type}</Text>
                 </View>
-                <Text style={styles.bankWhy} numberOfLines={2}>{data.matches[0].reason}</Text>
+                <ProtoButton variant="amber" label="Upload clearer copy" onPress={() => router.push("/documents" as any)} />
               </View>
-              <ChevronRight size={18} color={colors.textDim} strokeWidth={2} />
-            </TouchableOpacity>
-          )}
-
-          {/* ── WhatsApp Support ── */}
-          <TouchableOpacity
-            testID="whatsapp-cta"
-            style={styles.waBtn}
-            onPress={() => Linking.openURL("https://wa.me/919893869899?text=Hello%2C%20I%20am%20reaching%20out%20from%20the%20Saral%20Funding%20app.%20I%20would%20like%20some%20assistance%20regarding%20my%20funding%20journey.%20Could%20your%20team%20please%20help%20me%3F")}
-            activeOpacity={0.85}
-          >
-            <View style={styles.waIcon}>
-              <RemoteIcon slug="whatsapp" size={24} fallback={MessageCircle} fallbackColor="#25D366" />
-            </View>
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.waTitle}>WhatsApp Support</Text>
-              <Text style={styles.waSub}>Chat with our team instantly</Text>
-            </View>
-            <ChevronRight size={16} color="#FFF" strokeWidth={2} />
-          </TouchableOpacity>
-
-          {/* ── Upcoming Consultation ── */}
-          {next && (
-            <TouchableOpacity style={styles.card} testID="upcoming-card" onPress={() => setMeetModal(true)} activeOpacity={0.85}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <Calendar size={14} color={colors.primaryDark} strokeWidth={2} />
-                <Text style={styles.sectionLabel}>Upcoming Consultation</Text>
-                <ChevronRight size={13} color={colors.primaryDark} strokeWidth={2} style={{ marginLeft: "auto" }} />
-              </View>
-              <Text style={styles.consultType}>{next.consultation_type}</Text>
-              <Text style={styles.consultMeta}>{next.date}  •  {next.time_slot}</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-                <View style={styles.consultStatus}>
-                  <Text style={styles.consultStatusText}>{next.status}</Text>
+            ) : rawDocs.length > 0 ? (
+              <View style={homeStyles.card} testID="home-review-card">
+                <View style={homeStyles.pillRow}>
+                  <View style={homeStyles.pillBlue}><Text style={homeStyles.pillBlueText}>Under review</Text></View>
+                  <Text style={homeStyles.pillRowRight}>Our team</Text>
                 </View>
-                {next.meet_link && (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <Video size={12} color={colors.primaryDark} strokeWidth={2} />
-                    <Text style={{ fontSize: 11, fontFamily: fonts.semiBold, color: colors.primaryDark }}>Meeting Ready</Text>
-                  </View>
-                )}
+                <Text style={homeStyles.cardBody}>
+                  {rawDocs.length} document{rawDocs.length === 1 ? "" : "s"} sent — we'll update you here
+                </Text>
               </View>
-              <TouchableOpacity
-                testID="upcoming-view-details-btn"
-                style={styles.viewDetailsPill}
-                onPress={() => setMeetModal(true)}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.viewDetailsPillText}>View Details</Text>
-                <ChevronRight size={12} color={colors.primaryDark} strokeWidth={2.5} />
+            ) : null}
+
+            {/* Documents / Chat tiles */}
+            <View style={homeStyles.grid2}>
+              <TouchableOpacity testID="home-docs-tile" style={homeStyles.tile} onPress={() => router.push("/(tabs)/documents" as any)} activeOpacity={0.85}>
+                <View style={homeStyles.tileIcon}>
+                  <FolderIcon size={16} color={protoColors.primary} strokeWidth={2} />
+                </View>
+                <Text style={homeStyles.tileTitle}>Documents</Text>
+                <Text style={homeStyles.cardBody}>{rawDocs.length} uploaded</Text>
               </TouchableOpacity>
-            </TouchableOpacity>
-          )}
-
-          {/* ── Why Saral Funding (marketing tiles) ── */}
-          <Text style={[styles.sectionLabel, { marginTop: 4 }]}>Why Saral Funding</Text>
-          <View style={styles.marketingGrid}>
-            {MARKETING_TILES.map((t) => (
-              <View key={t.id} style={styles.marketingTile} testID={`marketing-tile-${t.id}`}>
-                <View style={[styles.marketingIconWrap, { backgroundColor: t.tint.bg }]}>
-                  <RemoteIcon slug={t.slug} size={22} fallback={t.Fallback} fallbackColor={t.tint.fg} />
+              <TouchableOpacity testID="home-chat-tile" style={homeStyles.tile} onPress={() => router.push("/(tabs)/support" as any)} activeOpacity={0.85}>
+                <View style={homeStyles.tileIcon}>
+                  <MessageCircle size={16} color={protoColors.primary} strokeWidth={2} />
                 </View>
-                <Text style={styles.marketingTitle}>{t.title}</Text>
-                <Text style={styles.marketingDesc}>{t.desc}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Meet link modal */}
-          <Modal visible={meetModal} transparent animationType="slide" onRequestClose={() => setMeetModal(false)}>
-            <View style={{ flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end" }}>
-              <View style={{ backgroundColor: "#FFF", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 24 + insets.bottom, gap: 16 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={{ fontSize: 18, fontFamily: fonts.displayBold, color: colors.text }}>Consultation Details</Text>
-                  <TouchableOpacity onPress={() => setMeetModal(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface2, alignItems: "center", justifyContent: "center" }}>
-                    <X size={16} color={colors.textMuted} strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
-                <View style={{ backgroundColor: colors.surface2, borderRadius: radius.xl, padding: 16, gap: 10 }}>
-                  <Text style={{ fontSize: 15, fontFamily: fonts.semiBold, color: colors.text }}>{next?.consultation_type}</Text>
-                  <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted }}>{next?.date}  •  {next?.time_slot}</Text>
-                  <View style={{ paddingHorizontal: 10, paddingVertical: 4, backgroundColor: colors.primarySoft, borderRadius: radius.pill, alignSelf: "flex-start" }}>
-                    <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.primaryDark, textTransform: "capitalize" }}>{next?.status}</Text>
-                  </View>
-                </View>
-                {next?.meet_link ? (
-                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.primary, padding: 16, gap: 10 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <Video size={16} color={colors.primaryDark} strokeWidth={2} />
-                      <Text style={{ fontSize: 14, fontFamily: fonts.displayBold, color: colors.primaryDark }}>Your Meeting Link</Text>
-                    </View>
-                    <Text style={{ fontSize: 11, fontFamily: fonts.medium, color: colors.primaryDark, opacity: 0.8 }} numberOfLines={1}>{next?.meet_link}</Text>
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <TouchableOpacity
-                        style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.primary, backgroundColor: "#FFF" }}
-                        onPress={() => Share.share({ message: next?.meet_link, title: "Meeting Link" })}
-                        activeOpacity={0.8}
-                      >
-                        <Copy size={14} color={colors.primaryDark} strokeWidth={2.5} />
-                        <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, color: colors.primaryDark }}>Copy Link</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: radius.lg, backgroundColor: colors.primary }}
-                        onPress={() => { setMeetModal(false); Linking.openURL(next?.meet_link); }}
-                        activeOpacity={0.8}
-                      >
-                        <Video size={14} color="#FFF" strokeWidth={2.5} />
-                        <Text style={{ fontSize: 13, fontFamily: fonts.displayBold, color: "#FFF" }}>Join Meeting</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={{ backgroundColor: colors.surface2, borderRadius: radius.xl, padding: 16, alignItems: "center" }}>
-                    <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: colors.textMuted, textAlign: "center" }}>Meeting link will be shared by your advisor before the session.</Text>
-                  </View>
-                )}
-              </View>
+                <Text style={homeStyles.tileTitle}>Chat</Text>
+                <Text style={homeStyles.cardBody}>Chat with our team</Text>
+              </TouchableOpacity>
             </View>
-          </Modal>
-
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
+
+const homeStyles = StyleSheet.create({
+  hero: {
+    paddingTop: spacing.sm2,
+    paddingHorizontal: spacing.md,
+    paddingBottom: 22,
+  },
+  headerRow: { flexDirection: "row", alignItems: "center" },
+  avatar: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: protoColors.accent,
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center", justifyContent: "center",
+  },
+  avatarText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
+  greetingSmall: { fontSize: 11, color: "rgba(255,255,255,0.6)" },
+  greetingName: { fontSize: 17, color: "#FFFFFF", fontWeight: "700", marginTop: 1 },
+  bell: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center", justifyContent: "center",
+  },
+  bellDot: {
+    position: "absolute", top: 9, right: 9,
+    width: 7, height: 7, borderRadius: 4, backgroundColor: protoColors.amber,
+  },
+  sheet: {
+    backgroundColor: protoColors.surfaceAlt,
+    borderTopLeftRadius: 29,
+    borderTopRightRadius: 29,
+    marginTop: -18,
+    padding: spacing.md,
+    gap: 13,
+    minHeight: 200,
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 19,
+    padding: 15,
+    gap: 10,
+  },
+  eyebrow: {
+    fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase",
+    color: protoColors.textDim, fontWeight: "700",
+  },
+  cardTitle: { fontSize: 15, color: protoColors.text, marginTop: 2 },
+  cardBody: { fontSize: 12, color: protoColors.textMuted },
+  strip: { flexDirection: "row", gap: 6 },
+  stripSeg: { flex: 1, height: 5, borderRadius: 3, backgroundColor: "#E1E9E6" },
+  stripOn: { backgroundColor: protoColors.accent },
+  stripAct: { backgroundColor: protoColors.amber },
+  amberCard: {
+    backgroundColor: protoColors.amberSoft,
+    borderRadius: 19,
+    padding: 15,
+    gap: 10,
+  },
+  pillRow: { flexDirection: "row", alignItems: "center" },
+  pillRowRight: { flex: 1, textAlign: "right", fontSize: 12, color: protoColors.textMuted },
+  pillAmber: { backgroundColor: protoColors.pill.amber.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  pillAmberText: { fontSize: 11, color: protoColors.pill.amber.text, fontWeight: "600" },
+  pillBlue: { backgroundColor: protoColors.pill.blue.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  pillBlueText: { fontSize: 11, color: protoColors.pill.blue.text, fontWeight: "600" },
+  grid2: { flexDirection: "row", gap: 12 },
+  tile: { flex: 1, backgroundColor: "#FFFFFF", borderRadius: 19, padding: 15, gap: 5 },
+  tileIcon: {
+    width: 34, height: 34, borderRadius: 12,
+    backgroundColor: protoColors.pill.teal.bg,
+    alignItems: "center", justifyContent: "center",
+    marginBottom: 4,
+  },
+  tileTitle: { fontSize: 13, color: protoColors.text, fontWeight: "600" },
+});
 
 const adStyles = StyleSheet.create({
   sectionLabel: {
