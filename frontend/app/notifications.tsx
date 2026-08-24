@@ -1,34 +1,16 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Bell, Target, Building2, Zap, CheckCheck, CheckCircle2, Info } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints, elevation } from "@/src/theme";
+import { spacing } from "@/src/theme";
+import { protoColors, protoSpacing } from "@/src/theme.proto";
 import { apiGet, apiPost } from "@/src/api";
-import { BackBar } from "@/src/components/StepBar";
-import Saathi from "@/src/components/Saathi";
-import RemoteIcon from "@/src/components/RemoteIcon";
 
-function notifIcon(type: string) {
-  const cfg: Record<string, { icon: any; slug: string; bg: string; color: string }> = {
-    high_match: { icon: Target, slug: "target", bg: colors.primarySoft, color: colors.primaryDark },
-    state_scheme: { icon: Building2, slug: "bank-building", bg: tints.blue.bg, color: tints.blue.fg },
-    readiness: { icon: Zap, slug: "idea", bg: tints.amber.bg, color: tints.amber.fg },
-    consultation_reminder: { icon: Bell, slug: "calendar", bg: tints.deepTeal.bg, color: tints.deepTeal.fg },
-    platform: { icon: Bell, slug: "megaphone", bg: tints.teal.bg, color: tints.teal.fg },
-    reminder: { icon: Bell, slug: "clock", bg: tints.deepTeal.bg, color: tints.deepTeal.fg },
-    recommendation: { icon: CheckCircle2, slug: "medal", bg: tints.blue.bg, color: tints.blue.fg },
-  };
-  return cfg[type] ?? { icon: Info, slug: "info-squared", bg: colors.surfaceAlt, color: colors.textMuted };
-}
+// Real notification `type` values bucketed into the prototype's two filter
+// pills — Actions (needs the user to do something) vs Updates (informational).
+const ACTION_TYPES = new Set(["reminder", "consultation_reminder"]);
 
 function formatTs(iso: string): string {
   const d = new Date(iso);
@@ -39,14 +21,18 @@ function formatTs(iso: string): string {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
+const FILTERS = ["All", "Actions", "Updates"] as const;
+type Filter = typeof FILTERS[number];
+
 export default function Notifications() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>("All");
 
   useEffect(() => {
     apiGet<any[]>("/notifications/me")
-      .then((x) => { setItems(x); setLoading(false); })
+      .then((x) => { setItems(x || []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
@@ -61,57 +47,62 @@ export default function Notifications() {
     setItems((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const filtered = items.filter((n) => {
+    if (filter === "All") return true;
+    const isAction = ACTION_TYPES.has(n.type);
+    return filter === "Actions" ? isAction : !isAction;
+  });
   const unreadCount = items.filter((n) => !n.read).length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="notifications-screen">
-      <BackBar title="Notifications" onBack={() => router.back()} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surface }} edges={["top", "bottom"]} testID="notifications-screen">
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+          <ArrowLeft size={20} color={protoColors.text} strokeWidth={2} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Notifications</Text>
+        <TouchableOpacity onPress={markAllRead} disabled={unreadCount === 0}>
+          <Text style={[styles.readAll, unreadCount === 0 && { opacity: 0.4 }]}>Read all</Text>
+        </TouchableOpacity>
+      </View>
 
-      {unreadCount > 0 && (
-        <View style={styles.subheader}>
-          <Text style={styles.subheaderText}>{unreadCount} unread</Text>
-          <TouchableOpacity onPress={markAllRead} style={styles.markAllBtn}>
-            <CheckCheck size={13} color={colors.primaryDark} strokeWidth={2} />
-            <Text style={styles.markAllText}>Mark all read</Text>
+      <View style={styles.filterRow}>
+        {FILTERS.map((f) => (
+          <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.pill, filter === f && styles.pillOn]}>
+            <Text style={[styles.pillText, filter === f && styles.pillTextOn]}>{f}</Text>
           </TouchableOpacity>
-        </View>
-      )}
+        ))}
+      </View>
 
       {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />
-      ) : items.length === 0 ? (
+        <ActivityIndicator color={protoColors.primary} style={{ marginTop: 60 }} />
+      ) : filtered.length === 0 ? (
         <View style={styles.empty}>
-          <Saathi expression="happy" size={110} />
-          <Text style={styles.emptyTitle}>No notifications yet</Text>
-          <Text style={styles.emptySubtitle}>
-            We'll notify you about scheme matches, readiness tips, and consultation reminders.
-          </Text>
+          <Text style={styles.emptyTitle}>Nothing here</Text>
+          <Text style={styles.emptySubtitle}>We'll notify you about document actions and application updates.</Text>
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={filtered}
           keyExtractor={(x) => x.id}
-          contentContainerStyle={{ padding: spacing.md, paddingBottom: 40 }}
+          contentContainerStyle={styles.body}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
-            const { icon: IconComponent, slug, bg, color } = notifIcon(item.type);
+            const isAction = ACTION_TYPES.has(item.type) && !item.read;
             return (
               <TouchableOpacity
                 testID={`notif-${item.id}`}
-                style={[styles.card, !item.read && styles.cardUnread]}
+                style={[styles.card, isAction && styles.cardAmber]}
                 onPress={() => markRead(item.id)}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                <View style={[styles.iconWrap, { backgroundColor: bg }]}>
-                  <RemoteIcon slug={slug} size={22} fallback={IconComponent} fallbackColor={color} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={styles.titleRow}>
-                    <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-                    {!item.read && <View style={styles.unreadDot} />}
+                <View style={styles.row}>
+                  {!item.read && <View style={[styles.dot, isAction && styles.dotAmber]} />}
+                  <View style={styles.icon}><View /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.itemTitle} numberOfLines={2}>{item.title}</Text>
+                    <Text style={styles.itemTs}>{formatTs(item.created_at)}</Text>
                   </View>
-                  <Text style={styles.body} numberOfLines={3}>{item.body}</Text>
-                  <Text style={styles.ts}>{formatTs(item.created_at)}</Text>
                 </View>
               </TouchableOpacity>
             );
@@ -123,108 +114,27 @@ export default function Notifications() {
 }
 
 const styles = StyleSheet.create({
-  empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 80,
-    paddingHorizontal: 32,
-    gap: spacing.md,
+  header: {
+    flexDirection: "row", alignItems: "center", gap: protoSpacing.sm,
+    paddingHorizontal: spacing.md, paddingTop: protoSpacing.sm, paddingBottom: protoSpacing.sm,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontFamily: fonts.semiBold,
-    color: colors.text,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.textDim,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  subheader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: "#FFF",
-  },
-  subheaderText: {
-    fontSize: 13,
-    fontFamily: fonts.medium,
-    color: colors.textMuted,
-  },
-  markAllBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm2,
-    paddingVertical: spacing.xs2,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-  },
-  markAllText: {
-    fontSize: 12,
-    fontFamily: fonts.semiBold,
-    color: colors.primaryDark,
-  },
-  card: {
-    flexDirection: "row",
-    gap: spacing.sm2,
-    backgroundColor: "#FFF",
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.sm2,
-    ...elevation.l1,
-  },
-  cardUnread: {
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.primaryMid,
-  },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    marginTop: 2,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 4,
-  },
-  title: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: fonts.semiBold,
-    color: colors.text,
-    lineHeight: 19,
-  },
-  unreadDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-  },
-  body: {
-    fontSize: 13,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    lineHeight: 18,
-    marginBottom: 6,
-  },
-  ts: {
-    fontSize: 11,
-    fontFamily: fonts.medium,
-    color: colors.textDim,
-  },
+  title: { flex: 1, fontSize: 15, fontWeight: "700", color: protoColors.text, textAlign: "center" },
+  readAll: { fontSize: 12.5, color: protoColors.textMuted, fontWeight: "600" },
+  filterRow: { flexDirection: "row", gap: 6, paddingHorizontal: spacing.md, marginBottom: protoSpacing.sm },
+  pill: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: protoColors.pill.neutral.bg },
+  pillOn: { backgroundColor: protoColors.pill.teal.bg },
+  pillText: { fontSize: 11.5, fontWeight: "600", color: protoColors.pill.neutral.text },
+  pillTextOn: { color: protoColors.pill.teal.text },
+  body: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg, gap: 10 },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 19, padding: 13 },
+  cardAmber: { backgroundColor: protoColors.amberSoft },
+  row: { flexDirection: "row", alignItems: "flex-start", gap: 9 },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: protoColors.accent, marginTop: 6 },
+  dotAmber: { backgroundColor: protoColors.amber },
+  icon: { width: 34, height: 34, borderRadius: 12, backgroundColor: protoColors.surfaceAlt },
+  itemTitle: { fontSize: 12.5, color: protoColors.text, lineHeight: 17 },
+  itemTs: { fontSize: 11, color: protoColors.textMuted, marginTop: 2 },
+  empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 8 },
+  emptyTitle: { fontSize: 15, fontWeight: "700", color: protoColors.text },
+  emptySubtitle: { fontSize: 12.5, color: protoColors.textMuted, textAlign: "center", lineHeight: 18 },
 });

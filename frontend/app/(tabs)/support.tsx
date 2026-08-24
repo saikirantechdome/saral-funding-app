@@ -12,15 +12,20 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect, useRouter } from "expo-router";
-import { ChevronLeft, Send, Headset } from "lucide-react-native";
+import { useFocusEffect } from "expo-router";
+import { Send, Headset } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, elevation } from "@/src/theme";
+import { spacing, fonts } from "@/src/theme";
+import { protoColors, protoSpacing } from "@/src/theme.proto";
 import { apiGet, apiPost } from "@/src/api";
 import EmptyState from "@/src/components/EmptyState";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import { useFocusPolling } from "@/src/hooks/useFocusPolling";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
+
+// Quick-reply chips matching the approved prototype's Chat state — just a
+// shortcut that fills+sends common replies through the same real send().
+const QUICK_REPLIES = ["Bhej diya", "Kab tak ho jayega?"];
 
 type Msg = {
   id: string;
@@ -38,7 +43,6 @@ function formatTime(iso: string): string {
 }
 
 export default function Support() {
-  const router = useRouter();
   const tabBarSpacing = useTabBarSpacing();
   const [items, setItems] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,8 +102,8 @@ export default function Support() {
     }
   };
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     if (!text || sending) return;
     setInput("");
     setSending(true);
@@ -117,14 +121,10 @@ export default function Support() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top"]} testID="support-screen">
+    <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surface }} edges={["top"]} testID="support-screen">
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <ChevronLeft size={22} color={colors.text} strokeWidth={2} />
-        </TouchableOpacity>
         <View style={styles.headerAvatarWrap}>
-          <InitialsAvatar name="Support Team" size={38} variant="staff" />
-          <View style={styles.onlineDot} />
+          <InitialsAvatar name="Support Team" size={34} variant="staff" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Support Team</Text>
@@ -138,18 +138,18 @@ export default function Support() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         {loading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />
+          <ActivityIndicator color={protoColors.primary} style={{ marginTop: 60 }} />
         ) : (
           <FlatList
             ref={listRef}
             data={items}
             keyExtractor={(m) => m.id}
-            style={{ flex: 1, backgroundColor: colors.surface2 }}
+            style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }}
             contentContainerStyle={{ padding: spacing.md, flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
             onEndReachedThreshold={0.3}
             ListHeaderComponent={
-              loadingMore ? <ActivityIndicator color={colors.primary} style={{ marginBottom: spacing.sm }} /> : null
+              loadingMore ? <ActivityIndicator color={protoColors.primary} style={{ marginBottom: spacing.sm }} /> : null
             }
             onScroll={({ nativeEvent }) => {
               if (nativeEvent.contentOffset.y < 40) loadOlder();
@@ -200,21 +200,29 @@ export default function Support() {
           />
         )}
 
+        <View style={styles.quickRow}>
+          {QUICK_REPLIES.map((q) => (
+            <TouchableOpacity key={q} style={styles.quickChip} onPress={() => send(q)} disabled={sending} testID={`quick-reply-${q}`}>
+              <Text style={styles.quickChipText}>{q}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View style={[styles.inputBar, { paddingBottom: spacing.sm2 + tabBarSpacing }]}>
           <TextInput
             testID="support-input"
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder="Type your message…"
-            placeholderTextColor={colors.textPlaceholder}
+            placeholder="Message"
+            placeholderTextColor={protoColors.textDim}
             multiline
             maxLength={2000}
           />
           <TouchableOpacity
             testID="support-send"
             style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]}
-            onPress={send}
+            onPress={() => send()}
             disabled={!input.trim() || sending}
           >
             <Send size={18} color="#FFF" strokeWidth={2.5} />
@@ -234,39 +242,40 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: "#FFF",
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
+    borderBottomColor: protoColors.border,
+    backgroundColor: protoColors.surface,
   },
   headerAvatarWrap: {
     position: "relative",
   },
-  onlineDot: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: "#FFF",
-  },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: fonts.displayBold,
-    color: colors.text,
+    color: protoColors.text,
   },
   headerSub: {
     fontSize: 11,
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: protoColors.textMuted,
     marginTop: 1,
+  },
+  quickRow: {
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingTop: protoSpacing.sm,
+    backgroundColor: protoColors.surfaceAlt,
+  },
+  quickChip: {
+    backgroundColor: protoColors.pill.neutral.bg,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  quickChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: protoColors.pill.neutral.text,
   },
   row: {
     flexDirection: "row",
@@ -286,28 +295,23 @@ const styles = StyleSheet.create({
   senderLabel: {
     fontSize: 11,
     fontFamily: fonts.semiBold,
-    color: colors.textMuted,
+    color: protoColors.textMuted,
     marginBottom: 3,
     marginLeft: 4,
   },
   bubble: {
-    borderRadius: radius.xl,
+    borderRadius: 17,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   bubbleUser: {
-    backgroundColor: colors.primary,
+    backgroundColor: protoColors.primary,
     borderBottomRightRadius: 6,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
   },
   bubbleAdmin: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#FFFFFF",
     borderBottomLeftRadius: 6,
-    shadowColor: colors.text,
+    shadowColor: protoColors.primaryDark,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -316,16 +320,16 @@ const styles = StyleSheet.create({
   bubbleText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.text,
+    color: protoColors.text,
     lineHeight: 20,
   },
   bubbleTextUser: {
-    color: "#FFF",
+    color: "#FFFFFF",
   },
   time: {
     fontSize: 10,
     fontFamily: fonts.medium,
-    color: colors.textDim,
+    color: protoColors.textDim,
     marginTop: 3,
     marginHorizontal: 4,
   },
@@ -335,35 +339,34 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: spacing.sm2,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: "#FFF",
+    borderTopColor: protoColors.border,
+    backgroundColor: protoColors.surface,
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: protoColors.border,
     borderRadius: 22,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 10,
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.text,
+    color: protoColors.text,
     maxHeight: 100,
     minHeight: 44,
-    backgroundColor: colors.surface2,
+    backgroundColor: protoColors.fieldBg,
   },
   sendBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.primary,
+    backgroundColor: protoColors.primary,
     alignItems: "center",
     justifyContent: "center",
-    ...elevation.l1,
   },
   sendBtnDisabled: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: protoColors.accent,
     opacity: 0.6,
   },
 });

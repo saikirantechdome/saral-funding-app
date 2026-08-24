@@ -14,9 +14,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, MapPin, Calendar, Tag, User as UserIcon, Briefcase, FileCheck, FileText, MessageCircle } from "lucide-react-native";
+import { ArrowLeft, Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, MapPin, Calendar, Tag, User as UserIcon, Briefcase, FileCheck, FileText, MessageCircle } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, elevation, gradients, formatMobile } from "@/src/theme";
+import { spacing, radius, fonts, formatMobile, shortRef } from "@/src/theme";
+import { protoColors, protoSpacing } from "@/src/theme.proto";
 import { apiGet, apiPost, apiLogout } from "@/src/api";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
@@ -30,6 +31,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "info" | "error" } | null>(null);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
   const toastAnim = useRef(new Animated.Value(0)).current;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,12 +56,14 @@ export default function Profile() {
       Promise.all([
         apiGet<any>("/auth/me"),
         apiGet<any>("/business-profile").catch(() => ({})),
-      ]).then(([u, b]) => {
+        apiGet<any[]>("/notifications/me").catch(() => []),
+      ]).then(([u, b, notifs]) => {
         setMe(u);
         setBp(b);
         setEditName(u.full_name || "");
         setEditDistrict(u.district || "");
         setEditAge(u.age?.toString() || "");
+        setUnreadNotifs((notifs || []).filter((n: any) => !n.read).length);
       });
     }, [])
   );
@@ -141,7 +145,7 @@ export default function Profile() {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top"]} testID="profile-tab">
+    <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }} edges={["top"]} testID="profile-tab">
       <ScrollView
         style={{ flex: 1, marginBottom: tabBarSpacing }}
         contentContainerStyle={{ paddingBottom: 4 }}
@@ -149,12 +153,16 @@ export default function Profile() {
       >
         {/* Avatar header */}
         <LinearGradient
-          colors={gradients.heroCompact}
+          colors={protoColors.heroGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.avatarSectionDark}
           testID="profile-hero-dark"
         >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+            <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2} />
+          </TouchableOpacity>
+
           <View style={styles.avatarOuter}>
             <View style={styles.avatarRing}>
               <InitialsAvatar name={me?.full_name || "User"} size={72} variant={isAdmin ? "staff" : "user"} />
@@ -165,7 +173,7 @@ export default function Profile() {
                 onPress={() => setEditing(true)}
                 testID="edit-profile-btn"
               >
-                <Pencil size={12} color={colors.primaryDark} strokeWidth={2.5} />
+                <Pencil size={12} color={protoColors.primary} strokeWidth={2.5} />
               </TouchableOpacity>
             )}
           </View>
@@ -190,16 +198,16 @@ export default function Profile() {
                 testID="save-profile-btn"
               >
                 {saving
-                  ? <ActivityIndicator size="small" color={colors.primaryDark} />
-                  : <Check size={16} color={colors.primaryDark} strokeWidth={2.5} />}
+                  ? <ActivityIndicator size="small" color={protoColors.primary} />
+                  : <Check size={16} color={protoColors.primary} strokeWidth={2.5} />}
               </TouchableOpacity>
             </View>
           ) : (
             <Text style={styles.nameDark}>{me?.full_name || "—"}</Text>
           )}
           <Text style={styles.mobileDark}>
-            {me?.role === "user" ? "User" : me?.role?.replace(/_/g, " ") || "User"}
-            {me?.email ? ` · ${me.email}` : ` · ${formatMobile(me?.mobile)}`}
+            {me?.email ? me.email : formatMobile(me?.mobile)}
+            {me?.id ? ` · SRL-${shortRef(me.id)}` : ""}
           </Text>
         </LinearGradient>
 
@@ -229,7 +237,7 @@ export default function Profile() {
                 ) : (
                   <>
                     <InfoRow Icon={MapPin} label="State" value={me?.state} />
-                    <InfoRow Icon={MapPin} label="District" value={me?.district} />
+                    <InfoRow Icon={MapPin} label="City" value={me?.district} />
                     <InfoRow Icon={UserIcon} label="Gender" value={me?.gender} />
                     <InfoRow Icon={Calendar} label="Age" value={me?.age?.toString()} />
                     <InfoRow Icon={Tag} label="Category" value={me?.category} last />
@@ -269,12 +277,17 @@ export default function Profile() {
                 activeOpacity={0.8}
               >
                 <View style={styles.actionIcon}>
-                  <a.Icon size={16} color={colors.textMuted} strokeWidth={2} />
+                  <a.Icon size={16} color={protoColors.textMuted} strokeWidth={2} />
                 </View>
                 <Text style={styles.actionLabel}>
                   {a.label}
                 </Text>
-                <ChevronRight size={16} color={colors.textDim} strokeWidth={2} />
+                {a.id === "notif" && unreadNotifs > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>{unreadNotifs}</Text>
+                  </View>
+                )}
+                <ChevronRight size={16} color={protoColors.textMuted} strokeWidth={2} />
               </TouchableOpacity>
             ))}
 
@@ -285,10 +298,10 @@ export default function Profile() {
               activeOpacity={0.8}
             >
               <View style={[styles.actionIcon, styles.logoutIcon]}>
-                <LogOut size={16} color={colors.danger} strokeWidth={2} />
+                <LogOut size={16} color={protoColors.danger} strokeWidth={2} />
               </View>
-              <Text style={[styles.actionLabel, { color: colors.danger }]}>Logout</Text>
-              <ChevronRight size={16} color={colors.danger} strokeWidth={2} />
+              <Text style={[styles.actionLabel, { color: protoColors.danger }]}>Logout</Text>
+              <ChevronRight size={16} color={protoColors.danger} strokeWidth={2} />
             </TouchableOpacity>
           </View>
 
@@ -324,7 +337,7 @@ function InfoRow({ Icon, label, value, last = false }: { Icon?: any; label: stri
       <View style={infoStyles.labelWrap}>
         {Icon && (
           <View style={infoStyles.iconChip}>
-            <Icon size={13} color={colors.primaryDark} strokeWidth={2} />
+            <Icon size={13} color={protoColors.primary} strokeWidth={2} />
           </View>
         )}
         <Text style={infoStyles.label}>{label}</Text>
@@ -343,7 +356,7 @@ function EditRow({ label, value, onChangeText, placeholder, keyboardType }: any)
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.textPlaceholder}
+        placeholderTextColor={protoColors.textDim}
         keyboardType={keyboardType || "default"}
       />
     </View>
@@ -360,7 +373,7 @@ const infoStyles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: protoColors.border,
   },
   labelWrap: {
     flexDirection: "row",
@@ -371,19 +384,19 @@ const infoStyles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: radius.md,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: protoColors.pill.teal.bg,
     alignItems: "center",
     justifyContent: "center",
   },
   label: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: protoColors.textMuted,
   },
   value: {
     fontSize: 13,
     fontFamily: fonts.semiBold,
-    color: colors.text,
+    color: protoColors.text,
     maxWidth: "55%",
     textAlign: "right",
   },
@@ -394,13 +407,13 @@ const infoStyles = StyleSheet.create({
   activityLabel: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: protoColors.textMuted,
     marginBottom: 4,
   },
   activityValue: {
     fontSize: 13,
     fontFamily: fonts.semiBold,
-    color: colors.text,
+    color: protoColors.text,
     lineHeight: 18,
   },
   editRow: {
@@ -411,31 +424,51 @@ const infoStyles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: protoColors.border,
   },
   editInput: {
     flex: 1,
     fontSize: 13,
     fontFamily: fonts.semiBold,
-    color: colors.text,
+    color: protoColors.text,
     textAlign: "right",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: protoColors.border,
     borderRadius: radius.md,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: colors.surface2,
+    backgroundColor: protoColors.fieldBg,
   },
 });
 
 const styles = StyleSheet.create({
   avatarSectionDark: {
     alignItems: "center",
-    paddingTop: 32,
+    paddingTop: 14,
     paddingBottom: 24,
-    borderBottomLeftRadius: radius.xxl,
-    borderBottomRightRadius: radius.xxl,
+    borderBottomLeftRadius: 29,
+    borderBottomRightRadius: 29,
     marginBottom: 16,
+  },
+  backBtn: {
+    alignSelf: "flex-start",
+    marginLeft: spacing.md,
+    marginBottom: 18,
+  },
+  notifBadge: {
+    backgroundColor: protoColors.pill.blue.bg,
+    borderRadius: 999,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+  },
+  notifBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: protoColors.pill.blue.text,
   },
   avatarRing: {
     padding: 3,
@@ -466,7 +499,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: protoColors.pill.teal.bg,
     borderWidth: 2,
     borderColor: "#FFF",
     alignItems: "center",
@@ -512,19 +545,16 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontFamily: fonts.bold,
-    color: colors.textMuted,
+    color: protoColors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginBottom: 8,
     marginLeft: 4,
   },
   infoCard: {
-    backgroundColor: "#FFF",
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 19,
     overflow: "hidden",
-    ...elevation.l1,
   },
   actionsWrap: {
     gap: 8,
@@ -533,39 +563,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#FFF",
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 19,
     paddingVertical: 14,
     paddingHorizontal: spacing.md,
-    ...elevation.l1,
   },
   logoutRow: {
-    borderColor: colors.dangerSoft,
-    backgroundColor: "#FFF",
+    backgroundColor: protoColors.dangerSoft,
   },
   actionIcon: {
     width: 34,
     height: 34,
     borderRadius: radius.lg,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: protoColors.surfaceAlt,
     alignItems: "center",
     justifyContent: "center",
   },
   logoutIcon: {
-    backgroundColor: colors.dangerSoft,
+    backgroundColor: "#FBE7E2",
   },
   actionLabel: {
     flex: 1,
     fontSize: 15,
     fontFamily: fonts.semiBold,
-    color: colors.text,
+    color: protoColors.text,
   },
   aboutFooter: {
     fontSize: 12,
     fontFamily: fonts.regular,
-    color: colors.textDim,
+    color: protoColors.textDim,
     textAlign: "center",
     lineHeight: 18,
     marginTop: spacing.lg,
@@ -577,17 +603,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: radius.pill,
-    shadowColor: colors.text,
+    shadowColor: protoColors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 6,
   },
   toastInfo: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: protoColors.primaryDark,
   },
   toastError: {
-    backgroundColor: colors.danger,
+    backgroundColor: protoColors.danger,
   },
   toastText: {
     fontSize: 13,
