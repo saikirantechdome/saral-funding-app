@@ -466,8 +466,14 @@ export default function Dashboard() {
     <View style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }} testID="dashboard-screen">
       <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.primaryDark }} edges={["top"]}>
         <ScrollView
-          style={{ flex: 1, marginBottom: tabBarSpacing, backgroundColor: protoColors.surfaceAlt }}
-          contentContainerStyle={{ paddingBottom: 4, flexGrow: 1 }}
+          // No marginBottom here — that shrinks the ScrollView's own box,
+          // leaving a gap below it that isn't covered by its background and
+          // falls through to the dark SafeAreaView behind it (looked like a
+          // black strip behind the floating tab bar). Clearance for the tab
+          // bar instead comes from padding *inside* the scroll content, which
+          // this light background still covers.
+          style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }}
+          contentContainerStyle={{ paddingBottom: tabBarSpacing, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -493,8 +499,10 @@ export default function Dashboard() {
                 <Text style={homeStyles.greetingSmall}>{greeting}</Text>
                 <Text style={homeStyles.greetingName}>{user?.full_name ? user.full_name.split(" ")[0] : "there"}</Text>
               </View>
+              {/* No bell glyph — the prototype's `.s-bell` is a blank circle
+                  (just the dot for unread), same flat-placeholder treatment
+                  as Status/Documents' row icons. */}
               <TouchableOpacity testID="bell-btn" onPress={() => router.push("/notifications")} style={homeStyles.bell}>
-                <Bell size={18} color="#FFFFFF" strokeWidth={2} />
                 {alerts.length > 0 && <View style={homeStyles.bellDot} />}
               </TouchableOpacity>
             </View>
@@ -551,19 +559,16 @@ export default function Dashboard() {
               </View>
             ) : null}
 
-            {/* Documents / Chat tiles */}
+            {/* Documents / Chat tiles — flat placeholder icon boxes (no
+                glyph), matching the prototype's `.s-ico` exactly. */}
             <View style={homeStyles.grid2}>
               <TouchableOpacity testID="home-docs-tile" style={homeStyles.tile} onPress={() => router.push("/(tabs)/documents" as any)} activeOpacity={0.85}>
-                <View style={homeStyles.tileIcon}>
-                  <FolderIcon size={16} color={protoColors.primary} strokeWidth={2} />
-                </View>
+                <View style={homeStyles.tileIcon} />
                 <Text style={homeStyles.tileTitle}>Documents</Text>
-                <Text style={homeStyles.cardBody}>{rawDocs.length} uploaded</Text>
+                <Text style={homeStyles.cardBody}>{rawDocs.length ? `${rawDocs.filter((d: any) => d.status === "verified").length} of ${rawDocs.length} approved` : "No documents yet"}</Text>
               </TouchableOpacity>
               <TouchableOpacity testID="home-chat-tile" style={homeStyles.tile} onPress={() => router.push("/(tabs)/support" as any)} activeOpacity={0.85}>
-                <View style={homeStyles.tileIcon}>
-                  <MessageCircle size={16} color={protoColors.primary} strokeWidth={2} />
-                </View>
+                <View style={homeStyles.tileIcon} />
                 <Text style={homeStyles.tileTitle}>Chat</Text>
                 <Text style={homeStyles.cardBody}>Chat with our team</Text>
               </TouchableOpacity>
@@ -579,7 +584,7 @@ const homeStyles = StyleSheet.create({
   hero: {
     paddingTop: spacing.sm2,
     paddingHorizontal: spacing.md,
-    paddingBottom: 22,
+    paddingBottom: 26,
   },
   headerRow: { flexDirection: "row", alignItems: "center" },
   avatar: {

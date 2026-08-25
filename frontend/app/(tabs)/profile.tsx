@@ -14,12 +14,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft, Bell, LogOut, ChevronRight, Pencil, X, Check, Briefcase, MessageCircle } from "lucide-react-native";
+import { ArrowLeft, ChevronRight, Pencil, X, Check } from "lucide-react-native";
 
 import { spacing, radius, fonts, formatMobile, shortRef } from "@/src/theme";
 import { protoColors, protoSpacing } from "@/src/theme.proto";
 import { apiGet, apiPost, apiLogout } from "@/src/api";
-import InitialsAvatar from "@/src/components/InitialsAvatar";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 export default function Profile() {
@@ -144,9 +143,9 @@ export default function Profile() {
     // and Terms of Service were extras not in the prototype; dropped per
     // explicit instruction. Those screens (/booking, /legal) still exist
     // and work, just aren't linked from Profile anymore.
-    ...(!isAdmin && bp?.industry ? [{ id: "business", label: "Business profile", Icon: Briefcase, onPress: () => router.push("/business-profile" as any) }] : []),
-    { id: "notif", label: "Notifications", Icon: Bell, onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
-    { id: "support", label: isAdmin ? "Support Inbox" : "Help & support", Icon: MessageCircle, onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
+    ...(!isAdmin && bp?.industry ? [{ id: "business", label: "Business profile", onPress: () => router.push("/business-profile" as any) }] : []),
+    { id: "notif", label: "Notifications", onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
+    { id: "support", label: isAdmin ? "Support Inbox" : "Help & support", onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
   ];
 
   return (
@@ -169,8 +168,13 @@ export default function Profile() {
           </TouchableOpacity>
 
           <View style={styles.avatarOuter}>
+            {/* Flat teal circle — the prototype's Profile avatar has no
+                image/initials at all (`.s-av`-style blank placeholder), same
+                treatment as Status/Documents/Home row icons. The edit pencil
+                badge is a real affordance the static prototype doesn't
+                depict any state for, so it stays. */}
             <View style={styles.avatarRing}>
-              <InitialsAvatar name={me?.full_name || "User"} size={72} variant={isAdmin ? "staff" : "user"} />
+              <View style={[styles.avatarBlank, { width: 72, height: 72, borderRadius: 36 }]} />
             </View>
             {!editing && (
               <TouchableOpacity
@@ -264,9 +268,7 @@ export default function Profile() {
                 onPress={a.onPress}
                 activeOpacity={0.8}
               >
-                <View style={styles.actionIcon}>
-                  <a.Icon size={16} color={protoColors.textMuted} strokeWidth={2} />
-                </View>
+                <View style={styles.actionIcon} />
                 <Text style={styles.actionLabel}>
                   {a.label}
                 </Text>
@@ -285,9 +287,7 @@ export default function Profile() {
               onPress={logout}
               activeOpacity={0.8}
             >
-              <View style={[styles.actionIcon, styles.logoutIcon]}>
-                <LogOut size={16} color={protoColors.danger} strokeWidth={2} />
-              </View>
+              <View style={[styles.actionIcon, styles.logoutIcon]} />
               <Text style={[styles.actionLabel, { color: protoColors.danger }]}>Logout</Text>
               <ChevronRight size={16} color={protoColors.danger} strokeWidth={2} />
             </TouchableOpacity>
@@ -376,15 +376,20 @@ const infoStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  // The prototype's info rows are the opposite of the usual "muted label,
+  // prominent value" pattern: the label ("State") is the dark/prominent
+  // text and the value ("Maharashtra") is the smaller muted one — and
+  // neither is bold, just regular weight throughout (Armata has no bold
+  // variant, and the prototype never overrides font-weight here).
   label: {
-    fontSize: 13,
+    fontSize: 15,
     fontFamily: fonts.regular,
-    color: protoColors.textMuted,
+    color: protoColors.text,
   },
   value: {
     fontSize: 13,
-    fontFamily: fonts.semiBold,
-    color: protoColors.text,
+    fontFamily: fonts.regular,
+    color: protoColors.textMuted,
     maxWidth: "55%",
     textAlign: "right",
   },
@@ -464,9 +469,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.4)",
   },
+  avatarBlank: {
+    backgroundColor: protoColors.accent,
+  },
   nameDark: {
     fontSize: 20,
-    fontFamily: fonts.displayBold,
+    // Regular, not displayBold — the prototype's name text has no
+    // font-weight override (Armata's only weight is 400).
+    fontFamily: fonts.regular,
     color: "#FFFFFF",
     marginBottom: 4,
   },
@@ -563,9 +573,8 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: radius.lg,
-    backgroundColor: protoColors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
+    // Flat placeholder, no glyph — matches the prototype's `.s-ico` exactly.
+    backgroundColor: protoColors.iconPlaceholder,
   },
   logoutIcon: {
     backgroundColor: "#FBE7E2",
@@ -573,7 +582,8 @@ const styles = StyleSheet.create({
   actionLabel: {
     flex: 1,
     fontSize: 15,
-    fontFamily: fonts.semiBold,
+    // Regular, not semiBold — no row label is bold in the prototype.
+    fontFamily: fonts.regular,
     color: protoColors.text,
   },
   aboutFooter: {

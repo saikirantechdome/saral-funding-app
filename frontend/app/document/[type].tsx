@@ -132,7 +132,7 @@ export default function DocumentDetail() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.body, { flexGrow: 1 }]} showsVerticalScrollIndicator={false}>
         {status === "rejected" && (
           <View style={styles.amberCard}>
             <Text style={styles.amberLabel}>Why it came back</Text>
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md, paddingVertical: protoSpacing.sm,
     borderBottomWidth: 1, borderBottomColor: protoColors.border,
   },
-  headerTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: protoColors.text },
+  headerTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: protoColors.text, textAlign: "center" },
   pill: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
   pillText: { fontSize: 10.5, fontWeight: "600" },
   body: { padding: spacing.md, gap: protoSpacing.md },
@@ -213,7 +213,10 @@ const styles = StyleSheet.create({
   viewRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
   viewText: { fontSize: 12, color: protoColors.primary, fontWeight: "600" },
   previewBox: {
-    minHeight: 160, borderRadius: 16, backgroundColor: protoColors.surfaceAlt,
+    // flex:1, not a fixed minHeight — the prototype's placeholder box
+    // expands to fill all remaining space down to the buttons, not a small
+    // fixed-height box with empty page below it.
+    flex: 1, minHeight: 160, borderRadius: 16, backgroundColor: protoColors.surfaceAlt,
     alignItems: "center", justifyContent: "center", gap: 8, padding: spacing.md,
   },
   previewPlaceholder: { fontSize: 12, color: protoColors.textDim },

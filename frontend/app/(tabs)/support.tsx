@@ -12,8 +12,8 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
-import { Send, Headset } from "lucide-react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { ArrowLeft, Send, Headset } from "lucide-react-native";
 
 import { spacing, fonts } from "@/src/theme";
 import { protoColors, protoSpacing } from "@/src/theme.proto";
@@ -43,6 +43,7 @@ function formatTime(iso: string): string {
 }
 
 export default function Support() {
+  const router = useRouter();
   const tabBarSpacing = useTabBarSpacing();
   const [items, setItems] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,6 +124,12 @@ export default function Support() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surface }} edges={["top"]} testID="support-screen">
       <View style={styles.header}>
+        {/* Prototype's isChat header opens with a back arrow (goHome) —
+            present even though Chat is a persistent tab here, same as the
+            Status tab's header. */}
+        <TouchableOpacity onPress={() => router.push("/(tabs)" as any)} hitSlop={12} testID="chat-back">
+          <ArrowLeft size={18} color={protoColors.text} strokeWidth={2} />
+        </TouchableOpacity>
         <View style={styles.headerAvatarWrap}>
           <InitialsAvatar name="Support Team" size={34} variant="staff" />
         </View>
@@ -208,25 +215,30 @@ export default function Support() {
           ))}
         </View>
 
-        <View style={[styles.inputBar, { paddingBottom: spacing.sm2 + tabBarSpacing }]}>
-          <TextInput
-            testID="support-input"
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Message"
-            placeholderTextColor={protoColors.textDim}
-            multiline
-            maxLength={2000}
-          />
-          <TouchableOpacity
-            testID="support-send"
-            style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]}
-            onPress={() => send()}
-            disabled={!input.trim() || sending}
-          >
-            <Send size={18} color="#FFF" strokeWidth={2.5} />
-          </TouchableOpacity>
+        {/* Single flat bar (text + inline send affordance) — matches the
+            prototype's isChat input exactly, instead of a separate pill
+            field plus a floating circular send button. */}
+        <View style={[styles.inputBarWrap, { paddingBottom: tabBarSpacing }]}>
+          <View style={styles.inputBar}>
+            <TextInput
+              testID="support-input"
+              style={styles.input}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Message"
+              placeholderTextColor={protoColors.textDim}
+              multiline
+              maxLength={2000}
+            />
+            <TouchableOpacity
+              testID="support-send"
+              onPress={() => send()}
+              disabled={!input.trim() || sending}
+              hitSlop={8}
+            >
+              <Send size={17} color={input.trim() && !sending ? protoColors.primary : protoColors.textDim} strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -333,40 +345,31 @@ const styles = StyleSheet.create({
     marginTop: 3,
     marginHorizontal: 4,
   },
+  inputBarWrap: {
+    paddingHorizontal: spacing.md,
+    paddingTop: protoSpacing.sm,
+    // Same light panel as the message list and quick-reply row behind it —
+    // the prototype's whole lower sheet is one continuous background, with
+    // just the pill-shaped bar itself (below) rendered white.
+    backgroundColor: protoColors.surfaceAlt,
+  },
   inputBar: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    padding: spacing.sm2,
-    borderTopWidth: 1,
-    borderTopColor: protoColors.border,
-    backgroundColor: protoColors.surface,
+    alignItems: "center",
+    gap: 9,
+    minHeight: 50,
+    borderRadius: 17,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E1E9E6",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: protoColors.border,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
     fontSize: 14,
     fontFamily: fonts.regular,
     color: protoColors.text,
     maxHeight: 100,
-    minHeight: 44,
-    backgroundColor: protoColors.fieldBg,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: protoColors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendBtnDisabled: {
-    backgroundColor: protoColors.accent,
-    opacity: 0.6,
   },
 });

@@ -68,8 +68,13 @@ export default function Status() {
     <View style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }} testID="status-screen">
       <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.primaryDark }} edges={["top"]}>
         <ScrollView
-          style={{ flex: 1, marginBottom: tabBarSpacing, backgroundColor: protoColors.surfaceAlt }}
-          contentContainerStyle={{ flexGrow: 1 }}
+          // See (tabs)/index.tsx for why this is contentContainerStyle
+          // paddingBottom, not a marginBottom on the ScrollView itself — a
+          // marginBottom gap here isn't covered by this light background and
+          // exposes the dark SafeAreaView behind it as a black strip under
+          // the floating tab bar.
+          style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }}
+          contentContainerStyle={{ paddingBottom: tabBarSpacing, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FFFFFF" />}
         >

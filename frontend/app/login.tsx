@@ -54,7 +54,11 @@ export default function Login() {
             style={styles.logoMark}
             resizeMode="contain"
           />
-          <View style={{ height: protoSpacing.sm }} />
+          {/* The prototype has an extra 4px spacer div between the logo and
+              headline, on top of the sheet's own uniform 13px child gap
+              (scaled below via `body`'s `gap`) — reproduced literally rather
+              than folded into one bigger margin. */}
+          <View style={{ height: protoSpacing.xs }} />
 
           <Text style={styles.headline}>Funding, clear hai.</Text>
           <Text style={styles.subtitle}>Enter your mobile number to start.</Text>
@@ -70,8 +74,6 @@ export default function Login() {
             placeholder="98765 43210"
           />
           {!!err && <Text style={styles.err}>{err}</Text>}
-
-          <View style={{ height: protoSpacing.lg }} />
 
           <ProtoButton
             testID="send-otp-btn"
@@ -99,6 +101,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: protoSpacing.lg,
     paddingTop: protoSpacing.xl,
     paddingBottom: protoSpacing.lg,
+    // Uniform gap between every direct child — matches the prototype's
+    // `.s-sheet.nb.pl{gap:13px}` (scaled). Previously this was a mix of
+    // one-off marginBottoms/spacer Views that didn't add up to the same
+    // rhythm (24px before the button vs. the prototype's 16px, etc).
+    gap: protoSpacing.md,
   },
   logoMark: {
     width: 104,
@@ -110,12 +117,10 @@ const styles = StyleSheet.create({
     lineHeight: (protoSize.headline + 5) * 1.2,
     color: protoColors.text,
     fontWeight: "700",
-    marginBottom: protoSpacing.xs,
   },
   subtitle: {
     fontSize: protoSize.body,
     color: protoColors.textMuted,
-    marginBottom: protoSpacing.lg,
   },
   err: {
     fontSize: 12,
