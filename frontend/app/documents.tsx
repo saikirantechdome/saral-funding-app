@@ -8,7 +8,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import FlatIcon from "@/src/components/FlatIcon";
 
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing } from "@/src/theme.proto";
@@ -22,7 +22,7 @@ export default function DocumentsOnboardingScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surface }} edges={["top", "bottom"]}>
       <View style={styles.backRow}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeft size={20} color={protoColors.text} strokeWidth={2} />
+          <FlatIcon name="left-arrow" size={20} color={protoColors.text} />
         </TouchableOpacity>
       </View>
       <View style={{ flex: 1 }}>

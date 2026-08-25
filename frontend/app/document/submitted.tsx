@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { Check } from "lucide-react-native";
+import FlatIcon from "@/src/components/FlatIcon";
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -29,7 +29,7 @@ export default function DocumentSubmitted() {
       <View style={styles.body}>
         <View style={styles.card}>
           <View style={styles.iconWrap}>
-            <Check size={20} color="#1F7A4C" strokeWidth={3} />
+            <FlatIcon name="checkmark" size={20} color="#1F7A4C" />
           </View>
           <Text style={styles.title}>Document sent</Text>
           <Text style={styles.subtitle}>{decodeURIComponent(type || "Document")} is with our team for review</Text>

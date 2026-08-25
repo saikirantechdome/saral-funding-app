@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import FlatIcon from "@/src/components/FlatIcon";
 
 import { protoColors, protoRadius, protoSpacing, protoSize, protoFonts } from "@/src/theme.proto";
 import { apiPost, setTokens } from "@/src/api";
@@ -124,7 +124,7 @@ export default function Otp() {
           showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={12}>
-            <ArrowLeft size={20} color={protoColors.text} strokeWidth={2} />
+            <FlatIcon name="left-arrow" size={20} color={protoColors.text} />
           </TouchableOpacity>
 
           <Text style={styles.headline}>Enter the code</Text>

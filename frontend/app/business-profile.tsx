@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import FlatIcon from "@/src/components/FlatIcon";
 
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -36,7 +36,7 @@ export default function BusinessProfile() {
     <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }} edges={["top", "bottom"]} testID="business-profile-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeft size={20} color={protoColors.text} strokeWidth={2} />
+          <FlatIcon name="left-arrow" size={20} color={protoColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Business Profile</Text>
         <View style={{ width: 20 }} />

@@ -20,7 +20,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft, PhoneCall, FileText, Landmark, FileCheck2, Search, CheckCircle2, Banknote } from "lucide-react-native";
+import FlatIcon, { FlatIconName } from "@/src/components/FlatIcon";
 
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
@@ -32,16 +32,15 @@ import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 // One icon per real pipeline stage — the prototype's own row icons are
 // blank placeholders, but a plain gray square for every single stage read
 // as unfinished rather than intentional, so each stage gets something that
-// matches its meaning. Free icons via lucide-react-native (already the
-// icon set used throughout this revamp — back arrows, chevrons, etc.).
-const STAGE_ICONS: Record<string, any> = {
-  call_done: PhoneCall,
-  documents_submitted: FileText,
-  scheme_identified: Landmark,
-  application_filed: FileCheck2,
-  under_review: Search,
-  approved: CheckCircle2,
-  disbursed: Banknote,
+// matches its meaning. Free icons via Flaticon (see src/components/FlatIcon.tsx).
+const STAGE_ICONS: Record<string, FlatIconName> = {
+  call_done: "phone-call",
+  documents_submitted: "document",
+  scheme_identified: "bank",
+  application_filed: "file-check",
+  under_review: "review",
+  approved: "checkmark",
+  disbursed: "money",
 };
 
 // Mirrors the relative-date formatter repeated elsewhere in this codebase
@@ -96,7 +95,7 @@ export default function Status() {
           <LinearGradient colors={protoColors.heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
             <View style={styles.headerRow}>
               <TouchableOpacity onPress={() => router.push("/(tabs)" as any)} hitSlop={12} testID="status-back">
-                <ArrowLeft size={18} color="#FFFFFF" strokeWidth={2} />
+                <FlatIcon name="left-arrow" size={18} color="#FFFFFF" />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Status</Text>
               <View style={{ width: 18 }} />
@@ -123,12 +122,11 @@ export default function Status() {
             <View style={styles.card}>
               {STAGES.map((stage, i) => {
                 const state = i < journey.stageIndex ? "done" : i === journey.stageIndex ? "now" : "pending";
-                const StageIcon = STAGE_ICONS[stage] ?? FileText;
                 const iconColor = state === "done" ? protoColors.pill.green.text : state === "now" ? protoColors.pill.amber.text : protoColors.textDim;
                 return (
                   <View key={stage} style={[styles.row, i === STAGES.length - 1 && styles.rowLast]}>
                     <View style={[styles.icon, state === "done" && styles.iconDone, state === "now" && styles.iconNow]}>
-                      <StageIcon size={17} color={iconColor} strokeWidth={2} />
+                      <FlatIcon name={STAGE_ICONS[stage] ?? "document"} size={17} color={iconColor} />
                     </View>
                     <Text style={[styles.rowLabel, state === "pending" && styles.rowLabelPending]}>
                       {STAGE_LABELS[stage]}

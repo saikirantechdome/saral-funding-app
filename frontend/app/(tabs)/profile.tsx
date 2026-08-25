@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft, ChevronRight, Pencil, X, Check, User, Briefcase, Bell, MessageCircle, LogOut } from "lucide-react-native";
+import FlatIcon, { FlatIconName } from "@/src/components/FlatIcon";
 
 import { spacing, radius, formatMobile, shortRef } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -143,9 +143,9 @@ export default function Profile() {
     // and Terms of Service were extras not in the prototype; dropped per
     // explicit instruction. Those screens (/booking, /legal) still exist
     // and work, just aren't linked from Profile anymore.
-    ...(!isAdmin && bp?.industry ? [{ id: "business", label: "Business profile", Icon: Briefcase, onPress: () => router.push("/business-profile" as any) }] : []),
-    { id: "notif", label: "Notifications", Icon: Bell, onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
-    { id: "support", label: isAdmin ? "Support Inbox" : "Help & support", Icon: MessageCircle, onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
+    ...(!isAdmin && bp?.industry ? [{ id: "business", label: "Business profile", iconName: "briefcase" as FlatIconName, onPress: () => router.push("/business-profile" as any) }] : []),
+    { id: "notif", label: "Notifications", iconName: "bell" as FlatIconName, onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
+    { id: "support", label: isAdmin ? "Support Inbox" : "Help & support", iconName: "chat" as FlatIconName, onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
   ];
 
   return (
@@ -164,7 +164,7 @@ export default function Profile() {
           testID="profile-hero-dark"
         >
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
-            <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2} />
+            <FlatIcon name="left-arrow" size={20} color="#FFFFFF" />
           </TouchableOpacity>
 
           <View style={styles.avatarOuter}>
@@ -176,7 +176,7 @@ export default function Profile() {
                 prototype doesn't depict any state for, so it stays. */}
             <View style={styles.avatarRing}>
               <View style={[styles.avatarBlank, { width: 72, height: 72, borderRadius: 36 }]}>
-                <User size={30} color="#FFFFFF" strokeWidth={1.75} />
+                <FlatIcon name="user" size={30} color="#FFFFFF" />
               </View>
             </View>
             {!editing && (
@@ -185,7 +185,7 @@ export default function Profile() {
                 onPress={() => setEditing(true)}
                 testID="edit-profile-btn"
               >
-                <Pencil size={12} color={protoColors.primary} strokeWidth={2.5} />
+                <FlatIcon name="pencil" size={12} color={protoColors.primary} />
               </TouchableOpacity>
             )}
           </View>
@@ -201,7 +201,7 @@ export default function Profile() {
                 autoFocus
               />
               <TouchableOpacity style={styles.editIconBtn} onPress={() => setEditing(false)}>
-                <X size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <FlatIcon name="close" size={16} color="#FFFFFF" />
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.editIconBtn, styles.editIconBtnSave]}
@@ -211,7 +211,7 @@ export default function Profile() {
               >
                 {saving
                   ? <ActivityIndicator size="small" color={protoColors.primary} />
-                  : <Check size={16} color={protoColors.primary} strokeWidth={2.5} />}
+                  : <FlatIcon name="checkmark" size={16} color={protoColors.primary} />}
               </TouchableOpacity>
             </View>
           ) : (
@@ -278,7 +278,7 @@ export default function Profile() {
                   activeOpacity={0.8}
                 >
                   <View style={styles.actionIcon}>
-                    <a.Icon size={16} color={protoColors.primary} strokeWidth={2} />
+                    <FlatIcon name={a.iconName} size={16} color={protoColors.primary} />
                   </View>
                   <Text style={styles.actionLabel}>
                     {a.label}
@@ -288,7 +288,7 @@ export default function Profile() {
                       <Text style={styles.notifBadgeText}>{unreadNotifs}</Text>
                     </View>
                   )}
-                  <ChevronRight size={16} color={protoColors.textMuted} strokeWidth={2} />
+                  <FlatIcon name="chevron-right" size={16} color={protoColors.textMuted} />
                 </TouchableOpacity>
               ))}
 
@@ -299,10 +299,10 @@ export default function Profile() {
                 activeOpacity={0.8}
               >
                 <View style={[styles.actionIcon, styles.logoutIcon]}>
-                  <LogOut size={16} color={protoColors.danger} strokeWidth={2} />
+                  <FlatIcon name="logout" size={16} color={protoColors.danger} />
                 </View>
                 <Text style={[styles.actionLabel, { color: protoColors.danger }]}>Logout</Text>
-                <ChevronRight size={16} color={protoColors.danger} strokeWidth={2} />
+                <FlatIcon name="chevron-right" size={16} color={protoColors.danger} />
               </TouchableOpacity>
             </View>
           </View>

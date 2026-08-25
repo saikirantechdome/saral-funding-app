@@ -15,8 +15,7 @@ import { useCallback, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, RefreshControl, Modal, SectionList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { FileText, ChevronRight, Plus, X, Check, CreditCard, Award, Landmark, Home, Receipt } from "lucide-react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import FlatIcon, { FlatIconName } from "@/src/components/FlatIcon";
 
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
@@ -40,17 +39,17 @@ function statusPill(status: string) {
 // read as unfinished. Reuses docTypeStyle's existing category detection
 // (already shared with the admin document-review screens) rather than a
 // second copy, just mapped to an icon instead of a color. Free icons via
-// lucide-react-native (the icon set already used throughout this revamp).
-const CATEGORY_ICONS: Record<string, any> = {
-  "identification-documents": CreditCard,
-  certificate: Award,
-  "bank-cards": Landmark,
-  home: Home,
-  invoice: Receipt,
-  file: FileText,
+// Flaticon (see src/components/FlatIcon.tsx).
+const CATEGORY_ICONS: Record<string, FlatIconName> = {
+  "identification-documents": "id-card",
+  certificate: "certificate",
+  "bank-cards": "bank",
+  home: "home",
+  invoice: "receipt",
+  file: "document",
 };
-function docTypeIcon(docType: string | undefined | null) {
-  return CATEGORY_ICONS[docTypeStyle(docType).slug] ?? FileText;
+function docTypeIcon(docType: string | undefined | null): FlatIconName {
+  return CATEGORY_ICONS[docTypeStyle(docType).slug] ?? "document";
 }
 
 export default function DocumentVault() {
@@ -129,14 +128,13 @@ export default function DocumentVault() {
       >
         {docs.length === 0 && !loading ? (
           <View style={styles.empty}>
-            <FileText size={30} color={protoColors.textDim} strokeWidth={1.5} />
+            <FlatIcon name="document" size={30} color={protoColors.textDim} />
             <Text style={styles.emptyTitle}>No documents uploaded yet</Text>
             <Text style={styles.emptyBody}>Tap "Add a document" below to get started.</Text>
           </View>
         ) : (
           docs.map((doc) => {
             const pill = statusPill(doc.status);
-            const DocIcon = docTypeIcon(doc.doc_type);
             return (
               <TouchableOpacity
                 key={doc.id}
@@ -150,7 +148,7 @@ export default function DocumentVault() {
                       prototype's `.s-ico` — with a category icon inside so
                       an all-gray list of squares doesn't read as unfinished. */}
                   <View style={styles.icon}>
-                    <DocIcon size={17} color={protoColors.textMuted} strokeWidth={2} />
+                    <FlatIcon name={docTypeIcon(doc.doc_type)} size={17} color={protoColors.textMuted} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.docName}>{doc.doc_type}</Text>
@@ -169,10 +167,10 @@ export default function DocumentVault() {
 
         <TouchableOpacity style={styles.addCard} onPress={() => setAddOpen(true)} activeOpacity={0.85} testID="add-document-btn">
           <View style={[styles.icon, { backgroundColor: protoColors.pill.teal.bg }]}>
-            <Plus size={17} color={protoColors.primary} strokeWidth={2.2} />
+            <FlatIcon name="plus" size={17} color={protoColors.primary} />
           </View>
           <Text style={styles.addText}>Add a document</Text>
-          <ChevronRight size={16} color={protoColors.textMuted} strokeWidth={2} />
+          <FlatIcon name="chevron-right" size={16} color={protoColors.textMuted} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -181,7 +179,7 @@ export default function DocumentVault() {
           activeOpacity={0.8}
           testID="bulk-upload-whatsapp-cta"
         >
-          <MaterialCommunityIcons name="whatsapp" size={15} color={protoColors.primary} />
+          <FlatIcon name="whatsapp" size={15} />
           <Text style={styles.bulkBtnText}>Bulk upload? Contact us on WhatsApp</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -193,7 +191,7 @@ export default function DocumentVault() {
             <View style={styles.sheetHeaderRow}>
               <Text style={styles.sheetTitle}>Add a document</Text>
               <TouchableOpacity onPress={() => setAddOpen(false)} hitSlop={10} testID="close-add-document">
-                <X size={18} color={protoColors.textMuted} strokeWidth={2} />
+                <FlatIcon name="close" size={18} color={protoColors.textMuted} />
               </TouchableOpacity>
             </View>
             <SectionList
@@ -216,7 +214,7 @@ export default function DocumentVault() {
                     <Text style={[styles.sheetOptText, already && styles.sheetOptTextDisabled]}>{item}</Text>
                     {already && (
                       <View style={styles.sheetOptBadge}>
-                        <Check size={11} color={protoColors.pill.green.text} strokeWidth={2.5} />
+                        <FlatIcon name="checkmark" size={11} color={protoColors.pill.green.text} />
                         <Text style={styles.sheetOptBadgeText}>Uploaded</Text>
                       </View>
                     )}

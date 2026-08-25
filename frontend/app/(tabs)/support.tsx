@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft, Send, Headset, User } from "lucide-react-native";
+import { Headset } from "lucide-react-native";
+import FlatIcon from "@/src/components/FlatIcon";
 
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -132,13 +133,13 @@ export default function Support() {
             present even though Chat is a persistent tab here, same as the
             Status tab's header. */}
         <TouchableOpacity onPress={() => router.push("/(tabs)" as any)} hitSlop={12} testID="chat-back">
-          <ArrowLeft size={18} color={protoColors.text} strokeWidth={2} />
+          <FlatIcon name="left-arrow" size={18} color={protoColors.text} />
         </TouchableOpacity>
         {/* Flat placeholder circle — the prototype's Chat header avatar is a
             blank `.s-ico` circle, same treatment as Status/Documents/Home/
             Profile — with a plain person icon inside. */}
         <View style={[styles.headerAvatarWrap, styles.avatarBlank, { width: 34, height: 34, borderRadius: 17 }]}>
-          <User size={16} color="#FFFFFF" strokeWidth={2} />
+          <FlatIcon name="user" size={16} color="#FFFFFF" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Karan S.</Text>
@@ -242,7 +243,7 @@ export default function Support() {
               disabled={!input.trim() || sending}
               hitSlop={8}
             >
-              <Send size={17} color={input.trim() && !sending ? protoColors.primary : protoColors.textDim} strokeWidth={2.5} />
+              <FlatIcon name="send" size={17} color={input.trim() && !sending ? protoColors.primary : protoColors.textDim} />
             </TouchableOpacity>
           </View>
         </View>

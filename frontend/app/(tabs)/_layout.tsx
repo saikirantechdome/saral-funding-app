@@ -3,32 +3,35 @@ import { Tabs, useRouter } from "expo-router";
 import { View, Text, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  LayoutDashboard, ClipboardList, Activity, Plus, FolderOpen, CircleUser,
-  Users, CalendarDays, FileSearch, MessageCircle,
+  ClipboardList, Users, CalendarDays, FileSearch, CircleUser,
 } from "lucide-react-native";
 
 import { colors, fonts, radius, TAB_BAR_HEIGHT } from "@/src/theme";
 import { protoColors } from "@/src/theme.proto";
 import { apiGet } from "@/src/api";
+import FlatIcon, { FlatIconName } from "@/src/components/FlatIcon";
 
 const TAB_ICON_SIZE = 20;
 
 interface TabIconProps {
   focused: boolean;
-  Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
+  // Either a Flaticon name (user-facing tabs — see FlatIcon.tsx) or a
+  // lucide component (still used for the admin-only tabs sharing this same
+  // layout; admin's own icon set is unchanged, out of scope this pass).
+  flatName?: FlatIconName;
+  Icon?: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
 }
 
 // Icon-only — sits in the library's own tabBarIcon slot, which already
 // reserves the right amount of space and clears the device's safe area
 // correctly on its own, no manual height/padding math needed.
-function TabIcon({ focused, Icon }: TabIconProps) {
+function TabIcon({ focused, flatName, Icon }: TabIconProps) {
+  const color = focused ? colors.primary : colors.textDim;
   return (
     <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-      <Icon
-        size={TAB_ICON_SIZE}
-        color={focused ? colors.primary : colors.textDim}
-        strokeWidth={focused ? 2.2 : 1.8}
-      />
+      {flatName
+        ? <FlatIcon name={flatName} size={TAB_ICON_SIZE} color={color} />
+        : Icon && <Icon size={TAB_ICON_SIZE} color={color} strokeWidth={focused ? 2.2 : 1.8} />}
     </View>
   );
 }
@@ -56,7 +59,7 @@ function makeLabel(label: string) {
 function FabIcon() {
   return (
     <View style={styles.fab}>
-      <Plus size={22} color="#FFFFFF" strokeWidth={2.4} />
+      <FlatIcon name="plus" size={22} color="#FFFFFF" />
     </View>
   );
 }
@@ -91,7 +94,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={LayoutDashboard} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} flatName="home" />,
           tabBarLabel: makeLabel("Home"),
         }}
       />
@@ -100,7 +103,8 @@ export default function TabsLayout() {
         options={{
           // Retired as a user-facing tab — the prototype has no "Applications"
           // tab; its content is superseded by the new Status tab. Admin's
-          // "Funnel" still uses this same route/file, unaffected.
+          // "Funnel" still uses this same route/file, unaffected — out of
+          // scope for the Flaticon swap (admin side, not touched this pass).
           href: isAdmin ? undefined : null,
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={isAdmin ? Users : ClipboardList} />,
           tabBarLabel: makeLabel(isAdmin ? "Funnel" : "Applications"),
@@ -110,7 +114,7 @@ export default function TabsLayout() {
         name="status"
         options={{
           href: isAdmin ? null : undefined,
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={Activity} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} flatName="activity" />,
           tabBarLabel: makeLabel("Status"),
         }}
       />
@@ -152,7 +156,11 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="documents"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={isAdmin ? FileSearch : FolderOpen} />,
+          tabBarIcon: ({ focused }) => (
+            isAdmin
+              ? <TabIcon focused={focused} Icon={FileSearch} />
+              : <TabIcon focused={focused} flatName="folder" />
+          ),
           tabBarLabel: makeLabel(isAdmin ? "Docs" : "Documents"),
         }}
       />
@@ -160,7 +168,7 @@ export default function TabsLayout() {
         name="support"
         options={{
           href: isAdmin ? null : undefined,
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={MessageCircle} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} flatName="chat" />,
           tabBarLabel: makeLabel("Chat"),
         }}
       />
@@ -168,7 +176,9 @@ export default function TabsLayout() {
         name="profile"
         options={{
           // Retired as a user-facing tab — the prototype reaches Profile via
-          // the avatar tap on Home's header instead. Admin keeps this tab.
+          // the avatar tap on Home's header instead. Admin keeps this tab —
+          // out of scope for the Flaticon swap (admin side, not touched this
+          // pass).
           href: isAdmin ? undefined : null,
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} Icon={CircleUser} />,
           tabBarLabel: makeLabel("Profile"),

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft, AlertCircle, Bell } from "lucide-react-native";
+import FlatIcon from "@/src/components/FlatIcon";
 
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -58,7 +58,7 @@ export default function Notifications() {
     <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surface }} edges={["top", "bottom"]} testID="notifications-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeft size={20} color={protoColors.text} strokeWidth={2} />
+          <FlatIcon name="left-arrow" size={20} color={protoColors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Notifications</Text>
         <TouchableOpacity onPress={markAllRead} disabled={unreadCount === 0}>
@@ -104,8 +104,8 @@ export default function Notifications() {
                       plain bell. */}
                   <View style={[styles.icon, isAction && styles.iconAmber]}>
                     {isAction
-                      ? <AlertCircle size={16} color={protoColors.amberDeep} strokeWidth={2} />
-                      : <Bell size={16} color={protoColors.textMuted} strokeWidth={2} />}
+                      ? <FlatIcon name="warning" size={16} color={protoColors.amberDeep} />
+                      : <FlatIcon name="bell" size={16} color={protoColors.textMuted} />}
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemTitle} numberOfLines={2}>{item.title}</Text>

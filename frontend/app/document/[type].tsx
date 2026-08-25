@@ -10,7 +10,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
-import { ArrowLeft, FileText, ExternalLink } from "lucide-react-native";
+import FlatIcon from "@/src/components/FlatIcon";
 
 import { apiGet, getToken, API_BASE } from "@/src/api";
 import { spacing } from "@/src/theme";
@@ -124,7 +124,7 @@ export default function DocumentDetail() {
     <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surface }} edges={["top", "bottom"]} testID="document-detail-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <ArrowLeft size={20} color={protoColors.text} strokeWidth={2} />
+          <FlatIcon name="left-arrow" size={20} color={protoColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{docType}</Text>
         <View style={[styles.pill, { backgroundColor: pill.bg }]}>
@@ -147,7 +147,7 @@ export default function DocumentDetail() {
             <Text style={styles.cardTitle}>{status === "verified" ? "Approved" : "Under review with our team"}</Text>
             {!!doc?.file_name && (
               <TouchableOpacity onPress={handleView} disabled={viewing} style={styles.viewRow}>
-                {viewing ? <ActivityIndicator size="small" color={protoColors.primary} /> : <ExternalLink size={14} color={protoColors.primary} strokeWidth={2.2} />}
+                {viewing ? <ActivityIndicator size="small" color={protoColors.primary} /> : <FlatIcon name="external-link" size={14} color={protoColors.primary} />}
                 <Text style={styles.viewText}>{doc.file_name}</Text>
               </TouchableOpacity>
             )}
@@ -158,7 +158,7 @@ export default function DocumentDetail() {
           <View style={styles.previewBox}>
             {pickedFile ? (
               <>
-                <FileText size={26} color={protoColors.primary} strokeWidth={1.6} />
+                <FlatIcon name="document" size={26} color={protoColors.primary} />
                 <Text style={styles.previewText} numberOfLines={1}>{pickedFile.name}</Text>
               </>
             ) : (

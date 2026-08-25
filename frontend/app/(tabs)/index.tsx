@@ -23,6 +23,7 @@ import {
 
 import { colors, spacing, radius, fonts, formatINR, elevation, tints, gradients, stageColor } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
+import FlatIcon from "@/src/components/FlatIcon";
 import { apiGet, apiPost } from "@/src/api";
 import { DashboardSkeleton, SkeletonBox } from "@/src/components/SkeletonLoader";
 import ReadinessRing from "@/src/components/ReadinessRing";
@@ -500,7 +501,7 @@ export default function Dashboard() {
                 <Text style={homeStyles.greetingName}>{user?.full_name ? user.full_name.split(" ")[0] : "there"}</Text>
               </View>
               <TouchableOpacity testID="bell-btn" onPress={() => router.push("/notifications")} style={homeStyles.bell}>
-                <Bell size={18} color="#FFFFFF" strokeWidth={2} />
+                <FlatIcon name="bell" size={18} color="#FFFFFF" />
                 {alerts.length > 0 && <View style={homeStyles.bellDot} />}
               </TouchableOpacity>
             </View>
@@ -520,7 +521,7 @@ export default function Dashboard() {
                   <Text style={homeStyles.eyebrow}>Stage {journey.stageIndex + 1} of {STAGES.length}</Text>
                   <Text style={homeStyles.cardTitle}>{journey.stageLabel}</Text>
                 </View>
-                <ChevronRight size={18} color={protoColors.textMuted} strokeWidth={2} />
+                <FlatIcon name="chevron-right" size={18} color={protoColors.textMuted} />
               </View>
               <View style={homeStyles.strip}>
                 {STAGES.map((_, i) => (
@@ -562,14 +563,14 @@ export default function Dashboard() {
             <View style={homeStyles.grid2}>
               <TouchableOpacity testID="home-docs-tile" style={homeStyles.tile} onPress={() => router.push("/(tabs)/documents" as any)} activeOpacity={0.85}>
                 <View style={homeStyles.tileIcon}>
-                  <FolderIcon size={16} color={protoColors.primary} strokeWidth={2} />
+                  <FlatIcon name="folder" size={16} color={protoColors.primary} />
                 </View>
                 <Text style={homeStyles.tileTitle}>Documents</Text>
                 <Text style={homeStyles.cardBody}>{rawDocs.length ? `${rawDocs.filter((d: any) => d.status === "verified").length} of ${rawDocs.length} approved` : "No documents yet"}</Text>
               </TouchableOpacity>
               <TouchableOpacity testID="home-chat-tile" style={homeStyles.tile} onPress={() => router.push("/(tabs)/support" as any)} activeOpacity={0.85}>
                 <View style={homeStyles.tileIcon}>
-                  <MessageCircle size={16} color={protoColors.primary} strokeWidth={2} />
+                  <FlatIcon name="chat" size={16} color={protoColors.primary} />
                 </View>
                 <Text style={homeStyles.tileTitle}>Chat</Text>
                 <Text style={homeStyles.cardBody}>Chat with our team</Text>
