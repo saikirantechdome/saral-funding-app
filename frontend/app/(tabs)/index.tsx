@@ -22,7 +22,7 @@ import {
 } from "lucide-react-native";
 
 import { colors, spacing, radius, fonts, formatINR, elevation, tints, gradients, stageColor } from "@/src/theme";
-import { protoColors, protoSpacing } from "@/src/theme.proto";
+import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
 import { apiGet, apiPost } from "@/src/api";
 import { DashboardSkeleton, SkeletonBox } from "@/src/components/SkeletonLoader";
 import ReadinessRing from "@/src/components/ReadinessRing";
@@ -593,9 +593,9 @@ const homeStyles = StyleSheet.create({
     borderWidth: 2, borderColor: "rgba(255,255,255,0.25)",
     alignItems: "center", justifyContent: "center",
   },
-  avatarText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
-  greetingSmall: { fontSize: 11, color: "rgba(255,255,255,0.6)" },
-  greetingName: { fontSize: 17, color: "#FFFFFF", fontWeight: "700", marginTop: 1 },
+  avatarText: { fontSize: 16, fontFamily: protoFonts.regular, color: "#FFFFFF" },
+  greetingSmall: { fontSize: 11, fontFamily: protoFonts.regular, color: "rgba(255,255,255,0.6)" },
+  greetingName: { fontSize: 17, color: "#FFFFFF", fontFamily: protoFonts.regular, marginTop: 1 },
   bell: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: "rgba(255,255,255,0.12)",
@@ -622,10 +622,10 @@ const homeStyles = StyleSheet.create({
   },
   eyebrow: {
     fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase",
-    color: protoColors.textDim, fontWeight: "700",
+    color: protoColors.textDim, fontFamily: protoFonts.regular,
   },
-  cardTitle: { fontSize: 15, color: protoColors.text, marginTop: 2 },
-  cardBody: { fontSize: 12, color: protoColors.textMuted },
+  cardTitle: { fontSize: 15, color: protoColors.text, marginTop: 2, fontFamily: protoFonts.regular },
+  cardBody: { fontSize: 12, color: protoColors.textMuted, fontFamily: protoFonts.regular },
   strip: { flexDirection: "row", gap: 6 },
   stripSeg: { flex: 1, height: 5, borderRadius: 3, backgroundColor: "#E1E9E6" },
   stripOn: { backgroundColor: protoColors.accent },
@@ -637,20 +637,22 @@ const homeStyles = StyleSheet.create({
     gap: 10,
   },
   pillRow: { flexDirection: "row", alignItems: "center" },
-  pillRowRight: { flex: 1, textAlign: "right", fontSize: 12, color: protoColors.textMuted },
+  pillRowRight: { flex: 1, textAlign: "right", fontSize: 12, color: protoColors.textMuted, fontFamily: protoFonts.regular },
   pillAmber: { backgroundColor: protoColors.pill.amber.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  pillAmberText: { fontSize: 11, color: protoColors.pill.amber.text, fontWeight: "600" },
+  pillAmberText: { fontSize: 11, color: protoColors.pill.amber.text, fontFamily: protoFonts.regular },
   pillBlue: { backgroundColor: protoColors.pill.blue.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  pillBlueText: { fontSize: 11, color: protoColors.pill.blue.text, fontWeight: "600" },
+  pillBlueText: { fontSize: 11, color: protoColors.pill.blue.text, fontFamily: protoFonts.regular },
   grid2: { flexDirection: "row", gap: 12 },
   tile: { flex: 1, backgroundColor: "#FFFFFF", borderRadius: 19, padding: 15, gap: 5 },
   tileIcon: {
+    // Flat placeholder, no glyph, no tint — matches the prototype's `.s-ico`
+    // exactly (was still using the teal tile-icon tint after the glyph
+    // itself was dropped).
     width: 34, height: 34, borderRadius: 12,
-    backgroundColor: protoColors.pill.teal.bg,
-    alignItems: "center", justifyContent: "center",
+    backgroundColor: protoColors.iconPlaceholder,
     marginBottom: 4,
   },
-  tileTitle: { fontSize: 13, color: protoColors.text, fontWeight: "600" },
+  tileTitle: { fontSize: 13, color: protoColors.text, fontFamily: protoFonts.regular },
 });
 
 const adStyles = StyleSheet.create({

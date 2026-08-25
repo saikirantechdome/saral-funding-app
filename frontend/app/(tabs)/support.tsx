@@ -15,17 +15,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowLeft, Send, Headset } from "lucide-react-native";
 
-import { spacing, fonts } from "@/src/theme";
-import { protoColors, protoSpacing } from "@/src/theme.proto";
+import { spacing } from "@/src/theme";
+import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
 import { apiGet, apiPost } from "@/src/api";
 import EmptyState from "@/src/components/EmptyState";
-import InitialsAvatar from "@/src/components/InitialsAvatar";
 import { useFocusPolling } from "@/src/hooks/useFocusPolling";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
-// Quick-reply chips matching the approved prototype's Chat state — just a
-// shortcut that fills+sends common replies through the same real send().
-const QUICK_REPLIES = ["Bhej diya", "Kab tak ho jayega?"];
+// Quick-reply chips matching the approved prototype's Chat state exactly —
+// the second chip's visible label ("Kab tak?") is shorter than the message
+// it actually sends ("Kab tak ho jayega?"), same as the prototype's
+// sendReply2. Just a shortcut that fills+sends through the same real send().
+const QUICK_REPLIES = [
+  { label: "Bhej diya", text: "Bhej diya" },
+  { label: "Kab tak?", text: "Kab tak ho jayega?" },
+];
 
 type Msg = {
   id: string;
@@ -130,9 +134,10 @@ export default function Support() {
         <TouchableOpacity onPress={() => router.push("/(tabs)" as any)} hitSlop={12} testID="chat-back">
           <ArrowLeft size={18} color={protoColors.text} strokeWidth={2} />
         </TouchableOpacity>
-        <View style={styles.headerAvatarWrap}>
-          <InitialsAvatar name="Support Team" size={34} variant="staff" />
-        </View>
+        {/* Flat placeholder circle, no illustration — the prototype's Chat
+            header avatar is a blank `.s-ico` circle, same treatment as
+            Status/Documents/Home/Profile. */}
+        <View style={[styles.headerAvatarWrap, styles.avatarBlank, { width: 34, height: 34, borderRadius: 17 }]} />
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Support Team</Text>
           <Text style={styles.headerSub}>Usually replies within a few hours</Text>
@@ -177,12 +182,11 @@ export default function Support() {
               const next = items[index + 1];
               const isLastInGroup = !next || next.sender_role !== item.sender_role;
               return (
+                // No per-message avatar — the prototype's message rows
+                // (`.s-bubl`/`.s-bubr`) have no avatar element at all, just
+                // the "KARAN"-style sender label above the first bubble in a
+                // group plus bubble alignment to tell sender apart.
                 <View style={[styles.row, isUser ? styles.rowUser : styles.rowAdmin, !isFirstInGroup && { marginTop: -6 }]}>
-                  {!isUser && (
-                    <View style={styles.avatarWrap}>
-                      {isFirstInGroup && <InitialsAvatar name="Support Team" size={28} variant="staff" />}
-                    </View>
-                  )}
                   <View style={{ maxWidth: "78%" }}>
                     {!isUser && isFirstInGroup && <Text style={styles.senderLabel}>Support Team</Text>}
                     <View
@@ -209,8 +213,8 @@ export default function Support() {
 
         <View style={styles.quickRow}>
           {QUICK_REPLIES.map((q) => (
-            <TouchableOpacity key={q} style={styles.quickChip} onPress={() => send(q)} disabled={sending} testID={`quick-reply-${q}`}>
-              <Text style={styles.quickChipText}>{q}</Text>
+            <TouchableOpacity key={q.label} style={styles.quickChip} onPress={() => send(q.text)} disabled={sending} testID={`quick-reply-${q.label}`}>
+              <Text style={styles.quickChipText}>{q.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -260,14 +264,17 @@ const styles = StyleSheet.create({
   headerAvatarWrap: {
     position: "relative",
   },
+  avatarBlank: {
+    backgroundColor: protoColors.accent,
+  },
   headerTitle: {
     fontSize: 14,
-    fontFamily: fonts.displayBold,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
   },
   headerSub: {
     fontSize: 11,
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
     marginTop: 1,
   },
@@ -286,7 +293,7 @@ const styles = StyleSheet.create({
   },
   quickChipText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: protoFonts.regular,
     color: protoColors.pill.neutral.text,
   },
   row: {
@@ -299,14 +306,9 @@ const styles = StyleSheet.create({
   rowAdmin: {
     justifyContent: "flex-start",
   },
-  avatarWrap: {
-    width: 28,
-    marginRight: 8,
-    marginTop: 16,
-  },
   senderLabel: {
     fontSize: 11,
-    fontFamily: fonts.semiBold,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
     marginBottom: 3,
     marginLeft: 4,
@@ -331,7 +333,7 @@ const styles = StyleSheet.create({
   },
   bubbleText: {
     fontSize: 14,
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
     lineHeight: 20,
   },
@@ -340,7 +342,7 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 10,
-    fontFamily: fonts.medium,
+    fontFamily: protoFonts.regular,
     color: protoColors.textDim,
     marginTop: 3,
     marginHorizontal: 4,
@@ -368,7 +370,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
     maxHeight: 100,
   },

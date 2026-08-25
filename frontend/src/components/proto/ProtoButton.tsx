@@ -5,7 +5,7 @@
  * USER_SIDE_REVAMP_PLAN.md.
  */
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from "react-native";
-import { protoColors, protoRadius, protoSize } from "@/src/theme.proto";
+import { protoColors, protoRadius, protoSize, protoFonts } from "@/src/theme.proto";
 
 interface ProtoButtonProps {
   label: string;
@@ -73,6 +73,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 15,
-    fontWeight: "600",
+    // Armata (the prototype's actual typeface) has only one weight — its
+    // own letterforms are what give button text a heavier look, not a
+    // synthetic bold.
+    fontFamily: protoFonts.regular,
   },
 });

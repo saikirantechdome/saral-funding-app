@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
-import { protoColors, protoRadius, protoSpacing, protoSize } from "@/src/theme.proto";
+import { protoColors, protoRadius, protoSpacing, protoSize, protoFonts } from "@/src/theme.proto";
 import { apiPost, setTokens } from "@/src/api";
 import { getLang } from "@/src/i18n";
 import ProtoButton from "@/src/components/proto/ProtoButton";
@@ -203,11 +203,12 @@ const styles = StyleSheet.create({
     fontSize: protoSize.headline - 2,
     lineHeight: (protoSize.headline - 2) * 1.2,
     color: protoColors.text,
-    fontWeight: "700",
+    fontFamily: protoFonts.regular,
     marginBottom: protoSpacing.xs,
   },
   subtitle: {
     fontSize: protoSize.body,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
     marginBottom: protoSpacing.lg,
   },
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
     textAlign: "center",
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
   },
   boxFocused: {
@@ -238,14 +239,17 @@ const styles = StyleSheet.create({
   },
   err: {
     fontSize: 12,
+    fontFamily: protoFonts.regular,
     color: protoColors.danger,
   },
   resend: {
     fontSize: protoSize.small,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
   },
   footer: {
     fontSize: protoSize.small,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
     textAlign: "center",
   },

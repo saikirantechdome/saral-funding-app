@@ -24,7 +24,7 @@ import { ArrowLeft } from "lucide-react-native";
 
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
-import { protoColors } from "@/src/theme.proto";
+import { protoColors, protoFonts } from "@/src/theme.proto";
 import ProtoRing from "@/src/components/proto/ProtoRing";
 import { STAGES, STAGE_LABELS, journeyProgress, SchemeApp } from "@/src/utils/stageProgress";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
@@ -139,9 +139,9 @@ const styles = StyleSheet.create({
     gap: 11,
   },
   headerRow: { flexDirection: "row", alignItems: "center", width: "100%" },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 14, fontFamily: protoFonts.regular, color: "#FFFFFF" },
   ringWrap: { alignItems: "center" },
-  subtitle: { fontSize: 12, color: "#93ABA6", textAlign: "center" },
+  subtitle: { fontSize: 12, fontFamily: protoFonts.regular, color: "#93ABA6", textAlign: "center" },
   sheet: {
     backgroundColor: protoColors.surfaceAlt,
     borderTopLeftRadius: 29,
@@ -163,12 +163,12 @@ const styles = StyleSheet.create({
   icon: { width: 40, height: 40, borderRadius: 13, backgroundColor: protoColors.iconPlaceholder },
   iconDone: { backgroundColor: protoColors.pill.green.bg },
   iconNow: { backgroundColor: protoColors.pill.amber.bg },
-  rowLabel: { flex: 1, fontSize: 13, color: protoColors.text },
+  rowLabel: { flex: 1, fontSize: 13, fontFamily: protoFonts.regular, color: protoColors.text },
   rowLabelPending: { color: protoColors.textDim },
   pill: { backgroundColor: protoColors.pill.neutral.bg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   pillDone: { backgroundColor: protoColors.pill.green.bg },
   pillNow: { backgroundColor: protoColors.pill.amber.bg },
-  pillText: { fontSize: 10, fontWeight: "600", color: protoColors.pill.neutral.text },
+  pillText: { fontSize: 10, fontFamily: protoFonts.regular, color: protoColors.pill.neutral.text },
   pillTextDone: { color: protoColors.pill.green.text },
   pillTextNow: { color: protoColors.pill.amber.text },
 });

@@ -6,7 +6,7 @@
  */
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { protoColors } from "@/src/theme.proto";
+import { protoColors, protoFonts } from "@/src/theme.proto";
 
 interface ProtoRingProps {
   percent: number;
@@ -58,8 +58,8 @@ export default function ProtoRing({
         />
       </Svg>
       <View style={{ width: inner, height: inner, borderRadius: inner / 2, backgroundColor: innerBg, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontSize, fontWeight: "700", color: textColor }}>{Math.round(clamped)}%</Text>
-        {!!label && <Text style={{ fontSize: 8, color: textColor, opacity: 0.7 }}>{label}</Text>}
+        <Text style={{ fontSize, fontFamily: protoFonts.regular, color: textColor }}>{Math.round(clamped)}%</Text>
+        {!!label && <Text style={{ fontSize: 8, fontFamily: protoFonts.regular, color: textColor, opacity: 0.7 }}>{label}</Text>}
       </View>
     </View>
   );

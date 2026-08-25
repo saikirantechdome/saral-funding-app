@@ -16,8 +16,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight, Pencil, X, Check } from "lucide-react-native";
 
-import { spacing, radius, fonts, formatMobile, shortRef } from "@/src/theme";
-import { protoColors, protoSpacing } from "@/src/theme.proto";
+import { spacing, radius, formatMobile, shortRef } from "@/src/theme";
+import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
 import { apiGet, apiPost, apiLogout } from "@/src/api";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
@@ -258,39 +258,46 @@ export default function Profile() {
             </View>
           )}
 
-          {/* Actions */}
+          {/* Actions — one continuous white card holding every row
+              including Log out, matching the prototype exactly: only the
+              icon chip is pink-tinted, the row itself stays white (a
+              separate pink-background row was a real deviation, and made
+              the icon chip invisible since it was the same pink as its
+              row). */}
           <View style={styles.actionsWrap}>
-            {actions.map((a) => (
+            <View style={styles.actionsCard}>
+              {actions.map((a) => (
+                <TouchableOpacity
+                  key={a.id}
+                  testID={`goto-${a.id}`}
+                  style={styles.actionRow}
+                  onPress={a.onPress}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.actionIcon} />
+                  <Text style={styles.actionLabel}>
+                    {a.label}
+                  </Text>
+                  {a.id === "notif" && unreadNotifs > 0 && (
+                    <View style={styles.notifBadge}>
+                      <Text style={styles.notifBadgeText}>{unreadNotifs}</Text>
+                    </View>
+                  )}
+                  <ChevronRight size={16} color={protoColors.textMuted} strokeWidth={2} />
+                </TouchableOpacity>
+              ))}
+
               <TouchableOpacity
-                key={a.id}
-                testID={`goto-${a.id}`}
-                style={styles.actionRow}
-                onPress={a.onPress}
+                testID="logout-btn"
+                style={[styles.actionRow, styles.actionRowLast]}
+                onPress={logout}
                 activeOpacity={0.8}
               >
-                <View style={styles.actionIcon} />
-                <Text style={styles.actionLabel}>
-                  {a.label}
-                </Text>
-                {a.id === "notif" && unreadNotifs > 0 && (
-                  <View style={styles.notifBadge}>
-                    <Text style={styles.notifBadgeText}>{unreadNotifs}</Text>
-                  </View>
-                )}
-                <ChevronRight size={16} color={protoColors.textMuted} strokeWidth={2} />
+                <View style={[styles.actionIcon, styles.logoutIcon]} />
+                <Text style={[styles.actionLabel, { color: protoColors.danger }]}>Logout</Text>
+                <ChevronRight size={16} color={protoColors.danger} strokeWidth={2} />
               </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity
-              testID="logout-btn"
-              style={[styles.actionRow, styles.logoutRow]}
-              onPress={logout}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.actionIcon, styles.logoutIcon]} />
-              <Text style={[styles.actionLabel, { color: protoColors.danger }]}>Logout</Text>
-              <ChevronRight size={16} color={protoColors.danger} strokeWidth={2} />
-            </TouchableOpacity>
+            </View>
           </View>
 
           <Text style={styles.aboutFooter}>
@@ -383,12 +390,12 @@ const infoStyles = StyleSheet.create({
   // variant, and the prototype never overrides font-weight here).
   label: {
     fontSize: 15,
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
   },
   value: {
     fontSize: 13,
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
     maxWidth: "55%",
     textAlign: "right",
@@ -399,13 +406,13 @@ const infoStyles = StyleSheet.create({
   },
   activityLabel: {
     fontSize: 13,
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
     marginBottom: 4,
   },
   activityValue: {
     fontSize: 13,
-    fontFamily: fonts.semiBold,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
     lineHeight: 18,
   },
@@ -422,7 +429,7 @@ const infoStyles = StyleSheet.create({
   editInput: {
     flex: 1,
     fontSize: 13,
-    fontFamily: fonts.semiBold,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
     textAlign: "right",
     borderWidth: 1,
@@ -460,7 +467,7 @@ const styles = StyleSheet.create({
   },
   notifBadgeText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: protoFonts.regular,
     color: protoColors.pill.blue.text,
   },
   avatarRing: {
@@ -476,13 +483,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     // Regular, not displayBold — the prototype's name text has no
     // font-weight override (Armata's only weight is 400).
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: "#FFFFFF",
     marginBottom: 4,
   },
   mobileDark: {
     fontSize: 13,
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: "rgba(255,255,255,0.7)",
     textTransform: "capitalize",
   },
@@ -514,7 +521,7 @@ const styles = StyleSheet.create({
   editNameInput: {
     flex: 1,
     fontSize: 16,
-    fontFamily: fonts.semiBold,
+    fontFamily: protoFonts.regular,
     color: "#FFFFFF",
     backgroundColor: "rgba(255,255,255,0.14)",
     borderWidth: 1.5,
@@ -542,7 +549,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 11,
-    fontFamily: fonts.bold,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.6,
@@ -557,17 +564,22 @@ const styles = StyleSheet.create({
   actionsWrap: {
     gap: 8,
   },
+  actionsCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 19,
+    overflow: "hidden",
+  },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 19,
     paddingVertical: 14,
     paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: protoColors.border,
   },
-  logoutRow: {
-    backgroundColor: protoColors.dangerSoft,
+  actionRowLast: {
+    borderBottomWidth: 0,
   },
   actionIcon: {
     width: 34,
@@ -583,12 +595,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     // Regular, not semiBold — no row label is bold in the prototype.
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
   },
   aboutFooter: {
     fontSize: 12,
-    fontFamily: fonts.regular,
+    fontFamily: protoFonts.regular,
     color: protoColors.textDim,
     textAlign: "center",
     lineHeight: 18,
@@ -615,7 +627,7 @@ const styles = StyleSheet.create({
   },
   toastText: {
     fontSize: 13,
-    fontFamily: fonts.semiBold,
+    fontFamily: protoFonts.regular,
     color: "#FFF",
     textAlign: "center",
   },

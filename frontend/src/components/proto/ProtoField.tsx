@@ -5,7 +5,7 @@
  * USER_SIDE_REVAMP_PLAN.md.
  */
 import { View, Text, TextInput, StyleSheet, TextInputProps } from "react-native";
-import { protoColors, protoRadius, protoSize, protoSpacing } from "@/src/theme.proto";
+import { protoColors, protoRadius, protoSize, protoSpacing, protoFonts } from "@/src/theme.proto";
 
 interface ProtoFieldProps extends Pick<TextInputProps, "keyboardType" | "maxLength" | "placeholder" | "autoFocus"> {
   label: string;
@@ -44,10 +44,10 @@ const styles = StyleSheet.create({
   group: { gap: protoSpacing.xs },
   label: {
     fontSize: protoSize.label,
+    fontFamily: protoFonts.regular,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     color: protoColors.textDim,
-    fontWeight: "600",
   },
   field: {
     height: protoSize.field,
@@ -65,15 +65,15 @@ const styles = StyleSheet.create({
   },
   prefix: {
     fontSize: 15,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
-    fontWeight: "600",
     marginRight: protoSpacing.xs,
   },
   input: {
     flex: 1,
     fontSize: 15,
+    fontFamily: protoFonts.regular,
     color: protoColors.text,
-    fontWeight: "600",
     letterSpacing: 0.5,
     padding: 0,
   },

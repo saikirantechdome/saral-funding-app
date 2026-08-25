@@ -20,7 +20,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
-import { protoColors, protoSpacing } from "@/src/theme.proto";
+import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
 import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
@@ -218,10 +218,10 @@ const styles = StyleSheet.create({
     paddingTop: protoSpacing.md,
     paddingBottom: protoSpacing.sm,
   },
-  title: { fontSize: 18, fontWeight: "700", color: protoColors.text },
-  subtitle: { fontSize: 12, color: protoColors.textMuted, marginTop: 2 },
+  title: { fontSize: 18, fontFamily: protoFonts.regular, color: protoColors.text },
+  subtitle: { fontSize: 12, fontFamily: protoFonts.regular, color: protoColors.textMuted, marginTop: 2 },
   pillCount: { backgroundColor: protoColors.pill.teal.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  pillCountText: { fontSize: 11, fontWeight: "600", color: protoColors.pill.teal.text },
+  pillCountText: { fontSize: 11, fontFamily: protoFonts.regular, color: protoColors.pill.teal.text },
   strip: { flexDirection: "row", gap: 6, paddingHorizontal: spacing.md, marginBottom: protoSpacing.sm },
   stripSeg: { flex: 1, height: 5, borderRadius: 3, backgroundColor: "#E1E9E6" },
   stripOn: { backgroundColor: protoColors.accent },
@@ -230,24 +230,24 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#FFFFFF", borderRadius: 19, padding: 13 },
   row: { flexDirection: "row", alignItems: "center", gap: 11 },
   icon: { width: 40, height: 40, borderRadius: 13, backgroundColor: protoColors.iconPlaceholder, alignItems: "center", justifyContent: "center" },
-  docName: { fontSize: 13.5, color: protoColors.text, fontWeight: "600" },
-  docMeta: { fontSize: 11.5, color: protoColors.textMuted, marginTop: 2 },
+  docName: { fontSize: 13.5, color: protoColors.text, fontFamily: protoFonts.regular },
+  docMeta: { fontSize: 11.5, color: protoColors.textMuted, marginTop: 2, fontFamily: protoFonts.regular },
   pill: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
-  pillText: { fontSize: 10.5, fontWeight: "600" },
+  pillText: { fontSize: 10.5, fontFamily: protoFonts.regular },
   addCard: {
     flexDirection: "row", alignItems: "center", gap: 11,
     backgroundColor: "#FFFFFF", borderRadius: 19, padding: 13,
     borderWidth: 1, borderColor: protoColors.border, borderStyle: "dashed",
   },
-  addText: { flex: 1, fontSize: 13.5, color: protoColors.text, fontWeight: "600" },
+  addText: { flex: 1, fontSize: 13.5, color: protoColors.text, fontFamily: protoFonts.regular },
   bulkBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
     paddingVertical: 10,
   },
-  bulkBtnText: { fontSize: 12, color: protoColors.primary, fontWeight: "600" },
+  bulkBtnText: { fontSize: 12, color: protoColors.primary, fontFamily: protoFonts.regular },
   empty: { alignItems: "center", gap: 6, paddingVertical: spacing.xl },
-  emptyTitle: { fontSize: 14, fontWeight: "700", color: protoColors.text },
-  emptyBody: { fontSize: 12, color: protoColors.textMuted, textAlign: "center" },
+  emptyTitle: { fontSize: 14, fontFamily: protoFonts.regular, color: protoColors.text },
+  emptyBody: { fontSize: 12, color: protoColors.textMuted, textAlign: "center", fontFamily: protoFonts.regular },
   backdrop: { flex: 1, backgroundColor: "rgba(14,33,30,0.45)", justifyContent: "flex-end" },
   sheet: {
     backgroundColor: "#FFFFFF",
@@ -259,20 +259,20 @@ const styles = StyleSheet.create({
   },
   sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: protoColors.border, alignSelf: "center", marginBottom: 12 },
   sheetHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  sheetTitle: { fontSize: 16, fontWeight: "700", color: protoColors.text },
+  sheetTitle: { fontSize: 16, fontFamily: protoFonts.regular, color: protoColors.text },
   sheetGroupLabel: {
     fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: protoColors.textDim,
-    fontWeight: "700", marginTop: 14, marginBottom: 6,
+    fontFamily: protoFonts.regular, marginTop: 14, marginBottom: 6,
   },
   sheetOpt: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: protoColors.border,
   },
-  sheetOptText: { fontSize: 13.5, color: protoColors.text, flex: 1 },
+  sheetOptText: { fontSize: 13.5, color: protoColors.text, flex: 1, fontFamily: protoFonts.regular },
   sheetOptTextDisabled: { color: protoColors.textDim },
   sheetOptBadge: {
     flexDirection: "row", alignItems: "center", gap: 3,
     backgroundColor: protoColors.pill.green.bg, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3,
   },
-  sheetOptBadgeText: { fontSize: 10, fontWeight: "600", color: protoColors.pill.green.text },
+  sheetOptBadgeText: { fontSize: 10, fontFamily: protoFonts.regular, color: protoColors.pill.green.text },
 });

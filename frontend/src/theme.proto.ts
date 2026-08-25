@@ -58,6 +58,16 @@ export const protoColors = {
   },
 };
 
+// The prototype's actual typeface (its <style> block imports Armata from
+// Google Fonts and sets it as the page's body font — see app/_layout.tsx for
+// where it's loaded). Only one weight exists in this package (400); the
+// prototype's own CSS also never sets font-weight anywhere but its base
+// 400 rule, so this is the only proto font token — Armata's own letterforms
+// (not synthetic bold) are what give headlines their heavier look.
+export const protoFonts = {
+  regular: "Armata_400Regular",
+};
+
 export const protoRadius = {
   field: s(13),
   btn: s(15),

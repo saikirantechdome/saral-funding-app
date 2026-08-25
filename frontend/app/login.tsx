@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
-import { protoColors, protoSpacing, protoSize } from "@/src/theme.proto";
+import { protoColors, protoSpacing, protoSize, protoFonts } from "@/src/theme.proto";
 import { apiPost } from "@/src/api";
 import ProtoButton from "@/src/components/proto/ProtoButton";
 import ProtoField from "@/src/components/proto/ProtoField";
@@ -116,19 +116,25 @@ const styles = StyleSheet.create({
     fontSize: protoSize.headline + 5,
     lineHeight: (protoSize.headline + 5) * 1.2,
     color: protoColors.text,
-    fontWeight: "700",
+    // Armata (loaded in app/_layout.tsx), regular weight — its own
+    // letterforms give this its heavier look, not a synthetic bold. The
+    // prototype's CSS never sets font-weight anywhere but its base 400 rule.
+    fontFamily: protoFonts.regular,
   },
   subtitle: {
     fontSize: protoSize.body,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
   },
   err: {
     fontSize: 12,
+    fontFamily: protoFonts.regular,
     color: protoColors.danger,
     marginTop: protoSpacing.xs,
   },
   footer: {
     fontSize: protoSize.small,
+    fontFamily: protoFonts.regular,
     color: protoColors.textMuted,
     textAlign: "center",
   },

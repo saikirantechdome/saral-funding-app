@@ -14,7 +14,7 @@ import { ArrowLeft, FileText, ExternalLink } from "lucide-react-native";
 
 import { apiGet, getToken, API_BASE } from "@/src/api";
 import { spacing } from "@/src/theme";
-import { protoColors, protoRadius, protoSpacing } from "@/src/theme.proto";
+import { protoColors, protoRadius, protoSpacing, protoFonts } from "@/src/theme.proto";
 import ProtoButton from "@/src/components/proto/ProtoButton";
 import { docTypeStyle } from "@/src/utils/docType";
 
@@ -199,19 +199,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md, paddingVertical: protoSpacing.sm,
     borderBottomWidth: 1, borderBottomColor: protoColors.border,
   },
-  headerTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: protoColors.text, textAlign: "center" },
+  headerTitle: { flex: 1, fontSize: 15, fontFamily: protoFonts.regular, color: protoColors.text, textAlign: "center" },
   pill: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
-  pillText: { fontSize: 10.5, fontWeight: "600" },
+  pillText: { fontSize: 10.5, fontFamily: protoFonts.regular },
   body: { padding: spacing.md, gap: protoSpacing.md },
   amberCard: { backgroundColor: protoColors.amberSoft, borderRadius: 16, padding: 14, gap: 4 },
-  amberLabel: { fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: protoColors.amberDeep, fontWeight: "700" },
-  amberTitle: { fontSize: 13, color: protoColors.text, fontWeight: "600" },
-  amberBody: { fontSize: 12, color: protoColors.textMuted },
+  amberLabel: { fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: protoColors.amberDeep, fontFamily: protoFonts.regular },
+  amberTitle: { fontSize: 13, color: protoColors.text, fontFamily: protoFonts.regular },
+  amberBody: { fontSize: 12, color: protoColors.textMuted, fontFamily: protoFonts.regular },
   card: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, gap: 4 },
-  eyebrow: { fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: protoColors.textDim, fontWeight: "700" },
-  cardTitle: { fontSize: 13, color: protoColors.text, fontWeight: "600" },
+  eyebrow: { fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: protoColors.textDim, fontFamily: protoFonts.regular },
+  cardTitle: { fontSize: 13, color: protoColors.text, fontFamily: protoFonts.regular },
   viewRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
-  viewText: { fontSize: 12, color: protoColors.primary, fontWeight: "600" },
+  viewText: { fontSize: 12, color: protoColors.primary, fontFamily: protoFonts.regular },
   previewBox: {
     // flex:1, not a fixed minHeight — the prototype's placeholder box
     // expands to fill all remaining space down to the buttons, not a small
@@ -219,14 +219,14 @@ const styles = StyleSheet.create({
     flex: 1, minHeight: 160, borderRadius: 16, backgroundColor: protoColors.surfaceAlt,
     alignItems: "center", justifyContent: "center", gap: 8, padding: spacing.md,
   },
-  previewPlaceholder: { fontSize: 12, color: protoColors.textDim },
-  previewText: { fontSize: 12, color: protoColors.text },
+  previewPlaceholder: { fontSize: 12, color: protoColors.textDim, fontFamily: protoFonts.regular },
+  previewText: { fontSize: 12, color: protoColors.text, fontFamily: protoFonts.regular },
   row: { flexDirection: "row", gap: protoSpacing.sm },
   outlineBtn: {
     height: protoRadius.btn + 32, borderRadius: protoRadius.btn,
     borderWidth: 1, borderColor: protoColors.border,
     alignItems: "center", justifyContent: "center",
   },
-  outlineBtnText: { fontSize: 13, fontWeight: "600", color: protoColors.text },
-  note: { fontSize: 11.5, color: protoColors.textMuted, textAlign: "center" },
+  outlineBtnText: { fontSize: 13, fontFamily: protoFonts.regular, color: protoColors.text },
+  note: { fontSize: 11.5, color: protoColors.textMuted, textAlign: "center", fontFamily: protoFonts.regular },
 });

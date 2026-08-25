@@ -14,6 +14,11 @@ import {
   Poppins_600SemiBold,
   Poppins_700Bold,
 } from "@expo-google-fonts/poppins";
+// The approved prototype's actual typeface (its <style> block loads
+// `family=Armata` from Google Fonts and sets it as the body font) — the
+// revamped ("proto") screens were using Poppins instead, which reads
+// noticeably thinner/different at the same weight. See theme.proto.ts.
+import { Armata_400Regular } from "@expo-google-fonts/armata";
 
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { loadLang } from "@/src/i18n";
@@ -67,6 +72,7 @@ export default function RootLayout() {
     Poppins_500Medium,
     Poppins_600SemiBold,
     Poppins_700Bold,
+    Armata_400Regular,
   });
 
   // Timeout fallback: if fonts haven't resolved after 4s (can happen on web
