@@ -41,6 +41,14 @@ export const protoColors = {
   danger: "#B4462F",
   dangerSoft: "#FBE7E2",
 
+  // The prototype's `.s-ico` placeholder square — a flat, un-iconed color
+  // block used for every list-row icon slot (Status stages, Documents rows,
+  // Profile rows, Notifications) unless that row's state overrides it (e.g.
+  // Status's done/now rows tint green/amber). Not the same token as
+  // `surfaceAlt` — the prototype uses a distinctly different, slightly
+  // greener gray for this one spot.
+  iconPlaceholder: "#EDF4F2",
+
   pill: {
     teal: { bg: "#E7F1EE", text: "#1B5C55" },
     amber: { bg: "#FBEFD8", text: "#8A5A05" },

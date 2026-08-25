@@ -47,15 +47,14 @@ export default function Login() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo */}
-          <View style={styles.brandRow}>
-            <Image
-              source={require("../assets/images/logo-icon.png")}
-              style={styles.logoMark}
-              resizeMode="contain"
-            />
-            <Text style={styles.brandName}>Saral</Text>
-          </View>
+          {/* Logo — the real wordmark asset the prototype uses (uploads/pasted-*.png
+              in Saral User Prototype.dc.html), not a reconstruction. */}
+          <Image
+            source={require("../assets/images/logo-full.png")}
+            style={styles.logoMark}
+            resizeMode="contain"
+          />
+          <View style={{ height: protoSpacing.sm }} />
 
           <Text style={styles.headline}>Funding, clear hai.</Text>
           <Text style={styles.subtitle}>Enter your mobile number to start.</Text>
@@ -101,20 +100,10 @@ const styles = StyleSheet.create({
     paddingTop: protoSpacing.xl,
     paddingBottom: protoSpacing.lg,
   },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: protoSpacing.xs,
-    marginBottom: protoSpacing.md,
-  },
   logoMark: {
-    width: protoSize.headline,
-    height: protoSize.headline,
-  },
-  brandName: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: protoColors.text,
+    width: 104,
+    height: 31,
+    alignSelf: "flex-start",
   },
   headline: {
     fontSize: protoSize.headline + 5,

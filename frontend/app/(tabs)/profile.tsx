@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft, Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, Briefcase, FileText, MessageCircle } from "lucide-react-native";
+import { ArrowLeft, Bell, LogOut, ChevronRight, Pencil, X, Check, Briefcase, MessageCircle } from "lucide-react-native";
 
 import { spacing, radius, fonts, formatMobile, shortRef } from "@/src/theme";
 import { protoColors, protoSpacing } from "@/src/theme.proto";
@@ -139,12 +139,14 @@ export default function Profile() {
   const actions = [
     // Order matches the approved prototype's Profile list: Business profile,
     // Notifications, Help & support, (Log out separately below in red).
+    // Exactly the prototype's 4 rows (Business profile / Notifications /
+    // Help & support / Log out below) — Book Consultation, Privacy Policy,
+    // and Terms of Service were extras not in the prototype; dropped per
+    // explicit instruction. Those screens (/booking, /legal) still exist
+    // and work, just aren't linked from Profile anymore.
     ...(!isAdmin && bp?.industry ? [{ id: "business", label: "Business profile", Icon: Briefcase, onPress: () => router.push("/business-profile" as any) }] : []),
     { id: "notif", label: "Notifications", Icon: Bell, onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
     { id: "support", label: isAdmin ? "Support Inbox" : "Help & support", Icon: MessageCircle, onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
-    ...(!isAdmin ? [{ id: "book", label: "Book Consultation", Icon: Phone, onPress: () => router.push("/booking") }] : []),
-    { id: "privacy", label: "Privacy Policy", Icon: FileText, onPress: () => router.push({ pathname: "/legal", params: { doc: "privacy" } }) },
-    { id: "terms", label: "Terms of Service", Icon: Shield, onPress: () => router.push({ pathname: "/legal", params: { doc: "terms" } }) },
   ];
 
   return (

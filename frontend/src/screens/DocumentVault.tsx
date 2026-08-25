@@ -21,7 +21,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing } from "@/src/theme.proto";
-import { docTypeStyle } from "@/src/utils/docType";
 import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
@@ -117,7 +116,6 @@ export default function DocumentVault() {
           </View>
         ) : (
           docs.map((doc) => {
-            const style = docTypeStyle(doc.doc_type);
             const pill = statusPill(doc.status);
             return (
               <TouchableOpacity
@@ -128,9 +126,11 @@ export default function DocumentVault() {
                 testID={`doc-row-${doc.id}`}
               >
                 <View style={styles.row}>
-                  <View style={[styles.icon, { backgroundColor: style.bg }]}>
-                    <FileText size={17} color={style.fg} strokeWidth={2} />
-                  </View>
+                  {/* Flat placeholder square, no glyph — matches the prototype's
+                      `.s-ico` exactly (every Documents row uses the same plain
+                      block regardless of doc type or status, see
+                      Saral User Prototype.dc.html lines 157-161). */}
+                  <View style={styles.icon} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.docName}>{doc.doc_type}</Text>
                     <Text style={styles.docMeta} numberOfLines={1}>
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: spacing.md, gap: 11, paddingTop: 4, paddingBottom: spacing.lg },
   card: { backgroundColor: "#FFFFFF", borderRadius: 19, padding: 13 },
   row: { flexDirection: "row", alignItems: "center", gap: 11 },
-  icon: { width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  icon: { width: 40, height: 40, borderRadius: 13, backgroundColor: protoColors.iconPlaceholder, alignItems: "center", justifyContent: "center" },
   docName: { fontSize: 13.5, color: protoColors.text, fontWeight: "600" },
   docMeta: { fontSize: 11.5, color: protoColors.textMuted, marginTop: 2 },
   pill: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
