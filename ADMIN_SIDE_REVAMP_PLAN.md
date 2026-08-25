@@ -1,5 +1,7 @@
 # Admin Side Revamp — Plan & Decisions
 
+**Status: all 12 non-login screens implemented and committed locally** (Today, Apps, Application detail, Document review/changes/sent, Inbox, Thread, Allocate CA, CA Cases, CA Tasks, Profile) — see the mapping table below for what's real vs. placeholder. Not pushed yet, per instruction to hold until both sides are done.
+
 Source of truth: `Saral Admin Prototype.dc.html` (interactive, 13 states) + `Saral Admin UI.dc.html` (static high-fidelity version of the same 6 core screens) from the same Claude Design project as the User side. **Login is explicitly out of scope** — the existing email+password admin auth stays exactly as-is.
 
 ## What the prototype actually describes
