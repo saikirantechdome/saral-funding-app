@@ -6,13 +6,28 @@
  * `require()` calls to be static string literals, so this map (not a
  * dynamic path) is how every icon gets registered.
  *
- * Recolored via RN's `tintColor` (Image style) — every source PNG is a
- * single solid color on a transparent background, same technique other
- * icon-font libraries use under the hood.
+ * Two tiers of icon, per explicit follow-up direction ("not just the plain
+ * black ones, use color"):
+ *  - Content icons (phone-call, document, bank, money, user, bell, ...) are
+ *    full multi-color illustrations now (flaticon.com/authors/1, style 15 —
+ *    "magnific", Flaticon's own first-party icon family, chosen for style
+ *    consistency across ~20 different subjects) and are never tinted — see
+ *    NO_TINT. Any `color` passed to one of these is accepted but ignored;
+ *    state (done/now/pending on Status, action/read on Notifications) is
+ *    conveyed by the surrounding icon-box background instead, same as it
+ *    already was.
+ *  - Chrome/navigation icons (back arrow, chevron, plus, close, send, ...)
+ *    stay single-color line glyphs, recolored via RN's `tintColor` (Image
+ *    style) to match whatever context they sit in (white on a dark hero,
+ *    teal on a light card, etc).
+ *
+ * tintColor on React Native Web renders as an SVG feFlood+feComposite
+ * filter applied over the image via background-image — confirmed working
+ * (see USER_SIDE_REVAMP_PLAN.md).
  *
  * Attribution: Flaticon's free-tier license requires attribution unless a
  * Premium plan is used. See ICON_CREDITS below — surfaced in-app wherever
- * a credits/about screen exists. See USER_SIDE_REVAMP_PLAN.md.
+ * a credits/about screen exists.
  */
 import { Image, ImageStyle, StyleProp } from "react-native";
 
@@ -48,10 +63,16 @@ const ICONS = {
 
 export type FlatIconName = keyof typeof ICONS;
 
-// Icons whose source PNG is already the right color (brand marks like
-// WhatsApp's green) — tinting these would wreck them, so `color` is
-// ignored for anything in this set.
-const NO_TINT = new Set<FlatIconName>(["whatsapp"]);
+// Full-color content icons (plus the WhatsApp brand mark) — tinting any of
+// these would flatten them to a single silhouette color and destroy the
+// point of them being colorful, so `color` is ignored for everything here.
+// Chrome/navigation icons are deliberately NOT in this set — they still
+// need tintColor to match their context.
+const NO_TINT = new Set<FlatIconName>([
+  "whatsapp", "phone-call", "document", "bank", "file-check", "review",
+  "checkmark", "money", "id-card", "certificate", "home", "receipt",
+  "user", "briefcase", "bell", "chat", "logout", "folder", "warning",
+]);
 
 interface FlatIconProps {
   name: FlatIconName;
