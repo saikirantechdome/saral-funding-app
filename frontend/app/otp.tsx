@@ -136,7 +136,11 @@ export default function Otp() {
                 key={i}
                 ref={(r) => { inputs.current[i] = r; }}
                 testID={i === 0 ? "otp-input" : `otp-digit-${i}`}
-                style={[styles.box, (digit.length > 0 || i === code.length) && styles.boxFocused, !!err && styles.boxError]}
+                // Only the next-to-type box gets the white/teal-border "focused"
+                // treatment — matches the prototype's OTP demo exactly (filled
+                // boxes 1-5 stay plain gray, only the empty 6th box is `.f`).
+                // A filled box previously kept this style too, which is backwards.
+                style={[styles.box, i === code.length && styles.boxFocused, !!err && styles.boxError]}
                 value={digit}
                 onChangeText={(t) => (t.length > 1 ? handlePaste(t, i) : handleChange(t, i))}
                 onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
