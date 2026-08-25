@@ -11,10 +11,11 @@
  * instead of uploading inline on this list, matching the prototype's
  * Documents → Upload → Submitted flow.
  */
-import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, RefreshControl } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
-import { FileText, ChevronRight, Plus } from "lucide-react-native";
+import { useCallback, useRef, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, RefreshControl, Modal, SectionList } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { FileText, ChevronRight, Plus, X, Check } from "lucide-react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { apiGet } from "@/src/api";
@@ -22,7 +23,6 @@ import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing } from "@/src/theme.proto";
 import { docTypeStyle } from "@/src/utils/docType";
 import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
-import Picker from "@/src/components/Picker";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 const BULK_UPLOAD_WHATSAPP_URL = `https://wa.me/919893869899?text=${encodeURIComponent(
@@ -37,11 +37,14 @@ function statusPill(status: string) {
 
 export default function DocumentVault() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ add?: string }>();
+  const insets = useSafeAreaInsets();
   const tabBarSpacing = useTabBarSpacing(-36);
   const [docs, setDocs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const consumedAddParam = useRef(false);
 
   const load = useCallback(async () => {
     try {
@@ -57,9 +60,20 @@ export default function DocumentVault() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // The Home FAB navigates here with ?add=1 to open the sheet immediately.
+  // Guarded by a ref (not just clearing the param) since router.setParams
+  // isn't guaranteed to actually drop the key from the URL on every
+  // platform — a stray "add=undefined" string would otherwise still be
+  // truthy and reopen the sheet on every future focus of this tab.
+  useFocusEffect(useCallback(() => {
+    if (params.add && !consumedAddParam.current) {
+      consumedAddParam.current = true;
+      setAddOpen(true);
+    }
+  }, [params.add]));
+
   const verifiedCount = docs.filter((d) => d.status === "verified").length;
   const uploadedTypes = new Set(docs.map((d) => d.doc_type));
-  const allTypeOptions = DOCUMENT_TYPE_GROUPS.flatMap((g) => g.options);
 
   return (
     <View style={{ flex: 1, backgroundColor: protoColors.surface }} testID="documents-screen">
@@ -151,24 +165,47 @@ export default function DocumentVault() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Hidden until opened — reuses the existing grouped/searchable type
-          picker rather than rebuilding one; the prototype has no equivalent
-          UI to match since it assumes documents are pre-assigned. */}
-      {addOpen && (
-        <Picker
-          label="Document Type"
-          placeholder="Select a document type"
-          value=""
-          groups={DOCUMENT_TYPE_GROUPS}
-          disabledOptions={Array.from(uploadedTypes)}
-          optionBadge={(opt) => (uploadedTypes.has(opt) ? "Uploaded" : undefined)}
-          onChange={(v) => {
-            setAddOpen(false);
-            if (v) router.push(`/document/${encodeURIComponent(v)}` as any);
-          }}
-          testID="doc-type-picker"
-        />
-      )}
+      <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setAddOpen(false)}>
+          <View style={[styles.sheet, { paddingBottom: 16 + insets.bottom }]} onStartShouldSetResponder={() => true}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeaderRow}>
+              <Text style={styles.sheetTitle}>Add a document</Text>
+              <TouchableOpacity onPress={() => setAddOpen(false)} hitSlop={10} testID="close-add-document">
+                <X size={18} color={protoColors.textMuted} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+            <SectionList
+              style={{ flexShrink: 1 }}
+              sections={DOCUMENT_TYPE_GROUPS.map((g) => ({ title: g.label, data: g.options }))}
+              keyExtractor={(item, i) => `${item}-${i}`}
+              showsVerticalScrollIndicator={false}
+              stickySectionHeadersEnabled={false}
+              renderSectionHeader={({ section }) => <Text style={styles.sheetGroupLabel}>{section.title}</Text>}
+              renderItem={({ item }) => {
+                const already = uploadedTypes.has(item);
+                return (
+                  <TouchableOpacity
+                    testID={`doc-type-opt-${item}`}
+                    style={styles.sheetOpt}
+                    disabled={already}
+                    onPress={() => { setAddOpen(false); router.push(`/document/${encodeURIComponent(item)}` as any); }}
+                    activeOpacity={already ? 1 : 0.7}
+                  >
+                    <Text style={[styles.sheetOptText, already && styles.sheetOptTextDisabled]}>{item}</Text>
+                    {already && (
+                      <View style={styles.sheetOptBadge}>
+                        <Check size={11} color={protoColors.pill.green.text} strokeWidth={2.5} />
+                        <Text style={styles.sheetOptBadgeText}>Uploaded</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -211,4 +248,31 @@ const styles = StyleSheet.create({
   empty: { alignItems: "center", gap: 6, paddingVertical: spacing.xl },
   emptyTitle: { fontSize: 14, fontWeight: "700", color: protoColors.text },
   emptyBody: { fontSize: 12, color: protoColors.textMuted, textAlign: "center" },
+  backdrop: { flex: 1, backgroundColor: "rgba(14,33,30,0.45)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: spacing.md,
+    paddingTop: 10,
+    maxHeight: "75%",
+  },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: protoColors.border, alignSelf: "center", marginBottom: 12 },
+  sheetHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  sheetTitle: { fontSize: 16, fontWeight: "700", color: protoColors.text },
+  sheetGroupLabel: {
+    fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: protoColors.textDim,
+    fontWeight: "700", marginTop: 14, marginBottom: 6,
+  },
+  sheetOpt: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: protoColors.border,
+  },
+  sheetOptText: { fontSize: 13.5, color: protoColors.text, flex: 1 },
+  sheetOptTextDisabled: { color: protoColors.textDim },
+  sheetOptBadge: {
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: protoColors.pill.green.bg, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3,
+  },
+  sheetOptBadgeText: { fontSize: 10, fontWeight: "600", color: protoColors.pill.green.text },
 });

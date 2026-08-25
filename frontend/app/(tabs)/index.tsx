@@ -459,11 +459,15 @@ export default function Dashboard() {
   const rejectedDoc = rawDocs.find((d: any) => d.status === "rejected");
 
   return (
-    <View style={{ flex: 1, backgroundColor: protoColors.primaryDark }} testID="dashboard-screen">
-      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+    // Base is the sheet's own color, not the hero's dark green — the hero
+    // gradient paints over the top itself, but when the sheet's content is
+    // shorter than the screen, whatever's left behind the ScrollView shows
+    // through below it, and that needs to match the sheet, not the hero.
+    <View style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }} testID="dashboard-screen">
+      <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.primaryDark }} edges={["top"]}>
         <ScrollView
-          style={{ flex: 1, marginBottom: tabBarSpacing }}
-          contentContainerStyle={{ paddingBottom: 4 }}
+          style={{ flex: 1, marginBottom: tabBarSpacing, backgroundColor: protoColors.surfaceAlt }}
+          contentContainerStyle={{ paddingBottom: 4, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl

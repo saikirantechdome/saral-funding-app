@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -63,6 +63,7 @@ function FabButton(props: React.ComponentProps<typeof TouchableOpacity>) {
 export default function TabsLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   useEffect(() => {
     apiGet<any>("/auth/me")
@@ -109,6 +110,18 @@ export default function TabsLayout() {
           href: isAdmin ? null : undefined,
           tabBarButton: FabButton,
           tabBarLabel: () => null,
+        }}
+        listeners={{
+          // The FAB never actually navigates to the "quick-upload" screen —
+          // it intercepts the tab press and jumps straight into the Documents
+          // tab with the add-document sheet already open, matching the
+          // prototype's Home-FAB → Upload flow. (Tabs.Screen still needs a
+          // real route file behind it; quick-upload.tsx's own redirect is
+          // just a safety net if this listener ever doesn't fire.)
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push("/(tabs)/documents?add=1" as any);
+          },
         }}
       />
       <Tabs.Screen

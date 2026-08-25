@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft, Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, MapPin, Calendar, Tag, User as UserIcon, Briefcase, FileCheck, FileText, MessageCircle } from "lucide-react-native";
+import { ArrowLeft, Bell, Phone, LogOut, ChevronRight, Pencil, X, Check, Shield, Briefcase, FileText, MessageCircle } from "lucide-react-native";
 
 import { spacing, radius, fonts, formatMobile, shortRef } from "@/src/theme";
 import { protoColors, protoSpacing } from "@/src/theme.proto";
@@ -137,9 +137,12 @@ export default function Profile() {
 
   const isAdmin = me?.role && me.role !== "user";
   const actions = [
-    ...(!isAdmin ? [{ id: "book", label: "Book Consultation", Icon: Phone, onPress: () => router.push("/booking") }] : []),
-    { id: "support", label: isAdmin ? "Support Inbox" : "Support Chat", Icon: MessageCircle, onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
+    // Order matches the approved prototype's Profile list: Business profile,
+    // Notifications, Help & support, (Log out separately below in red).
+    ...(!isAdmin && bp?.industry ? [{ id: "business", label: "Business profile", Icon: Briefcase, onPress: () => router.push("/business-profile" as any) }] : []),
     { id: "notif", label: "Notifications", Icon: Bell, onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
+    { id: "support", label: isAdmin ? "Support Inbox" : "Help & support", Icon: MessageCircle, onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
+    ...(!isAdmin ? [{ id: "book", label: "Book Consultation", Icon: Phone, onPress: () => router.push("/booking") }] : []),
     { id: "privacy", label: "Privacy Policy", Icon: FileText, onPress: () => router.push({ pathname: "/legal", params: { doc: "privacy" } }) },
     { id: "terms", label: "Terms of Service", Icon: Shield, onPress: () => router.push({ pathname: "/legal", params: { doc: "terms" } }) },
   ];
@@ -213,10 +216,14 @@ export default function Profile() {
 
         <View style={{ paddingHorizontal: spacing.md }}>
 
-          {/* Personal info — regular users only, admins don't fill this in */}
+          {/* Personal info — State/City/Category only, matching the
+              prototype's Profile card exactly. Gender/Age are real fields
+              too but the prototype doesn't display them here; Age stays
+              reachable via Edit. Business details moved to their own
+              /business-profile screen (see the "Business profile" row
+              below) rather than shown inline, also matching the prototype. */}
           {!isAdmin && (
             <View style={styles.sectionWrap}>
-              <Text style={styles.sectionLabel}>Personal</Text>
               <View style={styles.infoCard}>
                 {editing ? (
                   <>
@@ -236,31 +243,10 @@ export default function Profile() {
                   </>
                 ) : (
                   <>
-                    <InfoRow Icon={MapPin} label="State" value={me?.state} />
-                    <InfoRow Icon={MapPin} label="City" value={me?.district} />
-                    <InfoRow Icon={UserIcon} label="Gender" value={me?.gender} />
-                    <InfoRow Icon={Calendar} label="Age" value={me?.age?.toString()} />
-                    <InfoRow Icon={Tag} label="Category" value={me?.category} last />
+                    <InfoRow label="State" value={me?.state} />
+                    <InfoRow label="City" value={me?.district} />
+                    <InfoRow label="Category" value={me?.category} last />
                   </>
-                )}
-              </View>
-            </View>
-          )}
-
-          {/* Business info */}
-          {bp?.industry && (
-            <View style={styles.sectionWrap}>
-              <Text style={styles.sectionLabel}>Business</Text>
-              <View style={styles.infoCard}>
-                <InfoRow Icon={Tag} label="Stage" value={bp?.business_stage} />
-                <InfoRow Icon={Briefcase} label="Industry" value={bp?.industry} />
-                <InfoRow Icon={FileCheck} label="GST" value={bp?.gst_available ? "Registered" : "Not registered"} />
-                <InfoRow Icon={Shield} label="Udyam" value={bp?.udyam_available ? "Registered" : "Not registered"} last={!bp?.business_activity} />
-                {bp?.business_activity && (
-                  <View style={infoStyles.activityBlock}>
-                    <Text style={infoStyles.activityLabel}>Business Activity</Text>
-                    <Text style={infoStyles.activityValue}>{bp.business_activity}</Text>
-                  </View>
                 )}
               </View>
             </View>
