@@ -136,7 +136,10 @@ export default function AdminToday() {
 }
 
 const styles = StyleSheet.create({
-  hero: { paddingTop: spacing.sm2, paddingHorizontal: spacing.md, paddingBottom: 22 },
+  // Explicit background, not just inherited from the SafeAreaView behind it —
+  // the ScrollView's own bg (set light, so the sheet has no dark gap below
+  // short content) would otherwise paint over this too.
+  hero: { backgroundColor: protoColors.primaryDark, paddingTop: spacing.sm2, paddingHorizontal: spacing.md, paddingBottom: 22 },
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: protoSpacing.md },
   avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: protoColors.accent, alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },

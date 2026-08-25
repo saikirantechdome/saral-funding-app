@@ -147,7 +147,7 @@ export default function AdminProfile() {
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: "center", paddingTop: protoSpacing.lg, paddingBottom: 22, gap: 6 },
+  hero: { backgroundColor: protoColors.primaryDark, alignItems: "center", paddingTop: protoSpacing.lg, paddingBottom: 22, gap: 6 },
   avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: protoColors.accent, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   avatarText: { fontSize: 22, fontWeight: "700", color: "#FFFFFF" },
   name: { fontSize: 17, color: "#FFFFFF", fontWeight: "700" },

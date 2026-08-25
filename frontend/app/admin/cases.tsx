@@ -69,7 +69,7 @@ export default function CaCases() {
 }
 
 const styles = StyleSheet.create({
-  hero: { paddingHorizontal: spacing.md, paddingTop: protoSpacing.sm, paddingBottom: 22 },
+  hero: { backgroundColor: protoColors.primaryDark, paddingHorizontal: spacing.md, paddingTop: protoSpacing.sm, paddingBottom: 22 },
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: protoSpacing.md },
   avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
