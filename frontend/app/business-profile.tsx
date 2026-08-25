@@ -12,7 +12,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
 import { spacing } from "@/src/theme";
-import { protoColors, protoSpacing } from "@/src/theme.proto";
+import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
 import { apiGet } from "@/src/api";
 
 function Row({ label, value, last = false }: { label: string; value?: string; last?: boolean }) {
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: spacing.md, paddingTop: protoSpacing.sm, paddingBottom: protoSpacing.sm,
   },
-  headerTitle: { fontSize: 15, fontWeight: "700", color: protoColors.text },
+  headerTitle: { fontSize: 15, fontFamily: protoFonts.regular, color: protoColors.text },
   body: { padding: spacing.md, gap: protoSpacing.md },
   card: { backgroundColor: "#FFFFFF", borderRadius: 19, overflow: "hidden", padding: 4 },
   row: {
@@ -74,8 +74,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12, paddingHorizontal: 12,
   },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: protoColors.border },
-  rowLabel: { fontSize: 13, color: protoColors.textMuted },
-  rowValue: { fontSize: 13, fontWeight: "600", color: protoColors.text, maxWidth: "55%", textAlign: "right" },
-  activityLabel: { fontSize: 13, color: protoColors.textMuted, padding: 12, paddingBottom: 0 },
-  activityValue: { fontSize: 13, fontWeight: "600", color: protoColors.text, padding: 12, paddingTop: 4, lineHeight: 18 },
+  // Same convention as Profile's info rows: the label is the prominent dark
+  // text, the value is the smaller muted one.
+  rowLabel: { fontSize: 15, fontFamily: protoFonts.regular, color: protoColors.text },
+  rowValue: { fontSize: 13, fontFamily: protoFonts.regular, color: protoColors.textMuted, maxWidth: "55%", textAlign: "right" },
+  activityLabel: { fontSize: 15, fontFamily: protoFonts.regular, color: protoColors.text, padding: 12, paddingBottom: 0 },
+  activityValue: { fontSize: 13, fontFamily: protoFonts.regular, color: protoColors.textMuted, padding: 12, paddingTop: 4, lineHeight: 18 },
 });

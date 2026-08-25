@@ -139,8 +139,8 @@ export default function Support() {
             Status/Documents/Home/Profile. */}
         <View style={[styles.headerAvatarWrap, styles.avatarBlank, { width: 34, height: 34, borderRadius: 17 }]} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Support Team</Text>
-          <Text style={styles.headerSub}>Usually replies within a few hours</Text>
+          <Text style={styles.headerTitle}>Karan S.</Text>
+          <Text style={styles.headerSub}>Reviewer · replies in ~2h</Text>
         </View>
       </View>
 
@@ -172,7 +172,7 @@ export default function Support() {
                 Icon={Headset}
                 iconSlug="online-support"
                 title="Need help? We're here."
-                subtitle="Send a message about your application, documents, or schemes — our support team will reply here."
+                subtitle="Send a message about your application, documents, or schemes — Karan will reply here."
               />
             }
             renderItem={({ item, index }) => {
@@ -188,7 +188,7 @@ export default function Support() {
                 // group plus bubble alignment to tell sender apart.
                 <View style={[styles.row, isUser ? styles.rowUser : styles.rowAdmin, !isFirstInGroup && { marginTop: -6 }]}>
                   <View style={{ maxWidth: "78%" }}>
-                    {!isUser && isFirstInGroup && <Text style={styles.senderLabel}>Support Team</Text>}
+                    {!isUser && isFirstInGroup && <Text style={styles.senderLabel}>KARAN</Text>}
                     <View
                       style={[
                         styles.bubble,

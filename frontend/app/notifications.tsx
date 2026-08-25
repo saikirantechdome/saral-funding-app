@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
 import { spacing } from "@/src/theme";
-import { protoColors, protoSpacing } from "@/src/theme.proto";
+import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
 import { apiGet, apiPost } from "@/src/api";
 
 // Real notification `type` values bucketed into the prototype's two filter
@@ -98,7 +98,10 @@ export default function Notifications() {
               >
                 <View style={styles.row}>
                   {!item.read && <View style={[styles.dot, isAction && styles.dotAmber]} />}
-                  <View style={styles.icon}><View /></View>
+                  {/* Flat placeholder, no glyph — matches the prototype's
+                      `.s-ico` exactly; unread action items get its slightly
+                      deeper amber tint (`#F6E4C4`). */}
+                  <View style={[styles.icon, isAction && styles.iconAmber]} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemTitle} numberOfLines={2}>{item.title}</Text>
                     <Text style={styles.itemTs}>{formatTs(item.created_at)}</Text>
@@ -118,12 +121,12 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: protoSpacing.sm,
     paddingHorizontal: spacing.md, paddingTop: protoSpacing.sm, paddingBottom: protoSpacing.sm,
   },
-  title: { flex: 1, fontSize: 15, fontWeight: "700", color: protoColors.text, textAlign: "center" },
-  readAll: { fontSize: 12.5, color: protoColors.textMuted, fontWeight: "600" },
+  title: { flex: 1, fontSize: 15, fontFamily: protoFonts.regular, color: protoColors.text, textAlign: "center" },
+  readAll: { fontSize: 12.5, color: protoColors.textMuted, fontFamily: protoFonts.regular },
   filterRow: { flexDirection: "row", gap: 6, paddingHorizontal: spacing.md, marginBottom: protoSpacing.sm },
   pill: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: protoColors.pill.neutral.bg },
   pillOn: { backgroundColor: protoColors.pill.teal.bg },
-  pillText: { fontSize: 11.5, fontWeight: "600", color: protoColors.pill.neutral.text },
+  pillText: { fontSize: 11.5, fontFamily: protoFonts.regular, color: protoColors.pill.neutral.text },
   pillTextOn: { color: protoColors.pill.teal.text },
   body: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg, gap: 10 },
   card: { backgroundColor: "#FFFFFF", borderRadius: 19, padding: 13 },
@@ -131,10 +134,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "flex-start", gap: 9 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: protoColors.accent, marginTop: 6 },
   dotAmber: { backgroundColor: protoColors.amber },
-  icon: { width: 34, height: 34, borderRadius: 12, backgroundColor: protoColors.surfaceAlt },
-  itemTitle: { fontSize: 12.5, color: protoColors.text, lineHeight: 17 },
-  itemTs: { fontSize: 11, color: protoColors.textMuted, marginTop: 2 },
+  icon: { width: 34, height: 34, borderRadius: 12, backgroundColor: protoColors.iconPlaceholder },
+  iconAmber: { backgroundColor: "#F6E4C4" },
+  itemTitle: { fontSize: 12.5, color: protoColors.text, lineHeight: 17, fontFamily: protoFonts.regular },
+  itemTs: { fontSize: 11, color: protoColors.textMuted, marginTop: 2, fontFamily: protoFonts.regular },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 8 },
-  emptyTitle: { fontSize: 15, fontWeight: "700", color: protoColors.text },
-  emptySubtitle: { fontSize: 12.5, color: protoColors.textMuted, textAlign: "center", lineHeight: 18 },
+  emptyTitle: { fontSize: 15, fontFamily: protoFonts.regular, color: protoColors.text },
+  emptySubtitle: { fontSize: 12.5, color: protoColors.textMuted, textAlign: "center", lineHeight: 18, fontFamily: protoFonts.regular },
 });
