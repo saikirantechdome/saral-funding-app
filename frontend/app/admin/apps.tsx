@@ -79,7 +79,7 @@ export default function AdminApps() {
         />
       </View>
       <View style={styles.filterRow}>
-        {(["All", ...FILTERS] as const).map((f) => (
+        {FILTERS.map((f) => (
           <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.pill, filter === f && styles.pillOn]}>
             <Text style={[styles.pillText, filter === f && styles.pillTextOn]}>{f}</Text>
           </TouchableOpacity>
