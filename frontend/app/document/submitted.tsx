@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Check } from "lucide-react-native";
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -27,9 +28,9 @@ export default function DocumentSubmitted() {
     <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surface }} edges={["top", "bottom"]} testID="document-submitted-screen">
       <View style={styles.body}>
         <View style={styles.card}>
-          {/* Flat placeholder circle, no checkmark glyph — matches the
-              prototype's blank `.s-ico`-style circle exactly. */}
-          <View style={styles.iconWrap} />
+          <View style={styles.iconWrap}>
+            <Check size={20} color="#1F7A4C" strokeWidth={3} />
+          </View>
           <Text style={styles.title}>Document sent</Text>
           <Text style={styles.subtitle}>{decodeURIComponent(type || "Document")} is with our team for review</Text>
 
@@ -69,7 +70,7 @@ export default function DocumentSubmitted() {
 const styles = StyleSheet.create({
   body: { flex: 1, padding: spacing.md, gap: protoSpacing.md },
   card: { backgroundColor: "#FFFFFF", borderRadius: 19, padding: spacing.lg, alignItems: "center", gap: 6 },
-  iconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#E4F5EB", marginBottom: 4 },
+  iconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#E4F5EB", alignItems: "center", justifyContent: "center", marginBottom: 4 },
   title: { fontSize: 17, fontFamily: protoFonts.regular, color: protoColors.text },
   subtitle: { fontSize: 12.5, fontFamily: protoFonts.regular, color: protoColors.textMuted, textAlign: "center", marginBottom: protoSpacing.sm },
   kvBlock: { width: "100%", gap: 8, marginTop: protoSpacing.sm },

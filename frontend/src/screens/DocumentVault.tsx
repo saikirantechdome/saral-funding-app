@@ -15,13 +15,14 @@ import { useCallback, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, RefreshControl, Modal, SectionList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { FileText, ChevronRight, Plus, X, Check } from "lucide-react-native";
+import { FileText, ChevronRight, Plus, X, Check, CreditCard, Award, Landmark, Home, Receipt } from "lucide-react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
 import { DOCUMENT_TYPE_GROUPS } from "@/src/constants";
+import { docTypeStyle } from "@/src/utils/docType";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
 const BULK_UPLOAD_WHATSAPP_URL = `https://wa.me/919893869899?text=${encodeURIComponent(
@@ -32,6 +33,24 @@ function statusPill(status: string) {
   if (status === "verified") return { bg: protoColors.pill.green.bg, text: protoColors.pill.green.text, label: "Approved" };
   if (status === "rejected") return { bg: protoColors.pill.amber.bg, text: protoColors.pill.amber.text, label: "Action" };
   return { bg: protoColors.pill.blue.bg, text: protoColors.pill.blue.text, label: "Review" };
+}
+
+// A meaningful icon per document category — the prototype's own row icons
+// are blank placeholders, but a flat gray square for every single document
+// read as unfinished. Reuses docTypeStyle's existing category detection
+// (already shared with the admin document-review screens) rather than a
+// second copy, just mapped to an icon instead of a color. Free icons via
+// lucide-react-native (the icon set already used throughout this revamp).
+const CATEGORY_ICONS: Record<string, any> = {
+  "identification-documents": CreditCard,
+  certificate: Award,
+  "bank-cards": Landmark,
+  home: Home,
+  invoice: Receipt,
+  file: FileText,
+};
+function docTypeIcon(docType: string | undefined | null) {
+  return CATEGORY_ICONS[docTypeStyle(docType).slug] ?? FileText;
 }
 
 export default function DocumentVault() {
@@ -117,6 +136,7 @@ export default function DocumentVault() {
         ) : (
           docs.map((doc) => {
             const pill = statusPill(doc.status);
+            const DocIcon = docTypeIcon(doc.doc_type);
             return (
               <TouchableOpacity
                 key={doc.id}
@@ -126,11 +146,12 @@ export default function DocumentVault() {
                 testID={`doc-row-${doc.id}`}
               >
                 <View style={styles.row}>
-                  {/* Flat placeholder square, no glyph — matches the prototype's
-                      `.s-ico` exactly (every Documents row uses the same plain
-                      block regardless of doc type or status, see
-                      Saral User Prototype.dc.html lines 157-161). */}
-                  <View style={styles.icon} />
+                  {/* Flat placeholder square background — matches the
+                      prototype's `.s-ico` — with a category icon inside so
+                      an all-gray list of squares doesn't read as unfinished. */}
+                  <View style={styles.icon}>
+                    <DocIcon size={17} color={protoColors.textMuted} strokeWidth={2} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.docName}>{doc.doc_type}</Text>
                     <Text style={styles.docMeta} numberOfLines={1}>

@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft, ChevronRight, Pencil, X, Check } from "lucide-react-native";
+import { ArrowLeft, ChevronRight, Pencil, X, Check, User, Briefcase, Bell, MessageCircle, LogOut } from "lucide-react-native";
 
 import { spacing, radius, formatMobile, shortRef } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -143,9 +143,9 @@ export default function Profile() {
     // and Terms of Service were extras not in the prototype; dropped per
     // explicit instruction. Those screens (/booking, /legal) still exist
     // and work, just aren't linked from Profile anymore.
-    ...(!isAdmin && bp?.industry ? [{ id: "business", label: "Business profile", onPress: () => router.push("/business-profile" as any) }] : []),
-    { id: "notif", label: "Notifications", onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
-    { id: "support", label: isAdmin ? "Support Inbox" : "Help & support", onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
+    ...(!isAdmin && bp?.industry ? [{ id: "business", label: "Business profile", Icon: Briefcase, onPress: () => router.push("/business-profile" as any) }] : []),
+    { id: "notif", label: "Notifications", Icon: Bell, onPress: () => router.push(isAdmin ? "/admin/notifications" : "/notifications") },
+    { id: "support", label: isAdmin ? "Support Inbox" : "Help & support", Icon: MessageCircle, onPress: () => router.push((isAdmin ? "/admin/support" : "/support") as any) },
   ];
 
   return (
@@ -170,11 +170,14 @@ export default function Profile() {
           <View style={styles.avatarOuter}>
             {/* Flat teal circle — the prototype's Profile avatar has no
                 image/initials at all (`.s-av`-style blank placeholder), same
-                treatment as Status/Documents/Home row icons. The edit pencil
-                badge is a real affordance the static prototype doesn't
-                depict any state for, so it stays. */}
+                treatment as Status/Documents/Home row icons — with a plain
+                person icon inside so it doesn't read as an empty/broken
+                image. The edit pencil badge is a real affordance the static
+                prototype doesn't depict any state for, so it stays. */}
             <View style={styles.avatarRing}>
-              <View style={[styles.avatarBlank, { width: 72, height: 72, borderRadius: 36 }]} />
+              <View style={[styles.avatarBlank, { width: 72, height: 72, borderRadius: 36 }]}>
+                <User size={30} color="#FFFFFF" strokeWidth={1.75} />
+              </View>
             </View>
             {!editing && (
               <TouchableOpacity
@@ -274,7 +277,9 @@ export default function Profile() {
                   onPress={a.onPress}
                   activeOpacity={0.8}
                 >
-                  <View style={styles.actionIcon} />
+                  <View style={styles.actionIcon}>
+                    <a.Icon size={16} color={protoColors.primary} strokeWidth={2} />
+                  </View>
                   <Text style={styles.actionLabel}>
                     {a.label}
                   </Text>
@@ -293,7 +298,9 @@ export default function Profile() {
                 onPress={logout}
                 activeOpacity={0.8}
               >
-                <View style={[styles.actionIcon, styles.logoutIcon]} />
+                <View style={[styles.actionIcon, styles.logoutIcon]}>
+                  <LogOut size={16} color={protoColors.danger} strokeWidth={2} />
+                </View>
                 <Text style={[styles.actionLabel, { color: protoColors.danger }]}>Logout</Text>
                 <ChevronRight size={16} color={protoColors.danger} strokeWidth={2} />
               </TouchableOpacity>
@@ -478,6 +485,8 @@ const styles = StyleSheet.create({
   },
   avatarBlank: {
     backgroundColor: protoColors.accent,
+    alignItems: "center",
+    justifyContent: "center",
   },
   nameDark: {
     fontSize: 20,
@@ -585,8 +594,12 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: radius.lg,
-    // Flat placeholder, no glyph — matches the prototype's `.s-ico` exactly.
+    // Flat placeholder background, matching the prototype's `.s-ico` — with
+    // a fitting icon inside so a whole card of empty gray squares doesn't
+    // read as unfinished.
     backgroundColor: protoColors.iconPlaceholder,
+    alignItems: "center",
+    justifyContent: "center",
   },
   logoutIcon: {
     backgroundColor: "#FBE7E2",

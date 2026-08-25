@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft, Send, Headset } from "lucide-react-native";
+import { ArrowLeft, Send, Headset, User } from "lucide-react-native";
 
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -134,10 +134,12 @@ export default function Support() {
         <TouchableOpacity onPress={() => router.push("/(tabs)" as any)} hitSlop={12} testID="chat-back">
           <ArrowLeft size={18} color={protoColors.text} strokeWidth={2} />
         </TouchableOpacity>
-        {/* Flat placeholder circle, no illustration — the prototype's Chat
-            header avatar is a blank `.s-ico` circle, same treatment as
-            Status/Documents/Home/Profile. */}
-        <View style={[styles.headerAvatarWrap, styles.avatarBlank, { width: 34, height: 34, borderRadius: 17 }]} />
+        {/* Flat placeholder circle — the prototype's Chat header avatar is a
+            blank `.s-ico` circle, same treatment as Status/Documents/Home/
+            Profile — with a plain person icon inside. */}
+        <View style={[styles.headerAvatarWrap, styles.avatarBlank, { width: 34, height: 34, borderRadius: 17 }]}>
+          <User size={16} color="#FFFFFF" strokeWidth={2} />
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Karan S.</Text>
           <Text style={styles.headerSub}>Reviewer · replies in ~2h</Text>
@@ -266,6 +268,8 @@ const styles = StyleSheet.create({
   },
   avatarBlank: {
     backgroundColor: protoColors.accent,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 14,

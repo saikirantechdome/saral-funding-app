@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, AlertCircle, Bell } from "lucide-react-native";
 
 import { spacing } from "@/src/theme";
 import { protoColors, protoSpacing, protoFonts } from "@/src/theme.proto";
@@ -98,10 +98,15 @@ export default function Notifications() {
               >
                 <View style={styles.row}>
                   {!item.read && <View style={[styles.dot, isAction && styles.dotAmber]} />}
-                  {/* Flat placeholder, no glyph — matches the prototype's
-                      `.s-ico` exactly; unread action items get its slightly
-                      deeper amber tint (`#F6E4C4`). */}
-                  <View style={[styles.icon, isAction && styles.iconAmber]} />
+                  {/* Flat placeholder background matching the prototype's
+                      `.s-ico`; unread action items get its slightly deeper
+                      amber tint (`#F6E4C4`) plus an alert icon instead of a
+                      plain bell. */}
+                  <View style={[styles.icon, isAction && styles.iconAmber]}>
+                    {isAction
+                      ? <AlertCircle size={16} color={protoColors.amberDeep} strokeWidth={2} />
+                      : <Bell size={16} color={protoColors.textMuted} strokeWidth={2} />}
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemTitle} numberOfLines={2}>{item.title}</Text>
                     <Text style={styles.itemTs}>{formatTs(item.created_at)}</Text>
@@ -134,7 +139,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "flex-start", gap: 9 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: protoColors.accent, marginTop: 6 },
   dotAmber: { backgroundColor: protoColors.amber },
-  icon: { width: 34, height: 34, borderRadius: 12, backgroundColor: protoColors.iconPlaceholder },
+  icon: { width: 34, height: 34, borderRadius: 12, backgroundColor: protoColors.iconPlaceholder, alignItems: "center", justifyContent: "center" },
   iconAmber: { backgroundColor: "#F6E4C4" },
   itemTitle: { fontSize: 12.5, color: protoColors.text, lineHeight: 17, fontFamily: protoFonts.regular },
   itemTs: { fontSize: 11, color: protoColors.textMuted, marginTop: 2, fontFamily: protoFonts.regular },

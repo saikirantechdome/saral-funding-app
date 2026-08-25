@@ -20,7 +20,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, PhoneCall, FileText, Landmark, FileCheck2, Search, CheckCircle2, Banknote } from "lucide-react-native";
 
 import { apiGet } from "@/src/api";
 import { spacing } from "@/src/theme";
@@ -28,6 +28,21 @@ import { protoColors, protoFonts } from "@/src/theme.proto";
 import ProtoRing from "@/src/components/proto/ProtoRing";
 import { STAGES, STAGE_LABELS, journeyProgress, SchemeApp } from "@/src/utils/stageProgress";
 import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
+
+// One icon per real pipeline stage — the prototype's own row icons are
+// blank placeholders, but a plain gray square for every single stage read
+// as unfinished rather than intentional, so each stage gets something that
+// matches its meaning. Free icons via lucide-react-native (already the
+// icon set used throughout this revamp — back arrows, chevrons, etc.).
+const STAGE_ICONS: Record<string, any> = {
+  call_done: PhoneCall,
+  documents_submitted: FileText,
+  scheme_identified: Landmark,
+  application_filed: FileCheck2,
+  under_review: Search,
+  approved: CheckCircle2,
+  disbursed: Banknote,
+};
 
 // Mirrors the relative-date formatter repeated elsewhere in this codebase
 // (e.g. (tabs)/index.tsx, admin/support/index.tsx) — small enough that a
@@ -108,9 +123,13 @@ export default function Status() {
             <View style={styles.card}>
               {STAGES.map((stage, i) => {
                 const state = i < journey.stageIndex ? "done" : i === journey.stageIndex ? "now" : "pending";
+                const StageIcon = STAGE_ICONS[stage] ?? FileText;
+                const iconColor = state === "done" ? protoColors.pill.green.text : state === "now" ? protoColors.pill.amber.text : protoColors.textDim;
                 return (
                   <View key={stage} style={[styles.row, i === STAGES.length - 1 && styles.rowLast]}>
-                    <View style={[styles.icon, state === "done" && styles.iconDone, state === "now" && styles.iconNow]} />
+                    <View style={[styles.icon, state === "done" && styles.iconDone, state === "now" && styles.iconNow]}>
+                      <StageIcon size={17} color={iconColor} strokeWidth={2} />
+                    </View>
                     <Text style={[styles.rowLabel, state === "pending" && styles.rowLabelPending]}>
                       {STAGE_LABELS[stage]}
                     </Text>
@@ -160,7 +179,7 @@ const styles = StyleSheet.create({
     borderBottomColor: protoColors.border,
   },
   rowLast: { borderBottomWidth: 0 },
-  icon: { width: 40, height: 40, borderRadius: 13, backgroundColor: protoColors.iconPlaceholder },
+  icon: { width: 40, height: 40, borderRadius: 13, backgroundColor: protoColors.iconPlaceholder, alignItems: "center", justifyContent: "center" },
   iconDone: { backgroundColor: protoColors.pill.green.bg },
   iconNow: { backgroundColor: protoColors.pill.amber.bg },
   rowLabel: { flex: 1, fontSize: 13, fontFamily: protoFonts.regular, color: protoColors.text },
