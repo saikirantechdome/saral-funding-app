@@ -1,222 +1,166 @@
+/**
+ * Admin "Today" dashboard — matches the approved Saral Admin Prototype's
+ * isDash state. Stat tiles and unread-message count are real
+ * (`/admin/leads`, `/admin/support/unread-count`). The "Breaching soon" SLA
+ * card and "Switch role" are placeholders — see ADMIN_SIDE_REVAMP_PLAN.md:
+ * there is no due-date/SLA field or CA role in the backend today, so this
+ * uses the real earliest-open lead's name with illustrative framing rather
+ * than inventing a fake due-date field.
+ */
 import { useCallback, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import {
-  Users, Phone, Target, Landmark, FolderOpen,
-  TrendingUp, MessageSquare, MessageCircle, ChevronRight, Percent, Eye, Settings, Shield, Bell, BarChart2,
-} from "lucide-react-native";
+import { Bell } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, tints } from "@/src/theme";
 import { apiGet } from "@/src/api";
-import { BackBar } from "@/src/components/StepBar";
-import { SkeletonBox } from "@/src/components/SkeletonLoader";
-import { canAccess } from "./_layout";
+import { spacing } from "@/src/theme";
+import { protoColors, protoSpacing } from "@/src/theme.proto";
+import ProtoButton from "@/src/components/proto/ProtoButton";
+import { toggleAdminMode } from "@/src/hooks/useAdminMode";
+import { useTabBarSpacing } from "@/src/hooks/useTabBarSpacing";
 
-type Overview = {
-  total_users: number; total_admins: number; total_schemes: number;
-  total_consultations: number; total_leads: number; total_chats: number;
-  daily_active_users: number; conversion_rate: number;
-  scheme_views: number; bank_recommendation_views: number;
-};
+type Lead = { id: string; full_name: string; stage: string; created_at: string; follow_up_date?: string };
 
-const ALL_MODULES = [
-  { id: "users",         label: "Users",          sub: "Manage & view",         Icon: Users,     color: colors.primarySoft, iconColor: colors.primaryDark },
-  { id: "consultations", label: "Consultations",  sub: "Track & update",        Icon: Phone,     color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg },
-  { id: "leads",         label: "CRM / Leads",    sub: "Pipeline & stages",     Icon: Target,    color: tints.amber.bg, iconColor: tints.amber.fg },
-  { id: "schemes",       label: "Schemes",         sub: "Enable & disable",      Icon: Landmark,  color: tints.red.bg, iconColor: tints.red.fg },
-  { id: "documents",    label: "Documents",       sub: "Review & approve docs", Icon: FolderOpen, color: tints.teal.bg, iconColor: tints.teal.fg },
-  { id: "support",      label: "Support Chat",    sub: "User conversations",    Icon: MessageCircle, color: colors.primarySoft, iconColor: colors.primaryDark },
-  { id: "analytics",    label: "Analytics",       sub: "Charts & trends",       Icon: BarChart2, color: tints.blue.bg, iconColor: tints.blue.fg },
-  { id: "notifications",label: "Notifications",   sub: "Broadcast to all users",Icon: Bell,      color: tints.amber.bg, iconColor: tints.amber.fg },
-  { id: "team",          label: "Team Members",   sub: "Invite & manage roles", Icon: Shield,    color: tints.deepTeal.bg, iconColor: tints.deepTeal.fg },
-  { id: "settings",     label: "Settings",        sub: "App configuration",     Icon: Settings,  color: tints.neutral.bg, iconColor: tints.neutral.fg },
-];
-
-function StatCard({ label, value, Icon, color, iconColor }: { label: string; value: string; Icon: any; color: string; iconColor: string }) {
-  return (
-    <View style={[statStyles.card]}>
-      <View style={[statStyles.icon, { backgroundColor: color }]}>
-        <Icon size={14} color={iconColor} strokeWidth={2} />
-      </View>
-      <Text style={statStyles.value}>{value}</Text>
-      <Text style={statStyles.label}>{label}</Text>
-    </View>
-  );
+function bucketOf(stage: string): "new" | "review" | "changes" | "toAssign" | "other" {
+  if (stage === "new") return "new";
+  if (stage === "submitted") return "review";
+  if (stage === "documentation") return "changes";
+  if (stage === "contacted" || stage === "interested") return "toAssign";
+  return "other";
 }
 
-const statStyles = StyleSheet.create({
-  card: {
-    width: "31%",
-    backgroundColor: "#FFF",
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  icon: { width: 28, height: 28, borderRadius: radius.md, alignItems: "center", justifyContent: "center", marginBottom: 8 },
-  value: { fontSize: 20, fontFamily: fonts.displayBold, color: colors.text, lineHeight: 24 },
-  label: { fontSize: 10, fontFamily: fonts.medium, color: colors.textMuted, marginTop: 3, lineHeight: 14 },
-});
-
-export default function AdminHome() {
+export default function AdminToday() {
   const router = useRouter();
-  const [o, setO] = useState<Overview | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string>("super_admin");
+  const tabBarSpacing = useTabBarSpacing(-36);
+  const [me, setMe] = useState<any>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      Promise.all([
-        apiGet<Overview>("/admin/overview"),
+  const load = useCallback(async () => {
+    try {
+      const [u, l, s] = await Promise.all([
         apiGet<any>("/auth/me"),
-      ]).then(([overview, me]) => {
-        setO(overview);
-        setUserRole(me?.role ?? "super_admin");
-        setLoading(false);
-      }).catch(() => setLoading(false));
-    }, [])
-  );
+        apiGet<Lead[]>("/admin/leads?limit=200").catch(() => []),
+        apiGet<{ unread_count: number }>("/admin/support/unread-count").catch(() => ({ unread_count: 0 })),
+      ]);
+      setMe(u);
+      setLeads(l || []);
+      setUnread(s.unread_count || 0);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
-  const visibleModules = ALL_MODULES.filter((m) => canAccess(userRole, m.id));
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const counts = leads.reduce(
+    (acc, l) => { const b = bucketOf(l.stage); if (b !== "other") acc[b]++; return acc; },
+    { new: 0, review: 0, changes: 0, toAssign: 0 }
+  );
+  // Illustrative "breaching soon" — real lead, no real due-date field exists.
+  const oldestOpen = [...leads]
+    .filter((l) => l.stage === "new" || l.stage === "contacted")
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+
+  const roleLabel = me?.role ? me.role.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) : "Reviewer";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-home">
-      <BackBar title="Admin Console" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-
-        {/* Stats grid */}
-        <Text style={styles.sectionLabel}>Overview</Text>
-        {loading ? (
-          <View style={styles.statsGrid}>
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <SkeletonBox key={i} width="31%" height={90} borderRadius={radius.xl} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.primaryDark }} edges={["top"]} testID="admin-today-screen">
+      <ScrollView
+        style={{ flex: 1, marginBottom: tabBarSpacing, backgroundColor: protoColors.surfaceAlt }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FFFFFF" />}
+      >
+        <View style={styles.hero}>
+          <View style={styles.headerRow}>
+            <View style={styles.avatar}><Text style={styles.avatarText}>{(me?.full_name || "A")[0]?.toUpperCase()}</Text></View>
+            <View style={{ flex: 1, marginLeft: protoSpacing.sm }}>
+              <Text style={styles.roleLabel}>{roleLabel}</Text>
+              <Text style={styles.roleName}>{me?.full_name || "—"}</Text>
+            </View>
+            <TouchableOpacity style={styles.bell} onPress={() => router.push("/admin/support" as any)} testID="admin-bell">
+              <Bell size={18} color="#FFFFFF" strokeWidth={2} />
+              {unread > 0 && <View style={styles.bellDot} />}
+            </TouchableOpacity>
+          </View>
+          <View style={styles.statGrid}>
+            {([["new", "New"], ["review", "In review"], ["changes", "Changes"], ["toAssign", "To assign"]] as const).map(([key, label]) => (
+              <TouchableOpacity key={key} style={styles.statTile} onPress={() => router.push("/admin/apps" as any)} testID={`stat-${key}`}>
+                <Text style={styles.statVal}>{counts[key]}</Text>
+                <Text style={styles.statLabel}>{label}</Text>
+              </TouchableOpacity>
             ))}
           </View>
-        ) : (
-          <View style={styles.statsGrid}>
-            <StatCard label="Total Users" value={String(o?.total_users ?? 0)} Icon={Users} color={colors.primarySoft} iconColor={colors.primaryDark} />
-            <StatCard label="Daily Active" value={String(o?.daily_active_users ?? 0)} Icon={TrendingUp} color={tints.blue.bg} iconColor={tints.blue.fg} />
-            <StatCard label="AI Chats" value={String(o?.total_chats ?? 0)} Icon={MessageSquare} color={tints.deepTeal.bg} iconColor={tints.deepTeal.fg} />
-            <StatCard label="Consultations" value={String(o?.total_consultations ?? 0)} Icon={Phone} color={tints.amber.bg} iconColor={tints.amber.fg} />
-            <StatCard label="Leads" value={String(o?.total_leads ?? 0)} Icon={Target} color={tints.red.bg} iconColor={tints.red.fg} />
-            <StatCard label="Schemes" value={String(o?.total_schemes ?? 0)} Icon={Landmark} color={colors.surfaceAlt} iconColor={colors.textMuted} />
-            <StatCard label="Conversion" value={`${o?.conversion_rate ?? 0}%`} Icon={Percent} color={tints.teal.bg} iconColor={tints.teal.fg} />
-            <StatCard label="Scheme Views" value={String(o?.scheme_views ?? 0)} Icon={Eye} color={tints.neutral.bg} iconColor={tints.neutral.fg} />
-          </View>
-        )}
-
-        {/* Role badge */}
-        <View style={styles.roleBadgeRow}>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>Role: {userRole.replace("_", " ").toUpperCase()}</Text>
-          </View>
         </View>
 
-        {/* Modules */}
-        <Text style={[styles.sectionLabel, { marginTop: 16 }]}>Modules</Text>
-        <View style={styles.modulesGrid}>
-          {visibleModules.map((m) => (
-            <TouchableOpacity
-              key={m.id}
-              testID={`admin-nav-${m.id}`}
-              style={styles.moduleTile}
-              onPress={() => router.push(`/admin/${m.id}` as any)}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.moduleIcon, { backgroundColor: m.color }]}>
-                <m.Icon size={20} color={m.iconColor} strokeWidth={2} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.moduleLabel}>{m.label}</Text>
-                <Text style={styles.moduleSub}>{m.sub}</Text>
-              </View>
-              <ChevronRight size={15} color={colors.textDim} strokeWidth={2} />
+        <View style={styles.sheet}>
+          {oldestOpen && (
+            <View style={styles.amberCard} testID="breaching-card">
+              <View style={styles.pillRow}><View style={styles.pillAmber}><Text style={styles.pillAmberText}>Needs attention</Text></View></View>
+              <Text style={styles.cardTitle}>{oldestOpen.full_name}</Text>
+              <ProtoButton variant="amber" label="Open review" onPress={() => router.push(`/admin/application/${oldestOpen.id}` as any)} />
+            </View>
+          )}
+
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.listRow} onPress={() => router.push("/admin/support" as any)} testID="row-unread">
+              <View style={{ flex: 1 }}><Text style={styles.rowTitle}>Unread messages</Text></View>
+              <View style={styles.pillBlue}><Text style={styles.pillBlueText}>{unread}</Text></View>
             </TouchableOpacity>
-          ))}
-        </View>
+            <TouchableOpacity style={[styles.listRow, styles.listRowLast]} onPress={() => router.push("/admin/cases" as any)} testID="row-ca-pending">
+              <View style={{ flex: 1 }}><Text style={styles.rowTitle}>CA allocation pending</Text></View>
+              <View style={styles.pillAmber}><Text style={styles.pillAmberText}>{counts.toAssign}</Text></View>
+            </TouchableOpacity>
+          </View>
 
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => { toggleAdminMode(); router.replace("/admin/cases" as any); }}
+            testID="switch-role-btn"
+          >
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>Switch role</Text>
+                <Text style={styles.rowSub}>Reviewer ↔ CA mode</Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionLabel: {
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 10,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  roleBadgeRow: {
-    marginTop: 12,
-    flexDirection: "row",
-  },
-  roleBadge: {
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  roleBadgeText: {
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    color: colors.primaryDark,
-    letterSpacing: 0.4,
-  },
-  modulesGrid: {
-    gap: 8,
-  },
-  moduleTile: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#FFF",
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 14,
-    paddingHorizontal: spacing.md,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  moduleIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.xl,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  moduleLabel: {
-    fontSize: 15,
-    fontFamily: fonts.displayBold,
-    color: colors.text,
-  },
-  moduleSub: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
+  hero: { paddingTop: spacing.sm2, paddingHorizontal: spacing.md, paddingBottom: 22 },
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: protoSpacing.md },
+  avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: protoColors.accent, alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
+  roleLabel: { fontSize: 11, color: "rgba(255,255,255,0.6)" },
+  roleName: { fontSize: 17, color: "#FFFFFF", fontWeight: "700", marginTop: 1 },
+  bell: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center" },
+  bellDot: { position: "absolute", top: 9, right: 9, width: 7, height: 7, borderRadius: 4, backgroundColor: protoColors.amber },
+  statGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  statTile: { width: "47%", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 14, padding: 12 },
+  statVal: { fontSize: 22, color: "#FFFFFF", fontWeight: "700" },
+  statLabel: { fontSize: 11.5, color: "rgba(255,255,255,0.6)", marginTop: 2 },
+  sheet: { backgroundColor: protoColors.surfaceAlt, borderTopLeftRadius: 29, borderTopRightRadius: 29, marginTop: -18, padding: spacing.md, gap: 13, minHeight: 200 },
+  amberCard: { backgroundColor: protoColors.amberSoft, borderRadius: 19, padding: 15, gap: 10 },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 19, padding: 4 },
+  pillRow: { flexDirection: "row" },
+  pillAmber: { backgroundColor: protoColors.pill.amber.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: "flex-start" },
+  pillAmberText: { fontSize: 11, fontWeight: "600", color: protoColors.pill.amber.text },
+  pillBlue: { backgroundColor: protoColors.pill.blue.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  pillBlueText: { fontSize: 11, fontWeight: "600", color: protoColors.pill.blue.text },
+  cardTitle: { fontSize: 14, fontWeight: "600", color: protoColors.text },
+  row: { flexDirection: "row", alignItems: "center" },
+  listRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: protoColors.border },
+  listRowLast: { borderBottomWidth: 0 },
+  rowTitle: { fontSize: 13, color: protoColors.text, fontWeight: "600" },
+  rowSub: { fontSize: 11.5, color: protoColors.textMuted, marginTop: 1 },
+  chevron: { fontSize: 16, color: protoColors.textMuted },
 });

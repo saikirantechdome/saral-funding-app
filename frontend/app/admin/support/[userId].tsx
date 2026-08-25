@@ -15,7 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, Send, Headset } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, elevation, formatMobile } from "@/src/theme";
+import { spacing, radius, fonts, elevation, formatMobile } from "@/src/theme";
+import { protoColors } from "@/src/theme.proto";
 import { apiGet, apiPost } from "@/src/api";
 import EmptyState from "@/src/components/EmptyState";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
@@ -122,7 +123,7 @@ export default function AdminSupportConversation() {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }} edges={["top", "bottom"]} testID="admin-support-conversation">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <ChevronLeft size={22} color={colors.text} strokeWidth={2} />
+          <ChevronLeft size={22} color={protoColors.text} strokeWidth={2} />
         </TouchableOpacity>
         <InitialsAvatar name={targetUser?.full_name || "User"} size={38} />
         <View style={{ flex: 1 }}>
@@ -137,17 +138,17 @@ export default function AdminSupportConversation() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         {loading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />
+          <ActivityIndicator color={protoColors.primary} style={{ marginTop: 60 }} />
         ) : (
           <FlatList
             ref={listRef}
             data={items}
             keyExtractor={(m) => m.id}
-            style={{ flex: 1, backgroundColor: colors.surface2 }}
+            style={{ flex: 1, backgroundColor: protoColors.surfaceAlt }}
             contentContainerStyle={{ padding: spacing.md, flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
-              loadingMore ? <ActivityIndicator color={colors.primary} style={{ marginBottom: spacing.sm }} /> : null
+              loadingMore ? <ActivityIndicator color={protoColors.primary} style={{ marginBottom: spacing.sm }} /> : null
             }
             onScroll={({ nativeEvent }) => {
               if (nativeEvent.contentOffset.y < 40) loadOlder();
@@ -203,7 +204,7 @@ export default function AdminSupportConversation() {
             value={input}
             onChangeText={setInput}
             placeholder="Reply…"
-            placeholderTextColor={colors.textPlaceholder}
+            placeholderTextColor={protoColors.textDim}
             multiline
             maxLength={2000}
           />
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: protoColors.border,
     backgroundColor: "#FFF",
   },
   backBtn: {
@@ -242,12 +243,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 15,
     fontFamily: fonts.displayBold,
-    color: colors.text,
+    color: protoColors.text,
   },
   headerSub: {
     fontSize: 11,
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: protoColors.textMuted,
     marginTop: 1,
   },
   row: {
@@ -271,9 +272,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   bubbleAdmin: {
-    backgroundColor: colors.primary,
+    backgroundColor: protoColors.primary,
     borderBottomRightRadius: 6,
-    shadowColor: colors.primaryDark,
+    shadowColor: protoColors.primaryDark,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
   bubbleUser: {
     backgroundColor: "#FFF",
     borderBottomLeftRadius: 6,
-    shadowColor: colors.text,
+    shadowColor: protoColors.text,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
   bubbleText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.text,
+    color: protoColors.text,
     lineHeight: 20,
   },
   bubbleTextAdmin: {
@@ -300,7 +301,7 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 10,
     fontFamily: fonts.medium,
-    color: colors.textDim,
+    color: protoColors.textDim,
     marginTop: 3,
     marginHorizontal: 4,
   },
@@ -310,35 +311,35 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: spacing.sm2,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: protoColors.border,
     backgroundColor: "#FFF",
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: protoColors.border,
     borderRadius: 22,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 10,
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.text,
+    color: protoColors.text,
     maxHeight: 100,
     minHeight: 44,
-    backgroundColor: colors.surface2,
+    backgroundColor: protoColors.surfaceAlt,
   },
   sendBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.primary,
+    backgroundColor: protoColors.primary,
     alignItems: "center",
     justifyContent: "center",
     ...elevation.l1,
   },
   sendBtnDisabled: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: protoColors.accent,
     opacity: 0.6,
   },
 });

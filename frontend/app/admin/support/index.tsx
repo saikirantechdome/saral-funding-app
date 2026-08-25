@@ -12,9 +12,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Search, Headset, Send } from "lucide-react-native";
 
-import { colors, spacing, radius, fonts, elevation } from "@/src/theme";
+import { spacing, fonts } from "@/src/theme";
+import { protoColors, protoSpacing } from "@/src/theme.proto";
 import { apiGet } from "@/src/api";
-import { BackBar } from "@/src/components/StepBar";
 import InitialsAvatar from "@/src/components/InitialsAvatar";
 import EmptyState from "@/src/components/EmptyState";
 
@@ -58,28 +58,28 @@ export default function AdminSupportInbox() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface2 }} edges={["top", "bottom"]} testID="admin-support-inbox">
-      <BackBar
-        title="Messages"
-        onBack={() => router.back()}
-        right={
-          <TouchableOpacity
-            testID="support-broadcast-btn"
-            onPress={() => router.push("/admin/support/broadcast" as any)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Send size={19} color={colors.text} strokeWidth={2} />
-          </TouchableOpacity>
-        }
-      />
+    <SafeAreaView style={{ flex: 1, backgroundColor: protoColors.surface }} edges={["top"]} testID="admin-support-inbox">
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Inbox</Text>
+          <Text style={styles.subtitle}>{total} conversation{total !== 1 ? "s" : ""}</Text>
+        </View>
+        <TouchableOpacity
+          testID="support-broadcast-btn"
+          onPress={() => router.push("/admin/support/broadcast" as any)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Send size={19} color={protoColors.text} strokeWidth={2} />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.searchSection}>
         <View style={styles.searchBox}>
-          <Search size={15} color={colors.textDim} strokeWidth={2} />
+          <Search size={15} color={protoColors.textDim} strokeWidth={2} />
           <TextInput
             testID="admin-support-search"
             placeholder="Search by name or mobile…"
-            placeholderTextColor={colors.textPlaceholder}
+            placeholderTextColor={protoColors.textDim}
             style={styles.searchInput}
             value={q}
             onChangeText={onSearch}
@@ -88,14 +88,8 @@ export default function AdminSupportInbox() {
         </View>
       </View>
 
-      {!loading && (
-        <Text style={styles.countLabel}>
-          {total} conversation{total !== 1 ? "s" : ""}{q ? ` matching "${q}"` : ""}
-        </Text>
-      )}
-
       {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+        <ActivityIndicator color={protoColors.primary} style={{ marginTop: 40 }} />
       ) : items.length === 0 ? (
         <EmptyState
           Icon={Headset}
@@ -149,6 +143,9 @@ export default function AdminSupportInbox() {
 }
 
 const styles = StyleSheet.create({
+  header: { flexDirection: "row", alignItems: "flex-start", paddingHorizontal: spacing.md, paddingTop: protoSpacing.md, paddingBottom: protoSpacing.sm },
+  title: { fontSize: 18, fontWeight: "700", color: protoColors.text },
+  subtitle: { fontSize: 12, color: protoColors.textMuted, marginTop: 2 },
   searchSection: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -157,42 +154,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.xl,
+    borderRadius: 13,
     paddingHorizontal: 12,
-    backgroundColor: "#FFF",
-    height: 44,
+    backgroundColor: protoColors.fieldBg,
+    height: 42,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.text,
+    color: protoColors.text,
     padding: 0,
-  },
-  countLabel: {
-    fontSize: 12,
-    fontFamily: fonts.medium,
-    color: colors.textDim,
-    paddingHorizontal: spacing.md,
-    paddingBottom: 6,
   },
   row: {
     flexDirection: "row",
     gap: 12,
     alignItems: "center",
-    backgroundColor: "#FFF",
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-    marginBottom: 8,
-    ...elevation.l1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 19,
+    padding: 13,
+    marginBottom: 10,
   },
   rowUnread: {
-    borderColor: colors.primaryMid,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: protoColors.amberSoft,
   },
   topLine: {
     flexDirection: "row",
@@ -204,7 +188,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: fonts.semiBold,
-    color: colors.text,
+    color: protoColors.text,
   },
   nameUnread: {
     fontFamily: fonts.displayBold,
@@ -212,7 +196,7 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 11,
     fontFamily: fonts.medium,
-    color: colors.textDim,
+    color: protoColors.textDim,
   },
   bottomLine: {
     flexDirection: "row",
@@ -224,10 +208,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.textMuted,
+    color: protoColors.textMuted,
   },
   previewUnread: {
-    color: colors.text,
+    color: protoColors.text,
     fontFamily: fonts.medium,
   },
   badge: {
@@ -235,7 +219,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     paddingHorizontal: 6,
-    backgroundColor: colors.primary,
+    backgroundColor: protoColors.primary,
     alignItems: "center",
     justifyContent: "center",
   },

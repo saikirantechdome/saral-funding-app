@@ -67,7 +67,16 @@ export default function TabsLayout() {
 
   useEffect(() => {
     apiGet<any>("/auth/me")
-      .then((me) => setIsAdmin(me?.role && me.role !== "user"))
+      .then((me) => {
+        const admin = !!(me?.role && me.role !== "user");
+        setIsAdmin(admin);
+        // Admins now land on the revamped /admin experience (Today/Apps/
+        // Inbox/Profile) instead of these dual-role user tabs — mirrors the
+        // existing reverse guard in admin/_layout.tsx (which sends non-admins
+        // back here). Not a login/auth change: OTP verification still routes
+        // everyone here first; this just forwards admin roles onward.
+        if (admin) router.replace("/admin" as any);
+      })
       .catch(() => {});
   }, []);
 
