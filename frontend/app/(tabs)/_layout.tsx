@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Tabs, useRouter } from "expo-router";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   LayoutDashboard, ClipboardList, Activity, Plus, FolderOpen, CircleUser,
@@ -47,16 +47,17 @@ function makeLabel(label: string) {
 }
 
 // Center FAB matching the approved prototype's `.s-fab` (raised teal circle
-// with a plain "+"). Purely visual — `quick-upload.tsx` behind this tab does
-// the actual navigation (redirects into the Documents flow), so this is just
-// a styled tabBarButton, not a custom press handler.
-function FabButton(props: React.ComponentProps<typeof TouchableOpacity>) {
+// with a plain "+"). A custom `tabBarIcon`, not `tabBarButton` — Expo Router
+// disallows tabBarButton on a screen that also resolves an `href` (every
+// Tabs.Screen has one by default, and even `href: null` still counts), so
+// there's no way to keep a fully custom button here. The default tab button
+// chrome still wraps this icon, but unlabeled it just reads as a floating
+// circle; the tabPress listener below fully intercepts actual navigation.
+function FabIcon() {
   return (
-    <TouchableOpacity {...props} style={styles.fabWrap} activeOpacity={0.85}>
-      <View style={styles.fab}>
-        <Plus size={22} color="#FFFFFF" strokeWidth={2.4} />
-      </View>
-    </TouchableOpacity>
+    <View style={styles.fab}>
+      <Plus size={22} color="#FFFFFF" strokeWidth={2.4} />
+    </View>
   );
 }
 
@@ -116,8 +117,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="quick-upload"
         options={{
-          href: isAdmin ? null : undefined,
-          tabBarButton: FabButton,
+          tabBarIcon: FabIcon,
           tabBarLabel: () => null,
         }}
         listeners={{
@@ -214,11 +214,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: colors.primary,
     marginTop: 3,
-  },
-  fabWrap: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
   fab: {
     width: 52,

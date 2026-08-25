@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Tabs, useRouter } from "expo-router";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   LayoutGrid, FileText, Plus, MessageCircle, CircleUser, CheckSquare,
@@ -43,15 +43,18 @@ function makeLabel(label: string) {
   );
 }
 
-// Center FAB matching the prototype's `.s-fab` — purely visual, wired via
-// the tabPress listener below (same pattern as the user side's tab bar).
-function FabButton(props: React.ComponentProps<typeof TouchableOpacity>) {
+// Center FAB matching the prototype's `.s-fab` — a custom `tabBarIcon` (not
+// `tabBarButton`, which Expo Router disallows combining with a resolvable
+// `href` — every registered Tabs.Screen has one by default, even unset, so
+// there's no way to keep tabBarButton here). The default tab button chrome
+// still wraps this, but it's an unlabeled circle floating above the bar, so
+// that chrome is invisible; actual navigation is still fully intercepted by
+// the tabPress listener below.
+function FabIcon() {
   return (
-    <TouchableOpacity {...props} style={styles.fabWrap} activeOpacity={0.85}>
-      <View style={styles.fab}>
-        <Plus size={22} color="#FFFFFF" strokeWidth={2.4} />
-      </View>
-    </TouchableOpacity>
+    <View style={styles.fab}>
+      <Plus size={22} color="#FFFFFF" strokeWidth={2.4} />
+    </View>
   );
 }
 
@@ -100,7 +103,7 @@ export default function AdminLayout() {
       {/* Shared */}
       <Tabs.Screen
         name="quick-action"
-        options={{ tabBarButton: FabButton, tabBarLabel: () => null }}
+        options={{ tabBarIcon: FabIcon, tabBarLabel: () => null }}
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
@@ -141,7 +144,6 @@ const styles = StyleSheet.create({
   },
   tabLabel: { fontSize: 10, color: protoColors.textDim, marginTop: 2 },
   tabLabelActive: { color: protoColors.primary, fontWeight: "600" },
-  fabWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
   fab: {
     width: 52, height: 52, borderRadius: protoRadius.card,
     backgroundColor: protoColors.primary,
